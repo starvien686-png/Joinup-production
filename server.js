@@ -1136,20 +1136,18 @@ async function syncAll() {
             )`,
             `CREATE TABLE IF NOT EXISTS chat_messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                activity_id VARCHAR(100),
+                room_id VARCHAR(100),
                 sender_email VARCHAR(255),
                 sender_name VARCHAR(100),
-                sender_dept VARCHAR(100),
-                sender_student_id VARCHAR(50),
-                role VARCHAR(50),
-                message_type VARCHAR(50),
-                content TEXT,
+                message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS chat_participants (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 room_id VARCHAR(100),
                 user_email VARCHAR(255),
+                user_name VARCHAR(100),
+                role VARCHAR(50),
                 joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS activity_feedback (
