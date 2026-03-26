@@ -308,7 +308,12 @@ export const renderRegister = () => {
                         photoURL: result.user.profile_pic || ''
                     };
 
-                    localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    try {
+                        localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    } catch (e) {
+                        const liteProfile = { ...userUntukHomepage, profile_pic: '', photoURL: '' };
+                        localStorage.setItem('userProfile', JSON.stringify(liteProfile));
+                    }
                     localStorage.setItem('isLoggedIn', 'true');
 
                     if (typeof window.validLogin === 'function') {
