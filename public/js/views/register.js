@@ -1,150 +1,122 @@
-import { isValidNCNUEmail, sanitizeInput } from '../utils/validation.js';
-import { MockStore } from '../models/mockStore.js';
 import { I18n } from '../services/i18n.js';
-import { formatTime } from '../utils/dateFormatter.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
 
 export const renderRegister = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userProfile');
-
     const app = document.getElementById('app');
-    let activeTab = 'login';
-    let clockInterval = null;
+    let activeTab = 'login'; // 'login' or 'register'
 
-    if (!document.getElementById('auth-style')) {
-        const link = document.createElement('link');
-        link.id = 'auth-style';
-        link.rel = 'stylesheet';
-        link.href = 'css/auth.css';
-        document.head.appendChild(link);
-    }
+    const sanitizeInput = (str) => {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    };
 
-    const updateTexts = () => {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (el.tagName === 'INPUT') {
-                el.placeholder = I18n.t(key);
-            } else {
-                el.innerText = I18n.t(key);
-            }
-        });
+    const formatTime = (date) => {
+        return date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
     };
 
     const startClock = () => {
         const timeEl = document.querySelector('#auth-clock .time');
         const dateEl = document.querySelector('#auth-clock .date');
-        const update = () => {
-            if (!timeEl) return;
+        if (!timeEl || !dateEl) return;
+
+        setInterval(() => {
             const now = new Date();
             timeEl.innerText = formatTime(now);
-            dateEl.innerText = now.toLocaleDateString();
-        };
-        update();
-        clockInterval = setInterval(update, 1000);
+            dateEl.innerText = now.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+        }, 1000);
     };
 
     const render = () => {
-        if (clockInterval) clearInterval(clockInterval);
+        const currentLang = typeof I18n !== 'undefined' ? I18n.getLanguage() : 'en';
 
         app.innerHTML = `
-            <div id="auth-container">
-                <div id="lang-selector-container"></div>
-                <div id="auth-clock">
-                    <div class="time">--:--</div>
-                    <div class="date">----/--/--</div>
-                    <div class="sync-badge">
-                        <span>⚡</span> <span data-i18n="clock.sync">Syncing...</span>
-                    </div>
-                </div>
+            <div class="auth-container fade-in">
+                <header id="auth-clock" style="text-align: center; margin-bottom: 2rem; color: #333;">
+                    <div class="time" style="font-size: 3.5rem; font-weight: 300; letter-spacing: -2px;">${formatTime(new Date())}</div>
+                    <div class="date" style="font-size: 1rem; opacity: 0.7; text-transform: uppercase;">${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                </header>
 
                 <div class="auth-card">
-                    <div class="auth-header" style="text-align: center; padding: 0; background: transparent;">
-                        <img src="assets/banner.png?v=2" alt="JoinUp Banner" style="width: 100%; height: auto; display: block; border-radius: 12px 12px 0 0;">
-                    </div>
-
                     <div class="auth-tabs">
-                        <button id="tab-login" class="auth-tab ${activeTab === 'login' ? 'active' : ''}" data-i18n="auth.login_tab">Login</button>
-                        <button id="tab-register" class="auth-tab ${activeTab === 'register' ? 'active' : ''}" data-i18n="auth.register_tab">Sign Up</button>
+                        <div id="tab-login" class="tab ${activeTab === 'login' ? 'active' : ''}" data-i18n="auth.login_tab">Login</div>
+                        <div id="tab-register" class="tab ${activeTab === 'register' ? 'active' : ''}" data-i18n="auth.register_tab">Register</div>
                     </div>
 
-                    <div class="auth-body">
-                        <div id="view-login" style="display: ${activeTab === 'login' ? 'block' : 'none'};">
-                            <form id="form-login">
+                    <div class="auth-form-container">
+                        ${activeTab === 'login' ? `
+                            <form id="form-login" class="fade-in">
                                 <div class="form-group">
-                                    <label data-i18n="login.email_label">Email</label>
-                                    <input type="email" id="login-email" class="form-control" data-i18n="login.email_placeholder" placeholder="name@ncnu.edu.tw" required>
+                                    <label data-i18n="auth.email_label">University Email</label>
+                                    <input type="email" id="login-email" placeholder="s112213xxx@mail1.ncnu.edu.tw" required>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="login.pwd_label">Password</label>
-                                    <input type="password" id="login-pwd" class="form-control" data-i18n="login.pwd_placeholder" placeholder="Password" required>
-                                    
-                                    <a href="#" id="btn-forgot-pwd" data-i18n="login.forgot_pwd" style="font-size: 0.85rem; color: #d97706; display: block; margin-top: 8px; text-align: right; text-decoration: none; font-weight: bold;">Forgot Password?</a>
+                                    <label data-i18n="auth.pwd_label">Password</label>
+                                    <input type="password" id="login-pwd" placeholder="••••••••" required>
                                 </div>
-                                <button type="submit" class="btn-primary" data-i18n="login.submit">Login</button>
+                                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="auth.login_btn">Sign In</button>
+                                
+                                <div style="text-align: center; margin-top: 1rem;">
+                                    <a href="#" id="btn-forgot-pwd" style="color: var(--primary-color); font-size: 0.85rem; text-decoration: none;" data-i18n="auth.forgot_pwd">Forgot password?</a>
+                                </div>
                             </form>
-                        </div>
-
-                        <div id="view-register" style="display: ${activeTab === 'register' ? 'block' : 'none'};">
-                            <form id="form-register">
-                                <div class="form-group" style="margin-bottom: 15px;">
-                                    <label data-i18n="reg.role_label" style="font-weight: bold;">Identity (Role)</label>
-                                    <select id="reg-role" class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; font-family: inherit;">
-                                        <option value="student" data-i18n="role.student">🎓 Student</option>
-                                        <option value="professor" data-i18n="role.professor">👔 Professor</option>
-                                        <option value="staff" data-i18n="role.staff">🏢 Staff</option>
+                        ` : `
+                            <form id="form-register" class="fade-in">
+                                <div class="form-group">
+                                    <label data-i18n="reg.role_label">I am a...</label>
+                                    <select id="reg-role" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                                        <option value="student" selected data-i18n="reg.role_student">Student / Mahasiswa</option>
+                                        <option value="professor" data-i18n="reg.role_professor">Professor / Dosen</option>
+                                        <option value="staff" data-i18n="reg.role_staff">University Staff / Staf</option>
                                     </select>
                                 </div>
+
                                 <div class="form-group">
-                                    <label data-i18n="reg.email_label">Email</label>
-                                    <input type="email" id="reg-email" class="form-control" placeholder="s112... / name@ncnu.edu.tw" required>
+                                    <label data-i18n="reg.name_label">Display Name</label>
+                                    <input type="text" id="reg-displayName" placeholder="Budi / John Doe" required>
                                 </div>
-                                <div class="grid-2">
-                                    <div class="form-group">
-                                        <label data-i18n="reg.name_label">Full Name</label>
-                                        <input type="text" id="reg-realName" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label data-i18n="reg.nickname_label">Nickname</label>
-                                        <input type="text" id="reg-displayName" class="form-control" required>
-                                    </div>
+                                <div class="form-group">
+                                    <label data-i18n="auth.email_label">University Email</label>
+                                    <input type="email" id="reg-email" placeholder="s123xxxxxx@ncnu.edu.tw" required>
                                 </div>
-                                <div class="grid-2-1">
-                                    <div class="form-group">
+
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
                                         <label id="label-major" data-i18n="reg.major_label">Major</label>
-                                        <input type="text" id="reg-major" class="form-control" placeholder="CSIE" required>
+                                        <input type="text" id="reg-major" placeholder="CSIE" required>
                                     </div>
-                                    <div class="form-group" id="group-year">
+                                    <div class="form-group" id="group-year" style="flex: 1;">
                                         <label data-i18n="reg.year_label">Year</label>
-                                        <input type="text" id="reg-year" class="form-control" placeholder="大三" required>
+                                        <input type="text" id="reg-year" placeholder="112" required>
                                     </div>
                                 </div>
-                                <div class="grid-2">
-                                    <div class="form-group">
-                                        <label data-i18n="reg.pwd_label">Password</label>
-                                        <input type="password" id="reg-pwd" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label data-i18n="reg.repwd_label">Re-Password</label>
-                                        <input type="password" id="reg-repwd" class="form-control" required>
-                                    </div>
+
+                                <div class="form-group">
+                                    <label data-i18n="auth.pwd_label">Password</label>
+                                    <input type="password" id="reg-pwd" placeholder="••••••••" required>
                                 </div>
-                                <button type="submit" class="btn-primary" style="margin-top: 10px;" data-i18n="reg.submit">Register</button>
+                                <div class="form-group">
+                                    <label data-i18n="reg.confirm_pwd">Confirm Password</label>
+                                    <input type="password" id="reg-repwd" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="reg.submit">Create Account</button>
                             </form>
-                        </div>
+                        `}
                     </div>
                 </div>
-                <p style="margin-top: 2rem; color: #666; font-size: 0.8rem; text-align: center;" data-i18n="auth.footer">&copy; 2026 JoinUp!</p>
+
+                <div id="lang-selector-container" style="margin-top: 2rem; display: flex; justify-content: center;"></div>
             </div>
 
-            <div id="modal-forgot-pwd" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;">
-                <div style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                    <h3 style="margin-top: 0; color: #333;">🔑 Reset Password</h3>
+            <!-- MODAL FORGOT PASSWORD -->
+            <div id="modal-forgot-pwd" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;">
+                <div class="modal-content" style="background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center;">
+                    <h3 style="margin-bottom: 15px;">🔑 Reset Password</h3>
                     
                     <div id="step-1-email">
-                        <p style="font-size: 0.9rem; color: #666;">Enter your NCNU email to receive an OTP code.</p>
-                        <input type="email" id="forgot-input-email" class="form-control" placeholder="name@ncnu.edu.tw" style="width: 100%; margin-bottom: 15px;">
-                        <button id="btn-send-otp" class="btn-primary" style="width: 100%; margin-bottom: 10px;">📩 Send OTP</button>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Enter your university email to receive a recovery OTP.</p>
+                        <input type="email" id="forgot-input-email" class="form-control" placeholder="s112213xxx@ncnu.edu.tw" style="width: 100%; margin-bottom: 15px;">
+                        <button id="btn-send-otp" class="btn-primary" style="width: 100%;">📩 Send OTP</button>
                     </div>
 
                     <div id="step-2-otp" style="display: none;">
@@ -241,7 +213,7 @@ export const renderRegister = () => {
             const otp = document.getElementById('forgot-input-otp').value;
             const newPwd = document.getElementById('forgot-input-newpwd').value;
 
-            if (!otp || !newPwd) return alert("Please fill all fields!");
+            if (otp === '' || newPwd === '') return alert("Please fill all fields!");
 
             const btn = document.getElementById('btn-reset-pwd');
             btn.innerText = "⏳ Saving...";
@@ -272,7 +244,6 @@ export const renderRegister = () => {
 
         new LanguageSelector('lang-selector-container', {
             onUpdate: (lang) => {
-                updateTexts();
                 const timeEl = document.querySelector('#auth-clock .time');
                 if (timeEl) timeEl.innerText = formatTime(new Date());
             }
@@ -308,7 +279,12 @@ export const renderRegister = () => {
                         photoURL: result.user.profile_pic || ''
                     };
 
-                    localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    try {
+                        localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    } catch (e) {
+                        const liteProfile = { ...userUntukHomepage, profile_pic: '', photoURL: '' };
+                        localStorage.setItem('userProfile', JSON.stringify(liteProfile));
+                    }
                     localStorage.setItem('isLoggedIn', 'true');
 
                     if (typeof window.validLogin === 'function') {
@@ -360,7 +336,7 @@ export const renderRegister = () => {
                 return;
             }
 
-            const inputYear = sanitizeInput(document.getElementById('reg-year').value).trim();
+            const inputYear = document.getElementById('reg-year').value.trim();
             let finalStudyYear = 0;
 
             if (role === 'student') {
@@ -421,7 +397,11 @@ export const renderRegister = () => {
                         major: payloadDatabase.major
                     };
 
-                    localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    try {
+                        localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    } catch (e) {
+                        localStorage.setItem('userProfile', JSON.stringify(userUntukHomepage));
+                    }
                     localStorage.setItem('isLoggedIn', 'true');
 
                     if (typeof window.validLogin === 'function') {
@@ -439,6 +419,17 @@ export const renderRegister = () => {
                 btn.innerText = typeof I18n !== 'undefined' ? I18n.t('reg.submit') : "Register";
                 btn.disabled = false;
             }
+        };
+
+        const updateTexts = () => {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = I18n.t(key) || el.placeholder;
+                } else {
+                    el.innerText = I18n.t(key) || el.innerText;
+                }
+            });
         };
 
         updateTexts();
