@@ -308,7 +308,7 @@ export const renderTravel = () => {
         ].filter(Boolean).length;
 
         try {
-            const response = await fetch('http://localhost:3000/hangouts');
+            const response = await fetch('/hangouts');
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
 
@@ -472,7 +472,7 @@ export const renderTravel = () => {
     const renderManage = async () => {
         let myPosts = [];
         try {
-            const response = await fetch(`http://localhost:3000/my-hangouts/${user.email}`);
+            const response = await fetch(`/my-hangouts/${user.email}`);
             myPosts = await response.json();
         } catch (error) { }
 
@@ -626,7 +626,7 @@ export const renderTravel = () => {
                 const location = locSelect.value === '自訂' ? customLocInput.value : locSelect.value;
                 const destination = destSelect.value === '自訂' ? customDestInput.value : destSelect.value;
 
-                const response = await fetch('http://localhost:3000/create-hangout', {
+                const response = await fetch('/create-hangout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -769,7 +769,7 @@ export const renderTravel = () => {
 
 
             try {
-                const response = await fetch('http://localhost:3000/hangouts');
+                const response = await fetch('/hangouts');
                 const posts = await response.json();
                 const post = posts.find(p => String(p.id) === String(postId));
 
@@ -788,7 +788,7 @@ export const renderTravel = () => {
     window.updateHangoutStatus = async (postId, newStatus) => {
         if (!confirm(isAppZH() ? "確定要執行此操作嗎？" : "Are you sure?")) return;
         try {
-            const response = await fetch(`http://localhost:3000/update-hangout-status/${postId}`, {
+            const response = await fetch(`/update-hangout-status/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -806,7 +806,7 @@ export const renderTravel = () => {
             const roomId = `hangout_${postId}`;
 
             // Lapor ke MySQL untuk bikin ruangan
-            await fetch('http://localhost:3000/setup-chat-room', {
+            await fetch('/setup-chat-room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -834,7 +834,7 @@ export const renderTravel = () => {
         try {
             const roomId = `hangout_${postId}`;
             // Tambahkan user yang di-accept ke database MySQL
-            await fetch('http://localhost:3000/setup-chat-room', {
+            await fetch('/setup-chat-room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -868,7 +868,7 @@ export const renderTravel = () => {
     // --- POPUP DETAIL ---
     window.showHangoutDetail = async (id) => {
         try {
-            const response = await fetch('http://localhost:3000/hangouts');
+            const response = await fetch('/hangouts');
             const data = await response.json();
             const p = data.find(item => String(item.id) === String(id));
             if (!p) return;

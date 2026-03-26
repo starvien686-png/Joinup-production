@@ -39,12 +39,12 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     // 2. Ambil Judul Event & DAFTARKAN RUANGAN OTOMATIS KE MYSQL BARU!
     try {
         let fetchUrl = '';
-        if (roomType === 'hangout') fetchUrl = 'http://localhost:3000/hangouts';
-        else if (roomType === 'carpool') fetchUrl = 'http://localhost:3000/carpools';
-        else if (roomType === 'study') fetchUrl = 'http://localhost:3000/studies';
-        else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = 'http://localhost:3000/housing';
-        else if (roomType === 'travel' || roomType === 'food') fetchUrl = 'http://localhost:3000/travels';
-        else fetchUrl = 'http://localhost:3000/activities';
+        if (roomType === 'hangout') fetchUrl = '/hangouts';
+        else if (roomType === 'carpool') fetchUrl = '/carpools';
+        else if (roomType === 'study') fetchUrl = '/studies';
+        else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
+        else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
+        else fetchUrl = '/activities';
 
         const res = await fetch(fetchUrl);
         const data = await res.json();
@@ -52,7 +52,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         if (currentItem) chatTitle = currentItem.title || currentItem.teamName || 'Room Chat';
 
         // Ini Sihir Utamanya: Paksa semua chat terdaftar di MySQL jalur baru
-        await fetch('http://localhost:3000/setup-chat-room', {
+        await fetch('/setup-chat-room', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 room_id: String(roomId),
@@ -138,7 +138,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     const loadMessages = async (isInitial = false) => {
         try {
             // SEMUA FITUR SEKARANG BACA DARI JALUR BARU
-            const res = await fetch(`http://localhost:3000/room-messages/${roomId}`);
+            const res = await fetch(`/room-messages/${roomId}`);
             const dbMsgs = await res.json();
 
             if (!Array.isArray(dbMsgs)) return; // Baju Zirah
@@ -297,7 +297,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         try {
             // SEMUA PESAN SEKARANG DIKIRIM KE JALUR BARU
             const finalMessage = finalType === 'announcement' ? `! ${content}` : content;
-            const sendRes = await fetch('http://localhost:3000/send-message', {
+            const sendRes = await fetch('/send-message', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     room_id: String(roomId),
@@ -420,7 +420,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         try {
             messageArea.innerHTML += `<div id="upload-loading" style="text-align:center; color:#888; margin-top: 10px; font-size: 0.8rem;">Uploading... ⏳</div>`;
             messageArea.scrollTop = messageArea.scrollHeight;
-            const res = await fetch('http://localhost:3000/upload', { method: 'POST', body: formData });
+            const res = await fetch('/upload', { method: 'POST', body: formData });
             const data = await res.json();
             document.getElementById('upload-loading')?.remove();
             sendMessage(data.type, data.url);
@@ -487,7 +487,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             for (let file of files) {
                 const formData = new FormData(); formData.append('file', file);
                 try {
-                    const res = await fetch('http://localhost:3000/upload', { method: 'POST', body: formData });
+                    const res = await fetch('/upload', { method: 'POST', body: formData });
                     const data = await res.json();
                     if (data.url) albums[albumIndex].photos.push(data.url);
                 } catch (err) { }
@@ -601,7 +601,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     for (let file of files) {
                         const formData = new FormData(); formData.append('file', file);
                         try {
-                            const res = await fetch('http://localhost:3000/upload', { method: 'POST', body: formData });
+                            const res = await fetch('/upload', { method: 'POST', body: formData });
                             const data = await res.json();
                             if (data.url) tempPhotos.push(data.url);
                         } catch (err) { }
@@ -672,7 +672,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         `;
         document.body.appendChild(reportModal);
 
-        fetch(`http://localhost:3000/room-messages/${roomId}`)
+        fetch(`/room-messages/${roomId}`)
             .then(res => res.json())
             .then(messages => {
                 if (Array.isArray(messages)) {
@@ -779,12 +779,12 @@ export const renderMessages = (roomId = null, prefill = null) => {
 
             // SEMUA FITUR SEKARANG TERPUSAT DI SINI
             try {
-                const myRoomsRes = await fetch(`http://localhost:3000/my-chat-rooms/${user.email}`);
+                const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
                 if (myRoomsRes.ok) {
                     const myRooms = await myRoomsRes.json();
                     for (let room of myRooms) {
                         try {
-                            const chatRes = await fetch(`http://localhost:3000/room-messages/${room.id}`);
+                            const chatRes = await fetch(`/room-messages/${room.id}`);
                             if (chatRes.ok) {
                                 const chats = await chatRes.json();
                                 if (Array.isArray(chats) && chats.length > 0) {

@@ -213,7 +213,7 @@ export const renderRegister = () => {
                 // Deteksi bahasa yang lagi dipakai user di website
                 const currentLang = typeof I18n !== 'undefined' ? I18n.getLanguage() : 'en';
 
-                const response = await fetch('http://localhost:3000/send-otp', {
+                const response = await fetch('/send-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // Tambahin 'lang' ke dalam paket yang dikirim ke server!
@@ -248,7 +248,7 @@ export const renderRegister = () => {
             btn.disabled = true;
 
             try {
-                const response = await fetch('http://localhost:3000/reset-password', {
+                const response = await fetch('/reset-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, otp: otp, newPassword: newPwd })
@@ -285,7 +285,7 @@ export const renderRegister = () => {
             const pwd = document.getElementById('login-pwd').value;
 
             try {
-                const response = await fetch('http://localhost:3000/login', {
+                const response = await fetch('/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, password: pwd })
@@ -403,7 +403,7 @@ export const renderRegister = () => {
             };
 
             try {
-                const response = await fetch('http://localhost:3000/signup', {
+                const response = await fetch('/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payloadDatabase)

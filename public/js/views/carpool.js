@@ -319,7 +319,7 @@ export const renderCarpool = () => {
         ].filter(Boolean).length;
 
         try {
-            const response = await fetch('http://localhost:3000/carpools');
+            const response = await fetch('/carpools');
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
 
@@ -516,7 +516,7 @@ export const renderCarpool = () => {
     const renderManage = async () => {
         let myPosts = [];
         try {
-            const response = await fetch('http://localhost:3000/carpools');
+            const response = await fetch('/carpools');
             const allPosts = await response.json();
             myPosts = allPosts.filter(p => p.host_email === user.email);
         } catch (error) { }
@@ -677,7 +677,7 @@ export const renderCarpool = () => {
 
                 const finalDepart = deptSelect.value === '自訂' ? deptCustom.value : deptSelect.value;
 
-                const response = await fetch('http://localhost:3000/create-carpool', {
+                const response = await fetch('/create-carpool', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -782,7 +782,7 @@ export const renderCarpool = () => {
         if (!confirm(msgConfirm)) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/update-carpool-status/${postId}`, {
+            const response = await fetch(`/update-carpool-status/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -944,7 +944,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
         });
 
         try {
-            const response = await fetch('http://localhost:3000/carpools');
+            const response = await fetch('/carpools');
             const posts = await response.json();
             const post = posts.find(p => String(p.id) === String(postId));
 
@@ -1135,7 +1135,7 @@ window.handleCarpoolReviewAction = (action, appId, postId, applicantEmail, teamN
 /// --- FITUR POP-UP DETAIL CARPOOL DENGAN GOOGLE MAPS ---
 window.showCarpoolDetail = async (id) => {
     try {
-        const response = await fetch('http://localhost:3000/carpools');
+        const response = await fetch('/carpools');
         const data = await response.json();
         const p = data.find(item => String(item.id) === String(id));
 
@@ -1148,7 +1148,7 @@ window.showCarpoolDetail = async (id) => {
         let hostUser = {};
         try {
             // Kita panggil API backend untuk ngambil data profil si pembuat post
-            const userRes = await fetch(`http://localhost:3000/profile/${encodeURIComponent(p.host_email)}`);
+            const userRes = await fetch(`/profile/${encodeURIComponent(p.host_email)}`);
             if (userRes.ok) {
                 hostUser = await userRes.json();
             }

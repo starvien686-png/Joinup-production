@@ -271,7 +271,7 @@ export const renderStudy = () => {
         ].filter(Boolean).length;
 
         try {
-            const response = await fetch('http://localhost:3000/studies');
+            const response = await fetch('/studies');
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
 
@@ -416,7 +416,7 @@ export const renderStudy = () => {
     const renderManage = async () => {
         let myPosts = [];
         try {
-            const response = await fetch(`http://localhost:3000/my-studies/${user.email}`);
+            const response = await fetch(`/my-studies/${user.email}`);
             myPosts = await response.json();
         } catch (error) { }
 
@@ -556,7 +556,7 @@ export const renderStudy = () => {
 
                 const location = locSelect.value === '自訂' ? customLocInput.value : locSelect.value;
 
-                const response = await fetch('http://localhost:3000/create-study', {
+                const response = await fetch('/create-study', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -699,7 +699,7 @@ export const renderStudy = () => {
 
 
             try {
-                const response = await fetch('http://localhost:3000/studies');
+                const response = await fetch('/studies');
                 const posts = await response.json();
                 const post = posts.find(p => String(p.id) === String(postId));
 
@@ -722,7 +722,7 @@ export const renderStudy = () => {
     window.updateStudyStatus = async (postId, newStatus) => {
         if (!confirm(isAppZH() ? "確定要執行此操作嗎？" : "Are you sure?")) return;
         try {
-            const response = await fetch(`http://localhost:3000/update-study-status/${postId}`, {
+            const response = await fetch(`/update-study-status/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -772,7 +772,7 @@ export const renderStudy = () => {
     // --- POPUP DETAIL STUDY ---
     window.showStudyDetail = async (id) => {
         try {
-            const response = await fetch('http://localhost:3000/studies');
+            const response = await fetch('/studies');
             const data = await response.json();
             const p = data.find(item => String(item.id) === String(id));
             if (!p) return;

@@ -8,11 +8,11 @@ export const renderActivities = async () => {
     let upcoming = [];
     try {
         const [actRes, carpoolRes, studyRes, hangoutRes, housingRes] = await Promise.all([
-            fetch('http://localhost:3000/activities'),
-            fetch('http://localhost:3000/carpools'),
-            fetch('http://localhost:3000/studies'),
-            fetch('http://localhost:3000/hangouts'),
-            fetch('http://localhost:3000/housing')
+            fetch('/activities'),
+            fetch('/carpools'),
+            fetch('/studies'),
+            fetch('/hangouts'),
+            fetch('/housing')
         ]);
 
         const [activities, carpools, studies, hangouts, housings] = await Promise.all([

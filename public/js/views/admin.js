@@ -88,7 +88,7 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
     let feedbackStats = [];
     let feedbackDetails = [];
     try {
-        const res = await fetch('http://localhost:3000/admin/feedback-stats');
+        const res = await fetch('/admin/feedback-stats');
         if (res.ok) {
             const data = await res.json();
             feedbackStats = data.stats || [];

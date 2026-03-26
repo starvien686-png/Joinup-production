@@ -143,7 +143,7 @@ export const openRatingModal = (post, onSubmitted) => {
         };
 
         try {
-            const response = await fetch('http://localhost:3000/submit-feedback', {
+            const response = await fetch('/submit-feedback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(feedbackData)
@@ -173,7 +173,7 @@ export const checkPendingFeedback = async (user) => {
 
     try {
         // 1. Ambil daftar ID event yang SUDAH di-rate dari MySQL
-        const fbRes = await fetch(`http://localhost:3000/my-feedbacks/${user.email}`);
+        const fbRes = await fetch(`/my-feedbacks/${user.email}`);
         const ratedIds = fbRes.ok ? await fbRes.json() : [];
 
         // 2. Tarik semua event dari semua kategori di MySQL
@@ -187,7 +187,7 @@ export const checkPendingFeedback = async (user) => {
 
         let allEvents = [];
         for (let ep of endpoints) {
-            const res = await fetch(`http://localhost:3000/${ep.url}`);
+            const res = await fetch(`/${ep.url}`);
             if (res.ok) {
                 const data = await res.json();
                 data.forEach(d => allEvents.push({ ...d, category: ep.cat }));

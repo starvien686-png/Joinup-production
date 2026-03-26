@@ -1568,7 +1568,7 @@ export const MockStore = {
 
         // Sync to Server (New Point System)
         try {
-            await fetch('http://localhost:3000/award-points', {
+            await fetch('/award-points', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: userId, points: delta })

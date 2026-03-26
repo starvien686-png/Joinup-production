@@ -475,7 +475,7 @@ export const renderGroupBuy = () => {
         // 1. KEMBALI PAKAI MOCKSTORE (Karena data Housing sangat kompleks)
         let posts = [];
         try {
-            const res = await fetch('http://localhost:3000/housing');
+            const res = await fetch('/housing');
             if (res.ok) {
                 posts = await res.json();
             }
@@ -664,7 +664,7 @@ export const renderGroupBuy = () => {
     const renderPostDetail = async (postId) => {
         let post = null;
         try {
-            const res = await fetch('http://localhost:3000/housing/' + postId);
+            const res = await fetch('/housing/' + postId);
             if (res.ok) {
                 const p = await res.json();
                 post = {
@@ -1016,7 +1016,7 @@ export const renderGroupBuy = () => {
         let myPosts = [];
         try {
             // Ambil data langsung dari MySQL (Supabase)
-            const res = await fetch('http://localhost:3000/my-housing/' + user.email);
+            const res = await fetch('/my-housing/' + user.email);
             if (res.ok) {
                 myPosts = await res.json();
             }
@@ -1292,7 +1292,7 @@ export const renderGroupBuy = () => {
 
     window.closePost = (postId) => {
         window.showSimpleConfirm(I18n.t('housing.confirm.close_post'), async () => {
-            const response = await fetch('http://localhost:3000/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) });
+            const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'closed' }) });
             if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
             updateView();
         });
@@ -1341,7 +1341,7 @@ export const renderGroupBuy = () => {
     };
 
     window.pausePost = async (postId) => {
-        const response = await fetch('http://localhost:3000/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paused' }) });
+        const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paused' }) });
         if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
         currentState = 'manage';
         updateView();
@@ -1349,7 +1349,7 @@ export const renderGroupBuy = () => {
     };
 
     window.resumePost = async (postId) => {
-        const response = await fetch('http://localhost:3000/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'open' }) });
+        const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'open' }) });
         if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
         currentState = 'manage';
         updateView();
@@ -1360,7 +1360,7 @@ export const renderGroupBuy = () => {
         window.showSimpleConfirm(
             `${I18n.t('housing.confirm.cancel_post')}<br><span style="font-size:0.85rem; color:#f44336;">${I18n.t('housing.confirm.cancel_desc')}</span>`,
             async () => {
-                const response = await fetch('http://localhost:3000/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
+                const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
                 if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
                 currentState = 'manage';
                 updateView();
@@ -1373,7 +1373,7 @@ export const renderGroupBuy = () => {
         window.showSimpleConfirm(
             `${I18n.t('housing.confirm.success_match') || 'Confirm success?'}`,
             async () => {
-                const response = await fetch('http://localhost:3000/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'success' }) });
+                const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'success' }) });
                 if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
                 currentState = 'manage';
                 updateView();
@@ -1728,7 +1728,7 @@ export const renderGroupBuy = () => {
                 };
 
                 try {
-                    const response = await fetch('http://localhost:3000/create-housing', {
+                    const response = await fetch('/create-housing', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(postData)
@@ -1773,7 +1773,7 @@ export const renderGroupBuy = () => {
         const user = JSON.parse(userProfileStr);
 
         try {
-            await fetch('http://localhost:3000/setup-chat-room', {
+            await fetch('/setup-chat-room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1911,7 +1911,7 @@ export const renderGroupBuy = () => {
 
             // Notify the host
             try {
-                const res = await fetch('http://localhost:3000/housing/' + postId);
+                const res = await fetch('/housing/' + postId);
                 if (res.ok) {
                     const post = await res.json();
                     if (post && post.host_email && window.sendAppNotification) {

@@ -942,7 +942,7 @@ window.showEventDetail = async (activityId) => {
 
     try {
 
-        const response = await fetch(`http://localhost:3000/activity/${activityId}`);
+        const response = await fetch(`/activity/${activityId}`);
 
         const data = await response.json();
 
@@ -1226,7 +1226,7 @@ window.closeEventEarly = async (activityId) => {
 
     try {
 
-        const response = await fetch(`http://localhost:3000/activity/${activityId}/close`, { method: 'POST' });
+        const response = await fetch(`/activity/${activityId}/close`, { method: 'POST' });
 
         if (response.ok) {
 

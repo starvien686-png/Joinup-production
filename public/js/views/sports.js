@@ -235,7 +235,7 @@ export const renderSports = () => {
     const renderList = async () => {
         let posts = [];
         try {
-            const response = await fetch('http://localhost:3000/activities');
+            const response = await fetch('/activities');
             const dbPosts = await response.json();
             const availablePosts = dbPosts.filter(p => {
                 if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
@@ -472,7 +472,7 @@ export const renderSports = () => {
             });
 
             try {
-                const response = await fetch('http://localhost:3000/activities');
+                const response = await fetch('/activities');
                 const posts = await response.json();
                 const post = posts.find(p => String(p.id) === String(postId));
 
@@ -565,7 +565,7 @@ export const renderSports = () => {
     const renderManage = async () => {
         let myPosts = [];
         try {
-            const response = await fetch('http://localhost:3000/my-activities/' + user.email);
+            const response = await fetch('/my-activities/' + user.email);
             const dbPosts = await response.json();
             myPosts = dbPosts.map(p => ({
                 id: p.id, category: p.category, teamName: p.title, eventType: p.sport_type, maxParticipants: p.people_needed,
@@ -763,7 +763,7 @@ export const renderSports = () => {
             btnSubmit.disabled = true;
 
             try {
-                const response = await fetch('http://localhost:3000/create-activity', {
+                const response = await fetch('/create-activity', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -910,7 +910,7 @@ export const renderSports = () => {
 
     window.updateActivityStatus = async (postId, newStatus) => {
         try {
-            const response = await fetch(`http://localhost:3000/update-activity-status/${postId}`, {
+            const response = await fetch(`/update-activity-status/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
