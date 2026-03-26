@@ -26,7 +26,10 @@ app.use(express.static('public'));
 const otpStorage = {};
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Port 587 is STARTTLS
+    family: 4,     // Force IPv4 to avoid ENETUNREACH on IPv6
     auth: {
         user: 'ncnujoinupadmin@gmail.com',
         pass: 'oabrqgtshscfjrvo'

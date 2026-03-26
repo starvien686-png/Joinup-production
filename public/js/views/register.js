@@ -228,7 +228,8 @@ export const renderRegister = () => {
                     alert(result.error);
                 }
             } catch (error) {
-                alert('Connection error: ' + error.message);
+                const isQuotaError = error.name === 'QuotaExceededError' || error.message?.toLowerCase().includes('quota');
+                alert(isQuotaError ? 'Storage Error: Browser storage quota exceeded. Please clear space.' : 'Connection error: ' + error.message);
             } finally {
                 btn.innerText = "📩 Send OTP";
                 btn.disabled = false;
@@ -263,7 +264,8 @@ export const renderRegister = () => {
                     alert(result.error);
                 }
             } catch (error) {
-                alert('Connection error: ' + error.message);
+                const isQuotaError = error.name === 'QuotaExceededError' || error.message?.toLowerCase().includes('quota');
+                alert(isQuotaError ? 'Storage Error: Browser storage quota exceeded. Please clear space.' : 'Connection error: ' + error.message);
             } finally {
                 btn.innerText = "💾 Save New Password";
                 btn.disabled = false;
@@ -326,7 +328,8 @@ export const renderRegister = () => {
                     alert('Login Failed: ' + result.error);
                 }
             } catch (error) {
-                alert('Connection error: ' + error.message);
+                const isQuotaError = error.name === 'QuotaExceededError' || error.message?.toLowerCase().includes('quota');
+                alert(isQuotaError ? 'Storage Error: Browser storage quota exceeded. Please clear space.' : 'Connection error: ' + error.message);
             }
         };
 
@@ -444,7 +447,8 @@ export const renderRegister = () => {
                     alert('Registration failed: ' + result.error);
                 }
             } catch (error) {
-                alert('Oops, server connection failed: ' + error.message);
+                const isQuotaError = error.name === 'QuotaExceededError' || error.message?.toLowerCase().includes('quota');
+                alert(isQuotaError ? 'Storage Error: Browser storage quota exceeded. Please clear space.' : 'Oops, server connection failed: ' + error.message);
             } finally {
                 btn.innerText = typeof I18n !== 'undefined' ? I18n.t('reg.submit') : "Register";
                 btn.disabled = false;

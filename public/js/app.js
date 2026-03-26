@@ -278,9 +278,13 @@ window.validLogin = (user) => {
 
     }
 
-    localStorage.setItem('isLoggedIn', 'true');
-
-    localStorage.setItem('userProfile', JSON.stringify(user));
+    try {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userProfile', JSON.stringify(user));
+    } catch (e) {
+        const lite = { ...user, profile_pic: '', photoURL: '' };
+        localStorage.setItem('userProfile', JSON.stringify(lite));
+    }
 
     state.isLoggedIn = true;
 

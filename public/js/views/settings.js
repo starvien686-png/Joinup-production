@@ -1,6 +1,7 @@
 import { I18n } from '../services/i18n.js';
 import { renderRegister } from './register.js';
 import { MockStore } from '../models/mockStore.js';
+import { compressImage } from '../utils/imageUtils.js';
 
 export const renderSettings = () => {
     const app = document.getElementById('app');
@@ -128,8 +129,15 @@ export const renderSettings = () => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
-                fotoBase64 = event.target.result;
+            reader.onload = async (event) => {
+                const rawBase64 = event.target.result;
+                try {
+                    // Compress to max 300x300 for storage efficiency
+                    fotoBase64 = await compressImage(rawBase64, 300, 300, 0.7);
+                } catch (err) {
+                    console.error("Compression failed:", err);
+                    fotoBase64 = rawBase64; // Fallback
+                }
                 const img = document.getElementById('preview-foto');
                 const placeholder = document.getElementById('preview-foto-placeholder');
                 img.src = fotoBase64;
