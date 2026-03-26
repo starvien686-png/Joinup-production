@@ -413,7 +413,7 @@ app.get('/chat/:activityId', async (req, res) => {
         const activityId = req.params.activityId;
         const query = `
             SELECT * FROM chat_messages 
-            WHERE activity_id = ? 
+            WHERE room_id = ? 
             ORDER BY created_at ASC
         `;
         const [results] = await sequelize.query(query, {
@@ -427,18 +427,17 @@ app.get('/chat/:activityId', async (req, res) => {
 
 app.post('/chat', async (req, res) => {
     try {
-        const { activity_id, sender_email, sender_name, sender_dept, sender_student_id, role, message_type, content } = req.body;
+        const { room_id, sender_email, sender_name, message } = req.body;
 
         const query = `
             INSERT INTO chat_messages 
-            (activity_id, sender_email, sender_name, sender_dept, sender_student_id, role, message_type, content) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (room_id, sender_email, sender_name, message) 
+            VALUES (?, ?, ?, ?)
         `;
 
         await sequelize.query(query, {
             replacements: [
-                activity_id, sender_email, sender_name, sender_dept, sender_student_id,
-                role || 'participant', message_type || 'text', content
+                room_id, sender_email, sender_name, message
             ]
         });
 
@@ -500,7 +499,7 @@ app.use('/uploads', express.static(path.join(__dirname, '.uploads')));
 
 app.post('/upload', upload.single('file'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const fileUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+    const fileUrl = `/uploads/${req.file.filename}`;
     res.json({ url: fileUrl, type: req.file.mimetype.startsWith('image') ? 'image' : 'file' });
 });
 
@@ -1126,10 +1125,20 @@ async function syncAll() {
             `CREATE TABLE IF NOT EXISTS housing (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 host_email VARCHAR(255),
+                host_name VARCHAR(100),
+                host_dept VARCHAR(100),
+                housing_type VARCHAR(50),
                 title VARCHAR(255),
-                category VARCHAR(50),
-                people_needed INT,
                 location VARCHAR(255),
+                room_number VARCHAR(50),
+                rent_amount DECIMAL(10,2),
+                deposit DECIMAL(10,2),
+                people_needed INT,
+                gender_req VARCHAR(50),
+                deadline DATETIME,
+                rental_period VARCHAR(100),
+                facilities TEXT,
+                habits TEXT,
                 description TEXT,
                 status VARCHAR(50) DEFAULT 'open',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1152,13 +1161,17 @@ async function syncAll() {
             )`,
             `CREATE TABLE IF NOT EXISTS activity_feedback (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                event_id INT,
                 user_email VARCHAR(255),
+                user_name VARCHAR(100),
+                user_dept VARCHAR(100),
+                study_year VARCHAR(50),
+                event_id INT,
+                event_title VARCHAR(255),
                 category VARCHAR(50),
                 q1_rating INT,
                 q2_rating INT,
                 q3_success TINYINT(1),
-                feedback TEXT,
+                q4_message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];
