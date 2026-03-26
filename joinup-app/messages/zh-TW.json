@@ -1,0 +1,108 @@
+{
+  "common": {
+    "buttons": {
+      "confirm": "確定",
+      "cancel": "取消",
+      "back": "返回",
+      "submit": "提交",
+      "save": "儲存"
+    },
+    "labels": {
+      "loading": "載入中...",
+      "success": "成功",
+      "error": "錯誤"
+    }
+  },
+  "navigation": {
+    "home": "首頁",
+    "messages": "訊息",
+    "profile": "個人"
+  },
+  "home": {
+    "greeting": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好",
+      "night": "深夜好"
+    },
+    "categories": {
+      "sports": "一起運動吧",
+      "carpool": "一起坐車吧",
+      "housing": "一起合租吧",
+      "study": "一起學習吧",
+      "outing": "一起出去吧"
+    },
+    "section": {
+      "new_activity": "NEW ACTIVITIY🔥",
+      "new_desc": "查看校園內最新的揪團活動,或是發起你自己的活動!",
+      "upcoming": "Upcoming!",
+      "view_all": "view all",
+      "explore": "Explore"
+    }
+  },
+  "profile": {
+    "titles": {
+      "profile": "個人檔案",
+      "account_info": "帳號設定",
+      "security": "安全設定"
+    },
+    "actions": {
+      "edit_profile": "編輯個人檔案",
+      "save_changes": "儲存變更",
+      "cancel": "取消",
+      "follow": "追蹤",
+      "unfollow": "取消追蹤",
+      "message_user": "傳送訊息",
+      "logout": "登出"
+    },
+    "stats": {
+      "posts": "{count} 貼文",
+      "followers": "{count} 粉絲",
+      "following": "{count} 追蹤中"
+    },
+    "placeholders": {
+      "displayName": "用戶名稱",
+      "no_bio": "這個用戶很懶，什麼都沒留下。",
+      "enter_name": "請輸入您的姓名..."
+    },
+    "status": {
+      "member_since": "註冊日期：{date}",
+      "private_account": "不公開帳號",
+      "verified": "已驗證"
+    }
+  },
+  "messages": {
+    "navigation": {
+      "inbox": "收件匣",
+      "back": "返回",
+      "archive": "封存",
+      "delete": "刪除對話"
+    },
+    "chat_info": {
+      "active_now": "已連線",
+      "offline": "離線",
+      "last_seen": "最後上線 {time}",
+      "typing": "正在輸入...",
+      "read": "已讀",
+      "unread": "未讀",
+      "sent": "已傳送"
+    },
+    "placeholders": {
+      "search": "搜尋",
+      "type": "在此輸入...",
+      "share_photo": "分享照片"
+    },
+    "actions": {
+      "send": "傳送訊息"
+    },
+    "empty_states": {
+      "no_messages": "目前沒有任何對話",
+      "start_new": "開始新的對話"
+    },
+    "time_formats": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "just_now": "剛剛"
+    }
+  }
+}

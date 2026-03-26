@@ -1,0 +1,301 @@
+diff --git a/js/views/settings.js b/js/views/settings.js
+index c6d4708..09028c3 100644
+--- a/js/views/settings.js
++++ b/js/views/settings.js
+@@ -4,185 +4,140 @@ import { MockStore } from '../models/mockStore.js';
+ 
+ export const renderSettings = () => {
+     const app = document.getElementById('app');
++    const userProfile = JSON.parse(localStorage.getItem('userProfile')) || {};
++    const defaultFoto = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+ 
+-    // Get Current User Profile
+-    const profileStr = localStorage.getItem('userProfile');
+-    let user = {
+-        displayName: 'Guest',
+-        email: 'unknown',
+-        department: '',
+-        gender: '',
+-        interests: '',
+-        photoURL: ''
+-    };
++    // 🌟 FUNGSI SULTAN: AUTO-HITUNG TAHUN ANGKATAN (Bulan 8 Agustus naik kelas)
++    const calculateStudyYear = (email) => {
++        if (!email || !email.startsWith('s')) return 'Unknown';
+ 
+-    if (profileStr) {
+-        try {
+-            user = { ...user, ...JSON.parse(profileStr) };
+-        } catch (e) {
+-            console.error('Error parsing profile', e);
+-        }
+-    }
++        const entryYearROC = parseInt(email.substring(1, 4)); // Ambil angka 112
++        const now = new Date();
++        const currentMonth = now.getMonth() + 1; // Bulan 1-12
++        const currentYearROC = now.getFullYear() - 1911; // Tahun Masehi ke Tahun Taiwan
+ 
+-    // Default Department if empty (as per requirement)
+-    if (!user.department) {
+-        user.department = 'Department of International Business (國企系)';
+-    }
++        // Jika bulan 8 (Agustus) ke atas, masuk tahun ajaran baru. Jika Jan-Juli, masih tahun ajaran lama.
++        const academicYear = currentMonth >= 8 ? currentYearROC : currentYearROC - 1;
++        const yearNumber = academicYear - entryYearROC + 1;
+ 
+-    const avatarStyle = user.photoURL
+-        ? `background-image: url('${user.photoURL}'); background-size: cover; background-position: center; color: transparent;`
+-        : `background: #E3F2FD; color: #333;`;
++        const yearMap = { 1: '大一', 2: '大二', 3: '大三', 4: '大四', 5: '大五' };
++        return yearMap[yearNumber] || (yearNumber > 5 ? `大${yearNumber}` : '新生');
++    };
++
++    const currentYearString = calculateStudyYear(userProfile.email);
++
++    // Fungsi Ganti Bahasa Otomatis
++    const updateTexts = () => {
++        document.querySelectorAll('[data-i18n]').forEach(el => {
++            const key = el.getAttribute('data-i18n');
++            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
++                el.placeholder = I18n.t(key) || el.placeholder;
++            } else {
++                el.innerText = I18n.t(key) || el.innerText;
++            }
++        });
++    };
+ 
+     app.innerHTML = `
+-        <div class="container fade-in" style="padding-bottom: 40px;">
+-            <!-- Header -->
+-            <header style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+-                <button onclick="window.navigateTo('profile')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">←</button>
+-                <h2 style="margin: 0; flex-grow: 1;">Account Settings</h2>
+-            </header>
+-
+-            <!-- Profile Card -->
+-            <div class="card" style="text-align: center; margin-bottom: 2rem; border-radius: 16px;">
+-                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="window.handleAvatarChange(this)">
+-                
+-                <div style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
+-                    <div id="settings-avatar-display" 
+-                         style="width: 100px; height: 100px; border-radius: 50%; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; ${avatarStyle}">
+-                        ${user.photoURL ? '' : '👤'}
+-                    </div>
+-
+-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+-                        <button type="button" onclick="document.getElementById('avatar-upload').click()" class="btn" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+-                            📷 ${I18n.t('profile.btn.change_photo')}
+-                        </button>
+-                        ${user.photoURL ? `
+-                        <button type="button" onclick="window.handleAvatarDelete()" class="btn" style="padding: 0.5rem 1rem; background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDD2; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+-                            🗑️ ${I18n.t('profile.btn.delete_photo')}
+-                        </button>
+-                        ` : ''}
+-                    </div>
+-                </div>
+-
+-                <h3 style="margin: 1rem 0 0.5rem 0;">${user.displayName}</h3>
+-                 <p style="color: #666; margin: 0;">${user.email.split('@')[0]}</p>
+-             </div>
+-
+-            <!-- Form -->
+-            <div class="card" style="border-radius: 16px; padding: 1.5rem;">
+-                <form id="settings-form">
+-                    <div class="form-group" style="margin-bottom: 1.5rem;">
+-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333;">Department</label>
+-                        <input type="text" id="set-dept" class="form-control" value="${user.department}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+-                    </div>
+-
+-                    <div class="form-group" style="margin-bottom: 1.5rem;">
+-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333;">Gender</label>
+-                        <select id="set-gender" class="form-control" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; background: white;">
+-                            <option value="">Select Gender</option>
+-                            <option value="Male" ${user.gender === 'Male' ? 'selected' : ''}>Male</option>
+-                            <option value="Female" ${user.gender === 'Female' ? 'selected' : ''}>Female</option>
+-                            <option value="Other" ${user.gender === 'Other' ? 'selected' : ''}>Other</option>
+-                        </select>
+-                    </div>
+-
+-                    <div class="form-group" style="margin-bottom: 2rem;">
+-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333;">Interests</label>
+-                        <input type="text" id="set-interests" class="form-control" value="${user.interests || ''}" placeholder="e.g. Basketball, Coding, Music" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+-                    </div>
+-
+-                    <button type="submit" style="width: 100%; padding: 14px; background: #FF8C00; color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(255, 140, 0, 0.2);">
+-                        Save Changes
+-                    </button>
+-                    
+-                    <button type="button" id="btn-logout" style="width: 100%; padding: 14px; background: #FFEBEE; color: #D32F2F; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
+-                        Logout
+-                    </button>
+-                </form>
++        <div style="padding: 20px; max-width: 500px; margin: 0 auto; text-align: center;">
++            <h2 data-i18n="settings.title">⚙️ Account Settings</h2>
++            <p data-i18n="settings.subtitle" style="color: gray; margin-bottom: 20px;">Complete your profile!</p>
++
++            <div style="margin-bottom: 25px;">
++                <img id="preview-foto" src="${userProfile.profile_pic || defaultFoto}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #d97706; margin-bottom: 10px;">
++                <br>
++                <input type="file" id="input-foto" accept="image/*" style="font-size: 14px;">
+             </div>
+-        </div>
+-    `;
+ 
+-    // Handlers
+-    // Handlers
+-    window.handleAvatarChange = async (input) => {
+-        if (input.files && input.files[0]) {
+-            const file = input.files[0];
+-            const reader = new FileReader();
++            <div style="margin-bottom: 20px; text-align: left; background: #f3f4f6; padding: 12px; border-radius: 8px; border-left: 4px solid #d97706;">
++                <label style="font-weight: bold; font-size: 0.9rem; color: #555;" data-i18n="settings.academic_year">Academic Year:</label>
++                <div style="font-size: 1.2rem; font-weight: bold; color: #d97706; margin-top: 5px;">${currentYearString}</div>
++                <small style="color: #888; font-size: 0.8rem;" data-i18n="settings.year_note">*Auto-updated based on current month & year</small>
++            </div>
+ 
+-            reader.onload = async (e) => {
+-                const newPhotoURL = e.target.result;
++            <div style="margin-bottom: 15px; text-align: left;">
++                <label style="font-weight: bold; display: block; margin-bottom: 5px;" data-i18n="settings.bio_label">Your Bio:</label>
++                <textarea id="edit-bio" rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;" data-i18n="settings.bio_placeholder" placeholder="Love coffee and basketball...">${userProfile.bio || ''}</textarea>
++            </div>
++            <div style="margin-bottom: 25px; text-align: left;">
++                <label style="font-weight: bold; display: block; margin-bottom: 5px;" data-i18n="settings.hobby_label">Hobby:</label>
++                <input type="text" id="edit-hobby" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;" data-i18n="settings.hobby_placeholder" placeholder="E.g., Basketball, Coding" value="${userProfile.hobby || ''}">
++            </div>
+ 
+-                // Update Local & Storage & Sync to Airtable
+-                const result = await MockStore.updateUserProfile(user.email, { photoURL: newPhotoURL });
++            <button id="btn-save-profile" style="background-color: #d97706; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 12px;" data-i18n="settings.save_btn">
++                💾 Save Changes
++            </button>
++            
++            <button id="btn-back" style="background-color: #6b7280; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;" data-i18n="settings.back_btn">
++                🔙 Back
++            </button>
++        </div>
++    `;
+ 
+-                if (result.success) {
+-                    // Update UI locally
+-                    user.photoURL = newPhotoURL;
+-                    renderSettings();
++    // Jalankan ganti bahasa saat pertama kali dibuka
++    if (typeof I18n !== 'undefined') updateTexts();
+ 
+-                    if (window.notifications) {
+-                        window.notifications.success('Avatar updated!');
+-                    }
+-                } else {
+-                    alert(result.message || 'Update failed');
+-                }
++    // 1. LOGIKA PREVIEW FOTO
++    let fotoBase64 = userProfile.profile_pic || '';
++    document.getElementById('input-foto').onchange = (e) => {
++        const file = e.target.files[0];
++        if (file) {
++            const reader = new FileReader();
++            reader.onload = (event) => {
++                fotoBase64 = event.target.result;
++                document.getElementById('preview-foto').src = fotoBase64;
+             };
+             reader.readAsDataURL(file);
+         }
+     };
+ 
+-    window.handleAvatarDelete = async () => {
+-        if (confirm('Are you sure you want to delete your profile photo?')) {
+-            const result = await MockStore.updateUserProfile(user.email, { photoURL: '' });
+-            if (result.success) {
+-                user.photoURL = '';
+-                renderSettings();
+-                if (window.notifications) {
+-                    window.notifications.success('Avatar deleted!');
+-                }
+-            } else {
+-                alert(result.message || 'Delete failed');
+-            }
+-        }
++    // 2. LOGIKA TOMBOL BACK (Langsung ke Profile tanpa nge-save)
++    document.getElementById('btn-back').onclick = () => {
++        window.location.hash = '#profile';
+     };
+ 
++    // 3. LOGIKA TOMBOL SAVE & AUTO-REDIRECT
++    document.getElementById('btn-save-profile').onclick = async () => {
++        if (!userProfile.email) return alert("Login dulu ya!");
+ 
+-    document.getElementById('settings-form').onsubmit = async (e) => {
+-        e.preventDefault();
++        const inputBio = document.getElementById('edit-bio').value;
++        const inputHobby = document.getElementById('edit-hobby').value;
++        const btn = document.getElementById('btn-save-profile');
+ 
+-        // Update User Object
+-        const interestsVal = document.getElementById('set-interests').value;
+-        const hobbiesVal = interestsVal.split(/[,，]/).map(s => s.trim()).filter(s => s); // Split by comma or Chinese comma
++        btn.innerText = "⏳...";
++        btn.disabled = true;
+ 
+-        const updates = {
+-            department: document.getElementById('set-dept').value,
+-            gender: document.getElementById('set-gender').value,
+-            interests: interestsVal,
+-            hobbies: hobbiesVal
+-        };
+-
+-        // Save to Storage & Sync to Airtable
+-        const result = await MockStore.updateUserProfile(user.email, updates);
++        try {
++            const response = await fetch('http://localhost:3000/update-profile', {
++                method: 'POST',
++                headers: { 'Content-Type': 'application/json' },
++                body: JSON.stringify({
++                    email: userProfile.email,
++                    bio: inputBio,
++                    hobby: inputHobby,
++                    profile_pic: fotoBase64
++                })
++            });
++
++            if (response.ok) {
++                alert(typeof I18n !== 'undefined' ? I18n.t('settings.success') : "MANTAP! 🎉 Tersimpan!");
++
++                userProfile.bio = inputBio;
++                userProfile.hobby = inputHobby;
++                userProfile.profile_pic = fotoBase64;
++                userProfile.study_year = currentYearString;
++                localStorage.setItem('userProfile', JSON.stringify(userProfile));
++
++                window.location.hash = '#profile';
+ 
+-        if (result.success) {
+-            // UI Feedback
+-            if (window.notifications) {
+-                window.notifications.success('Settings updated successfully!');
+             } else {
+-                alert('Settings updated successfully!');
++                alert("Failed to save.");
++                btn.disabled = false;
++                btn.innerText = typeof I18n !== 'undefined' ? I18n.t('settings.save_btn') : "💾 Save Changes";
+             }
+-        } else {
+-            alert(result.message || 'Update failed');
+-        }
+-    };
+-
+-    document.getElementById('btn-logout').onclick = () => {
+-        if (confirm('Are you sure you want to logout?')) {
+-            localStorage.removeItem('userProfile');
+-            localStorage.removeItem('isLoggedIn');
+-            localStorage.removeItem('userEmail');
+-
+-            window.location.reload();
++        } catch (err) {
++            alert("Oops, server down! Check Terminal.");
++            btn.disabled = false;
+         }
+     };
+-};
++};
+\ No newline at end of file

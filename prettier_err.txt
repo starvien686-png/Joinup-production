@@ -1,0 +1,7 @@
+Need to install the following packages:
+prettier@3.8.1
+Ok to proceed? (y) [[31merror[39m] js/views/carpool.js: SyntaxError: Unexpected token (1273:1)
+[[31merror[39m] [0m [90m 1271 |[39m
+[[31merror[39m]  [90m 1272 |[39m updateView()[33m;[39m
+[[31merror[39m] [31m[1m>[22m[39m[90m 1273 |[39m }[33m;[39m
+[[31merror[39m]  [90m      |[39m [31m[1m^[22m[39m[0m

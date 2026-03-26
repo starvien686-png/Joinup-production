@@ -1,0 +1,196 @@
+commit 830188d6e976a45de2b03cc7214080023026ba6f
+Author: Vicky <starvien686@gmail.com>
+Date:   Wed Mar 4 13:34:27 2026 +0800
+
+    update again
+
+diff --git a/js/views/settings.js b/js/views/settings.js
+index b753b8b..c6d4708 100644
+--- a/js/views/settings.js
++++ b/js/views/settings.js
+@@ -1,5 +1,6 @@
+ import { I18n } from '../services/i18n.js';
+ import { renderRegister } from './register.js';
++import { MockStore } from '../models/mockStore.js';
+ 
+ export const renderSettings = () => {
+     const app = document.getElementById('app');
+@@ -44,20 +45,27 @@ export const renderSettings = () => {
+             <div class="card" style="text-align: center; margin-bottom: 2rem; border-radius: 16px;">
+                 <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="window.handleAvatarChange(this)">
+                 
+-                <div id="settings-avatar-display" onclick="document.getElementById('avatar-upload').click()" 
+-                     style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; position: relative; ${avatarStyle}">
+-                    ${user.photoURL ? '' : '👤'}
+-                    <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; border: 2px solid white;">📷</div>
+-                </div>
+-                <h3 style="margin: 0 0 0.5rem 0;">${user.displayName}</h3>
+-                <p style="color: #666; margin: 0;">${user.email.split('@')[0]}</p>
+-                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+-                    ${user.isVerified ?
+-            `<span style="color: #2E7D32; display: inline-flex; align-items: center; gap: 4px; background: #E8F5E9; padding: 2px 8px; border-radius: 12px;">✅ Verified User</span>` :
+-            `<button type="button" onclick="window.handleVerifyEmail()" style="background: #FFF3E0; border: 1px solid #FF9800; color: #E65100; padding: 4px 12px; border-radius: 15px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">⚠️ Verify Email</button>`
+-        }
++                <div style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
++                    <div id="settings-avatar-display" 
++                         style="width: 100px; height: 100px; border-radius: 50%; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; ${avatarStyle}">
++                        ${user.photoURL ? '' : '👤'}
++                    </div>
++
++                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
++                        <button type="button" onclick="document.getElementById('avatar-upload').click()" class="btn" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
++                            📷 ${I18n.t('profile.btn.change_photo')}
++                        </button>
++                        ${user.photoURL ? `
++                        <button type="button" onclick="window.handleAvatarDelete()" class="btn" style="padding: 0.5rem 1rem; background: #FFEBEE; color: #D32F2F; border: 1px solid #FFCDD2; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
++                            🗑️ ${I18n.t('profile.btn.delete_photo')}
++                        </button>
++                        ` : ''}
++                    </div>
+                 </div>
+-            </div>
++
++                <h3 style="margin: 1rem 0 0.5rem 0;">${user.displayName}</h3>
++                 <p style="color: #666; margin: 0;">${user.email.split('@')[0]}</p>
++             </div>
+ 
+             <!-- Form -->
+             <div class="card" style="border-radius: 16px; padding: 1.5rem;">
+@@ -96,70 +104,75 @@ export const renderSettings = () => {
+ 
+     // Handlers
+     // Handlers
+-    window.handleAvatarChange = (input) => {
++    window.handleAvatarChange = async (input) => {
+         if (input.files && input.files[0]) {
+             const file = input.files[0];
+             const reader = new FileReader();
+ 
+-            reader.onload = (e) => {
++            reader.onload = async (e) => {
+                 const newPhotoURL = e.target.result;
+ 
+-                // Update Local & Storage
+-                user.photoURL = newPhotoURL;
+-                const currentUser = JSON.parse(localStorage.getItem('userProfile') || '{}');
+-                currentUser.photoURL = newPhotoURL;
+-                localStorage.setItem('userProfile', JSON.stringify(currentUser));
++                // Update Local & Storage & Sync to Airtable
++                const result = await MockStore.updateUserProfile(user.email, { photoURL: newPhotoURL });
+ 
+-                // Update UI
+-                renderSettings();
++                if (result.success) {
++                    // Update UI locally
++                    user.photoURL = newPhotoURL;
++                    renderSettings();
+ 
+-                if (window.notifications) {
+-                    window.notifications.success('Avatar updated!');
++                    if (window.notifications) {
++                        window.notifications.success('Avatar updated!');
++                    }
++                } else {
++                    alert(result.message || 'Update failed');
+                 }
+             };
+             reader.readAsDataURL(file);
+         }
+     };
+ 
+-    window.handleVerifyEmail = () => {
+-        const confirmVerify = confirm('Send verification email to ' + user.email + '?');
+-        if (confirmVerify) {
+-            alert('✅ Verification link sent! \n(Simulating verification...)');
+-            // Update User
+-            user.isVerified = true;
+-            const currentUser = JSON.parse(localStorage.getItem('userProfile') || '{}');
+-            currentUser.isVerified = true;
+-            localStorage.setItem('userProfile', JSON.stringify(currentUser));
+-
+-            // Re-render
+-            renderSettings();
++    window.handleAvatarDelete = async () => {
++        if (confirm('Are you sure you want to delete your profile photo?')) {
++            const result = await MockStore.updateUserProfile(user.email, { photoURL: '' });
++            if (result.success) {
++                user.photoURL = '';
++                renderSettings();
++                if (window.notifications) {
++                    window.notifications.success('Avatar deleted!');
++                }
++            } else {
++                alert(result.message || 'Delete failed');
++            }
+         }
+     };
+ 
+-    document.getElementById('settings-form').onsubmit = (e) => {
++
++    document.getElementById('settings-form').onsubmit = async (e) => {
+         e.preventDefault();
+ 
+-        // Update User Object
+         // Update User Object
+         const interestsVal = document.getElementById('set-interests').value;
+         const hobbiesVal = interestsVal.split(/[,，]/).map(s => s.trim()).filter(s => s); // Split by comma or Chinese comma
+ 
+-        const updatedUser = {
+-            ...user,
++        const updates = {
+             department: document.getElementById('set-dept').value,
+             gender: document.getElementById('set-gender').value,
+             interests: interestsVal,
+             hobbies: hobbiesVal
+         };
+ 
+-        // Save to Storage
+-        localStorage.setItem('userProfile', JSON.stringify(updatedUser)); // warning: this might overwrite avatar if not careful, but we updated `user.photoURL` in handleAvatarChange so it should be fine.
++        // Save to Storage & Sync to Airtable
++        const result = await MockStore.updateUserProfile(user.email, updates);
+ 
+-        // UI Feedback
+-        if (window.notifications) {
+-            window.notifications.success('Settings updated successfully!');
++        if (result.success) {
++            // UI Feedback
++            if (window.notifications) {
++                window.notifications.success('Settings updated successfully!');
++            } else {
++                alert('Settings updated successfully!');
++            }
+         } else {
+-            alert('Settings updated successfully!');
++            alert(result.message || 'Update failed');
+         }
+     };
+ 
+
+commit 3a9d17250a898a17cc5b19dbd17a4320ff5c1f0f
+Author: Gisele <feiyingzh@gmail.com>
+Date:   Wed Feb 11 21:03:18 2026 +0700
+
+    feat: enhance feedback system with credit rewards, blocking logic, and admin dashboard integration; update travel category label
+
+diff --git a/js/views/settings.js b/js/views/settings.js
+index 7635ff6..b753b8b 100644
+--- a/js/views/settings.js
++++ b/js/views/settings.js
+@@ -140,11 +140,16 @@ export const renderSettings = () => {
+         e.preventDefault();
+ 
+         // Update User Object
++        // Update User Object
++        const interestsVal = document.getElementById('set-interests').value;
++        const hobbiesVal = interestsVal.split(/[,，]/).map(s => s.trim()).filter(s => s); // Split by comma or Chinese comma
++
+         const updatedUser = {
+             ...user,
+             department: document.getElementById('set-dept').value,
+             gender: document.getElementById('set-gender').value,
+-            interests: document.getElementById('set-interests').value
++            interests: interestsVal,
++            hobbies: hobbiesVal
+         };
+ 
+         // Save to Storage

@@ -1,0 +1,32 @@
+const { Sequelize } = require('sequelize');
+
+// Format: new Sequelize('database_name', 'username', 'password', ...)
+const sequelize = new Sequelize(
+    process.env.DB_NAME || 'JoinUp', 
+    process.env.DB_USER || 'root', 
+    process.env.DB_PASS || 'Vicdata.base8', 
+    {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 3306,
+        dialect: 'mysql',
+        logging: false,
+        dialectOptions: {
+            ssl: {
+                rejectUnauthorized: false
+            }
+        }
+    }
+);
+
+async function testConnection() {
+    try {
+        await sequelize.authenticate();
+        console.log('Success: Connection to the JoinUp database has been established successfully.');
+    } catch (error) {
+        console.error('Error: Unable to connect to the database. Please check your password or connection:', error);
+    }
+}
+
+testConnection();
+
+module.exports = sequelize;

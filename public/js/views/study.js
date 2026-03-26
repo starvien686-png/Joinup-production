@@ -1,0 +1,839 @@
+import { MockStore } from '../models/mockStore.js?v=21';
+import { I18n } from '../services/i18n.js';
+
+// --- SENSOR BAHASA ULTIMATE ---
+const isAppZH = () => {
+    try {
+        const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
+        if (langObj.includes('en')) return false;
+        if (langObj.includes('zh')) return true;
+    } catch (e) { }
+    const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW').toLowerCase();
+    if (ls.includes('en')) return false;
+    return true;
+};
+
+const t = (key, zhText, enText) => {
+    try {
+        if (typeof window.I18n !== 'undefined' && typeof window.I18n.t === 'function') {
+            const trans = window.I18n.t(key);
+            if (trans && trans !== key && trans.trim() !== '') return trans;
+        }
+    } catch (e) { }
+    return isAppZH() ? zhText : enText;
+};
+
+// --- MESIN PENDAFTARAN STUDY ---
+window.StudyAppEngine = {
+    saveApp: (appData) => {
+        const apps = JSON.parse(localStorage.getItem('joinup_study_apps') || '[]');
+        appData.id = Date.now().toString();
+        apps.push(appData);
+        localStorage.setItem('joinup_study_apps', JSON.stringify(apps));
+        return appData.id;
+    },
+    getApps: (postId) => {
+        const apps = JSON.parse(localStorage.getItem('joinup_study_apps') || '[]');
+        return apps.filter(a => String(a.postId) === String(postId));
+    },
+    updateApp: (appId, status) => {
+        const apps = JSON.parse(localStorage.getItem('joinup_study_apps') || '[]');
+        const index = apps.findIndex(a => String(a.id) === String(appId));
+        if (index > -1) {
+            apps[index].status = status;
+            localStorage.setItem('joinup_study_apps', JSON.stringify(apps));
+        }
+    }
+};
+
+export const renderStudy = () => {
+    const app = document.getElementById('app');
+    const userProfileStr = localStorage.getItem('userProfile');
+
+    if (!userProfileStr) {
+        alert(t('auth.req', '請先登入！', 'Please login first!'));
+        window.navigateTo('home');
+        return;
+    }
+
+    const user = JSON.parse(userProfileStr);
+    let currentState = 'landing';
+
+    // --- VARIABEL FILTER STUDY ---
+    let activeFilters = {
+        searchQuery: '',
+        eventType: null,
+        dateRange: null,
+        peopleCount: null
+    };
+
+    const renderLanding = () => {
+        return `
+            <div class="container fade-in" style="height: 100vh; display: flex; flex-direction: column; justify-content: center;">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <span style="font-size: 3.5rem;">📚</span>
+                    <h1 style="color: #FFB300; margin-top: 1rem;">${t('study.title', '一起合租吧 (學習)', 'Study Together')}</h1>
+                    <p style="color: var(--text-secondary);">${t('study.sub', '尋找學伴，一起進步！', 'Find study buddies and learn together!')}</p>
+                </div>
+
+                <div style="display: grid; gap: 1rem;">
+                    <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                        <span style="font-size: 2.5rem; margin-right: 1.5rem;">✍️</span>
+                        <div>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('study.host.title', '發起活動', 'Create Event')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('study.host.desc', '我想找人一起讀書/討論', 'I want to host a study session')}</p>
+                        </div>
+                    </button>
+
+                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                        <span style="font-size: 2.5rem; margin-right: 1.5rem;">🔍</span>
+                        <div>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('study.join.title', '尋找夥伴', 'Find Buddy')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('study.join.desc', '加入別人的讀書會', 'Join an existing study group')}</p>
+                        </div>
+                    </button>
+
+                    <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #FFD600, #FF6D00); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3); transition: transform 0.2s;">
+                        ⚙️ ${t('common.manage', '管理我的活動', 'Manage My Activities')}
+                    </button>
+                </div>
+                
+                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: bold; color: #555;">
+                    ⬅️ ${t('common.back', '返回', 'Back')}
+                </button>
+            </div>
+        `;
+    };
+
+    const renderCreateForm = () => {
+        const isZH = isAppZH();
+        return `
+            <div class="container fade-in" style="padding-bottom: 3rem;">
+                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
+                    <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
+                    <h2 style="color: #FF9800;">${t('study.create.title', '我是發起人', 'Create Study Event')}</h2>
+                </header>
+
+                <form id="createStudyForm" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    
+                    <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF9800; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.1rem;">📖 ${t('study.desc_head', '詳細說明', 'Description')}</h3>
+                    <div style="color: #888888; font-size: 11px; text-align: center; margin-bottom: 1.5rem;">此平台不負責任何金錢問題<br>(This platform is not responsible for financial issues)</div>
+                    
+                    <div class="input-group">
+                        <label>${t('study.topic', '主題標題 *', 'Topic Title *')}</label>
+                        <input type="text" id="stTitle" placeholder="${t('study.ph.topic', '例如: 微積分期中複習、多益讀書會', 'e.g. Calculus Review, TOEIC Study Group')}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>${t('study.type', '活動類型 *', 'Event Type *')}</label>
+                        <select id="stType" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                            <option value="Study Group">📚 ${isZH ? '讀書會 (Study Group)' : 'Study Group'}</option>
+                            <option value="Midterm/Final Prep">📝 ${isZH ? '期中/期末考準備 (Midterm/Final Prep)' : 'Midterm/Final Prep'}</option>
+                            <option value="Language Exchange">🗣️ ${isZH ? '語言交換 (Language Exchange)' : 'Language Exchange'}</option>
+                            <option value="Peer Tutoring">🎓 ${isZH ? '同儕教學 (Peer Tutoring)' : 'Peer Tutoring'}</option>
+                            <option value="Skill Exchange">🔄 ${isZH ? '技能交換 (Skill Exchange)' : 'Skill Exchange'}</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>${t('study.subject', '科目/詳細內容 *', 'Subject/Details *')}</label>
+                        <input type="text" id="stSubject" placeholder="${t('study.ph.subj', '例如: Calculus Ch1-3, TOEIC Listening', 'e.g. Calculus Ch1-3, TOEIC Listening')}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>${t('study.location', '地點 *', 'Location *')}</label>
+                        <select id="stLocation" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                            <option value="暨大圖書館">🏛️ ${isZH ? '暨大圖書館' : 'NCNU Library'}</option>
+                            <option value="暨大學生活動中心">🏢 ${isZH ? '暨大學生活動中心' : 'NCNU Student Activity Center'}</option>
+                            <option value="路易莎咖啡(暨南大學門市)">☕ ${isZH ? '路易莎咖啡(暨南大學門市)' : 'LOUISA COFFEE (NCNU Branch)'}</option>
+                            <option value="線上會議 (Google Meet/Teams)">💻 ${isZH ? '線上會議 (Google Meet/Teams)' : 'Online Meeting'}</option>
+                            <option value="自訂">📍 ${isZH ? '自訂 (Custom)' : 'Custom'}</option>
+                        </select>
+                        <input type="text" id="stCustomLoc" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd; display: none;" placeholder="${isZH ? '請輸入地點...' : 'Enter custom location...'}">
+                    </div>
+
+                    <div class="input-group">
+                        <label>${t('study.people', '需要人數 *', 'People Needed *')}</label>
+                        <input type="number" id="stPeople" min="1" max="20" value="4" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="input-group">
+                            <label>${t('study.time', '時間 *', 'Time *')}</label>
+                            <input type="datetime-local" id="stTime" required>
+                        </div>
+                        <div class="input-group">
+                            <label>${t('study.deadline', '截止時間 *', 'Deadline *')}</label>
+                            <input type="datetime-local" id="stDeadline" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="input-group">
+                            <label>${t('study.host', '發起人 *', 'Host *')}</label>
+                            <input type="text" value="${user.displayName || user.name || ''}" readonly style="background: #f5f5f5;">
+                        </div>
+                        <div class="input-group">
+                            <label>${t('study.dept', '系級 *', 'Department *')}</label>
+                            <input type="text" value="${user.department || user.major || ''}" readonly style="background: #f5f5f5;">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>${t('study.notes', '備註說明', 'Notes')}</label>
+                        <textarea id="stNotes" rows="3" placeholder="${t('study.ph.notes', '例如: 自備課本、僅限大一...', 'e.g. Bring own textbook, Freshmen only...')}" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; font-size: 1.1rem; border-radius: 8px; background: #FFB300; border: none; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 179, 0, 0.3);">
+                        ${t('common.submit', '發佈活動', 'Publish Event')}
+                    </button>
+                </form>
+            </div>
+        `;
+    };
+
+    // --- POPUP FILTER PANEL (STUDY VERSION) ---
+    const renderFilterPanel = () => {
+        const isZH = isAppZH();
+        const txtFilterTitle = isZH ? '篩選活動' : 'Filter Activities';
+        const txtCat = isZH ? '類別' : 'Category';
+        const txtDate = isZH ? '日期' : 'Date';
+        const txtPeople = isZH ? '需要人數' : 'People Needed';
+        const txtClear = isZH ? '清除篩選' : 'Clear Filters';
+        const txtConfirm = isZH ? '確認' : 'Confirm';
+
+        const categories = [
+            { id: 'Study Group', label: isZH ? '讀書會' : 'Study Group' },
+            { id: 'Midterm/Final Prep', label: isZH ? '期中/期末考準備' : 'Midterm/Final Prep' },
+            { id: 'Language Exchange', label: isZH ? '語言交換' : 'Language Exchange' },
+            { id: 'Peer Tutoring', label: isZH ? '同儕教學' : 'Peer Tutoring' },
+            { id: 'Skill Exchange', label: isZH ? '技能交換' : 'Skill Exchange' }
+        ];
+
+        let catHtml = categories.map(c => {
+            const isActive = activeFilters.eventType === c.id;
+            return `<button class="filter-option" data-filter="eventType" data-value="${c.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FFB300' : '#ddd'}; border-radius: 8px; background: ${isActive ? '#FFF8E1' : 'white'}; color: ${isActive ? '#FF8C00' : '#555'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${c.label}</button>`;
+        }).join('');
+
+        return `
+            <div id="st-filter-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: end; z-index: 1000;">
+                <div style="background: white; width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <h3 style="color: #FFB300; margin: 0;">${txtFilterTitle}</h3>
+                        <button onclick="window.closeStudyFilter()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #333;">×</button>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtCat}</label>
+                        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">${catHtml}</div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtDate}</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-option" data-filter="dateRange" data-value="today" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'today' ? '#FFB300' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'today' ? '#FFF8E1' : 'white'}; color: ${activeFilters.dateRange === 'today' ? '#FF8C00' : '#555'}; font-weight: ${activeFilters.dateRange === 'today' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '今天' : 'Today'}</button>
+                            <button class="filter-option" data-filter="dateRange" data-value="week" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'week' ? '#FFB300' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'week' ? '#FFF8E1' : 'white'}; color: ${activeFilters.dateRange === 'week' ? '#FF8C00' : '#555'}; font-weight: ${activeFilters.dateRange === 'week' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一週內' : 'Within 1 Week'}</button>
+                            <button class="filter-option" data-filter="dateRange" data-value="month" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'month' ? '#FFB300' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'month' ? '#FFF8E1' : 'white'}; color: ${activeFilters.dateRange === 'month' ? '#FF8C00' : '#555'}; font-weight: ${activeFilters.dateRange === 'month' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一個月內' : 'Within 1 Month'}</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtPeople}</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            ${[5, 10, 20].map(num => `
+                                <button class="filter-option" data-filter="peopleCount" data-value="${num}" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.peopleCount === num ? '#FFB300' : '#ddd'}; border-radius: 8px; background: ${activeFilters.peopleCount === num ? '#FFF8E1' : 'white'}; color: ${activeFilters.peopleCount === num ? '#FF8C00' : '#555'}; font-weight: ${activeFilters.peopleCount === num ? 'bold' : 'normal'}; cursor: pointer;">≤ ${num} ${isZH ? '人' : 'People Needed'}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button onclick="window.resetStudyFilters()" class="btn" style="flex: 1; background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-weight: bold;">${txtClear}</button>
+                        <button onclick="window.applyStudyFilters()" class="btn btn-primary" style="flex: 2; background: #FFB300; border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold;">${txtConfirm}</button>
+                    </div>
+                </div>
+            </div>
+            <style>@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
+        `;
+    };
+
+    const renderList = async () => {
+        const isZH = isAppZH();
+        const txtTitle = t('study.list.title', '尋找夥伴', 'Activity List');
+        const txtNoData = t('study.nodata', '目前沒有活動。', 'No matching activities found.');
+
+        let contentHtml = `<div style="text-align: center; padding: 2rem; color: #888;">⏳ ${t('common.loading', '載入中...', 'Loading...')}</div>`;
+
+        // Ngitung berapa filter yang aktif
+        const activeFilterCount = [
+            activeFilters.eventType,
+            activeFilters.dateRange,
+            activeFilters.peopleCount
+        ].filter(Boolean).length;
+
+        try {
+            const response = await fetch('http://localhost:3000/studies');
+            const dbPosts = await response.json();
+            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+
+            let availablePosts = dbPosts.filter(p => {
+                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
+
+                const dTime = new Date(p.deadline || p.event_time);
+                if (dTime < new Date()) return false;
+
+                const apps = window.StudyAppEngine.getApps(p.id) || [];
+                const acceptedApps = apps.filter(a => a.status === 'accepted');
+                if (acceptedApps.length >= p.people_needed) return false;
+
+                if (p.people_needed !== undefined && p.people_needed <= 0) return false;
+
+                return true;
+            });
+
+            // --- PROSES FILTER & SEARCH ---
+            if (activeFilters.searchQuery) {
+                const q = activeFilters.searchQuery.toLowerCase();
+                availablePosts = availablePosts.filter(p => p.title.toLowerCase().includes(q) || p.subject.toLowerCase().includes(q) || p.location.toLowerCase().includes(q));
+            }
+            if (activeFilters.eventType) {
+                availablePosts = availablePosts.filter(p => p.event_type === activeFilters.eventType);
+            }
+            if (activeFilters.peopleCount) {
+                availablePosts = availablePosts.filter(p => p.people_needed <= activeFilters.peopleCount);
+            }
+            if (activeFilters.dateRange) {
+                const targetDate = new Date();
+                if (activeFilters.dateRange === 'today') {
+                    targetDate.setHours(23, 59, 59, 999);
+                    availablePosts = availablePosts.filter(p => new Date(p.event_time) <= targetDate);
+                } else if (activeFilters.dateRange === 'week') {
+                    targetDate.setDate(targetDate.getDate() + 7);
+                    availablePosts = availablePosts.filter(p => new Date(p.event_time) <= targetDate);
+                } else if (activeFilters.dateRange === 'month') {
+                    targetDate.setMonth(targetDate.getMonth() + 1);
+                    availablePosts = availablePosts.filter(p => new Date(p.event_time) <= targetDate);
+                }
+            }
+
+            if (availablePosts.length > 0) {
+                contentHtml = availablePosts.map(p => {
+                    const dTime = new Date(p.event_time);
+                    const timeStr = isZH
+                        ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
+                        : `${(dTime.getMonth() + 1).toString().padStart(2, '0')}/${dTime.getDate().toString().padStart(2, '0')}/${dTime.getFullYear()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+
+                    const isHost = (p.host_email === user.email);
+
+                    const apps = window.StudyAppEngine.getApps(p.id) || [];
+                    const acceptedApps = apps.filter(a => a.status === 'accepted');
+                    const participantCount = acceptedApps.length;
+                    const isFull = participantCount >= p.people_needed;
+
+                    let hostData = null;
+                    if (window.MockStore && window.MockStore.getUser) hostData = window.MockStore.getUser(p.host_email);
+                    if (!hostData) hostData = allUsers.find(u => u.email === p.host_email);
+
+                    const hostAvatar = hostData?.profile_pic || hostData?.profilePic || hostData?.avatar || hostData?.picture || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+                    return `
+                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; padding: 1.2rem; transition: transform 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                <div style="background: #FFF3E0; color: #FF9800; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold;">
+                                    ${p.event_type}
+                                </div>
+                                <div style="font-size: 0.8rem; color: #999;">
+                                    📅 ${new Date(p.deadline).toLocaleDateString()}
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
+                            <div style="font-size: 0.95rem; color: #1976D2; font-weight: bold; margin-bottom: 15px;">📚 ${p.subject}</div>
+
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; color: #666;">
+                                <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                                <span>${t('common.host', '發起人', 'Host')}: <strong>${p.host_name}</strong> (${p.host_dept})</span>
+                            </div>
+
+                            <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #555; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
+                                <div><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> <br>${p.location}</div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="font-size: 0.85rem; color: #666;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:#FF9800; font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
+                                ${isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${t('common.full', '額滿', 'Full')}</span>` : ''}
+                            </div>
+
+                            ${isHost ? `
+                            <button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 進入聊天室</button>
+                            ` : !isFull ? `
+                            <button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FFB300, #FF9800); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                contentHtml = `
+                    <div style="text-align: center; padding: 3rem 1rem; color: #888;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                        <p>${txtNoData}</p>
+                        <button onclick="window.resetStudyFilters()" style="margin-top: 1rem; background: #FFB300; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">${isZH ? '清除篩選' : 'Clear Filters'}</button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            contentHtml = `<div style="text-align: center; padding: 2rem; color: red;">Error connecting to server.</div>`;
+        }
+
+        return `
+            <div class="container fade-in" style="padding-bottom: 80px;">
+                <header style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
+                        <h2 style="margin: 0; color: #FFB300; font-size: 1.3rem;">${txtTitle}</h2>
+                    </div>
+                    
+                    <button id="btn-st-filter" style="background: #eee; border: 1px solid #ccc; padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
+                        🔍 ${isZH ? '篩選' : 'Filter'}
+                        ${activeFilterCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #F44336; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${activeFilterCount}</span>` : ''}
+                    </button>
+                </header>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
+                    <div style="flex: 1; position: relative;">
+                        <input type="text" id="stSearchInput" placeholder="${isZH ? '搜尋標題/科目...' : 'Search subjects...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; padding-right: 40px; font-size: 0.95rem;">
+                        <span id="btn-st-search" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">🔍</span>
+                    </div>
+                </div>
+
+                <div class="post-list">
+                    ${contentHtml}
+                </div>
+            </div>
+        `;
+    };
+
+    const renderManage = async () => {
+        let myPosts = [];
+        try {
+            const response = await fetch(`http://localhost:3000/my-studies/${user.email}`);
+            myPosts = await response.json();
+        } catch (error) { }
+
+        const isZH = isAppZH();
+        const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
+
+        const postsHtmlArray = await Promise.all(myPosts.map(async p => {
+            const apps = window.StudyAppEngine.getApps(p.id) || [];
+            const pendingApps = apps.filter(a => a.status === 'pending');
+            const acceptedApps = apps.filter(a => a.status === 'accepted');
+            const participantCount = acceptedApps.length;
+
+            let statusBadge = '';
+            if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${isZH ? '招募中' : 'Status: OK'}</span>`;
+            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.8rem; color: #ff9800; border: 1px solid #ff9800; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⏸️ ${isZH ? '暫停' : 'Paused'}</span>`;
+            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${isZH ? '已成案' : 'Success'}</span>`;
+            else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${isZH ? '已取消' : 'Cancelled'}</span>`;
+
+            let participantsView = `
+                <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Participants'} (${participantCount}/${p.people_needed})</div>
+            `;
+
+            if (pendingApps.length > 0) {
+                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認:' : 'Pending Confirmation:'}</div>`;
+                participantsView += pendingApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="window.acceptStudyApp('${app.id}', '${p.id}', '${app.applicantId}', '${app.applicantName}', '${p.title}')" style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '接受 ✓' : 'Accept'}</button>
+                            <button onclick="window.rejectStudyApp('${app.id}', '${p.id}', '${app.applicantId}', '${p.title}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '拒絕 ✗' : 'Reject'}</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            if (acceptedApps.length > 0) {
+                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
+                participantsView += acceptedApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
+                        <button onclick="window.removeStudyApp('${app.id}', '${p.id}', '${app.applicantId}')" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">${isZH ? '移除' : 'Remove'}</button>
+                    </div>
+                `).join('');
+            }
+
+            // --- ACTION BUTTONS (Memanjang / Stacking) ---
+            const chatAction = `window.navigateTo('messages?room=travel_${p.id}')`;
+            let actionButtonsHtml = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+
+            participantsView += `</div>`;
+
+            const dTime = new Date(p.event_time);
+            const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
+
+            return `
+                <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
+                        ${statusBadge}
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
+                        🗓️ ${dateStr}
+                    </div>
+
+                    ${participantsView}
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button onclick="window.navigateTo('messages?room=study_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('study.chat', '進入聊天室', 'Enter Chat Room')}</button>
+                        ${p.status === 'open' ? `
+                            <button onclick="window.updateStudyStatus('${p.id}', 'paused')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${t('common.pause', '暫停招募', 'Pause Recruiting')}</button>
+                            <button onclick="window.updateStudyStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
+                            <button onclick="window.updateStudyStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
+                        ` : p.status === 'paused' ? `
+                            <button onclick="window.updateStudyStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${t('common.resume', '繼續招募', 'Resume Recruiting')}</button>
+                            <button onclick="window.updateStudyStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
+                            <button onclick="window.updateStudyStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }));
+
+        return `
+            <div class="container fade-in" style="padding-bottom: 80px;">
+                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
+                    <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
+                    <h2>⚙️ ${txtManageTitle}</h2>
+                </header>
+
+                ${myPosts.length > 0 ? `<section style="margin-bottom: 2rem;">${postsHtmlArray.join('')}</section>` : `<div style="text-align: center; padding: 3rem 1rem; color: #888;">📝 <br>${t('study.nodata_manage', '尚未建立任何活動。', 'No events created yet.')}</div>`}
+            </div>
+        `;
+    };
+
+    const updateView = async () => {
+        if (currentState === 'landing') { app.innerHTML = renderLanding(); bindLandingListeners(); }
+        else if (currentState === 'create') { app.innerHTML = renderCreateForm(); bindCreateListeners(); }
+        else if (currentState === 'list') { app.innerHTML = await renderList(); bindListListeners(); }
+        else if (currentState === 'manage') { app.innerHTML = await renderManage(); bindManageListeners(); }
+    };
+
+    const bindLandingListeners = () => {
+        document.getElementById('btn-role-host')?.addEventListener('click', () => { currentState = 'create'; updateView(); });
+        document.getElementById('btn-role-partner')?.addEventListener('click', () => { currentState = 'list'; updateView(); });
+        document.getElementById('btn-manage')?.addEventListener('click', () => { currentState = 'manage'; updateView(); });
+    };
+
+    const bindCreateListeners = () => {
+        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
+
+        const locSelect = document.getElementById('stLocation');
+        const customLocInput = document.getElementById('stCustomLoc');
+        locSelect?.addEventListener('change', () => {
+            if (locSelect.value === '自訂') {
+                customLocInput.style.display = 'block';
+                customLocInput.required = true;
+            } else {
+                customLocInput.style.display = 'none';
+                customLocInput.required = false;
+            }
+        });
+
+        document.getElementById('createStudyForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const oriText = btnSubmit.innerText;
+            btnSubmit.innerText = "⏳..."; btnSubmit.disabled = true;
+
+            const isZH = isAppZH();
+            try {
+                const rawTime = document.getElementById('stTime').value;
+                const formattedTime = rawTime ? rawTime.replace('T', ' ') + ':00' : null;
+
+                const rawDeadline = document.getElementById('stDeadline').value;
+                const formattedDeadline = rawDeadline ? rawDeadline.replace('T', ' ') + ':00' : null;
+
+                const location = locSelect.value === '自訂' ? customLocInput.value : locSelect.value;
+
+                const response = await fetch('http://localhost:3000/create-study', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host_email: user.email,
+                        host_name: user.displayName || user.name,
+                        host_dept: user.department || user.major || 'Student',
+                        title: document.getElementById('stTitle').value,
+                        event_type: document.getElementById('stType').value,
+                        subject: document.getElementById('stSubject').value,
+                        location: location,
+                        people_needed: parseInt(document.getElementById('stPeople').value),
+                        event_time: formattedTime,
+                        deadline: formattedDeadline,
+                        description: document.getElementById('stNotes').value || ''
+                    })
+                });
+
+                if (response.ok) {
+                    if (window.refreshUserProfile) await window.refreshUserProfile();
+                    alert(isZH ? "發佈成功！ 🎉" : "Success! 🎉");
+                    currentState = 'manage';
+                    updateView();
+                } else { alert("Database Error."); }
+            } catch (err) { alert("Connection failed."); }
+            finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
+        });
+    };
+
+    const bindListListeners = () => {
+        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
+
+        document.getElementById('btn-st-filter')?.addEventListener('click', () => {
+            const existingOverlay = document.getElementById('st-filter-overlay');
+            if (existingOverlay) existingOverlay.remove();
+            app.insertAdjacentHTML('beforeend', renderFilterPanel());
+            bindFilterOptions();
+        });
+
+        const searchInput = document.getElementById('stSearchInput');
+        const triggerSearch = () => {
+            activeFilters.searchQuery = searchInput.value;
+            updateView();
+        };
+        document.getElementById('btn-st-search')?.addEventListener('click', triggerSearch);
+        searchInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') triggerSearch(); });
+    };
+
+    const bindFilterOptions = () => {
+        document.querySelectorAll('.filter-option').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const filterType = this.getAttribute('data-filter');
+                const value = this.getAttribute('data-value');
+
+                if (activeFilters[filterType] === value || (filterType === 'peopleCount' && activeFilters[filterType] === parseInt(value))) {
+                    activeFilters[filterType] = null;
+                } else {
+                    activeFilters[filterType] = filterType === 'peopleCount' ? parseInt(value) : value;
+                }
+                const filterOverlay = document.getElementById('st-filter-overlay');
+                if (filterOverlay) {
+                    filterOverlay.outerHTML = renderFilterPanel();
+                    bindFilterOptions();
+                }
+            });
+        });
+    };
+
+    window.closeStudyFilter = () => {
+        const overlay = document.getElementById('st-filter-overlay');
+        if (overlay) overlay.remove();
+    };
+
+    window.resetStudyFilters = () => {
+        activeFilters = { searchQuery: '', eventType: null, dateRange: null, peopleCount: null };
+        window.closeStudyFilter();
+        updateView();
+    };
+
+    window.applyStudyFilters = () => {
+        window.closeStudyFilter();
+        updateView();
+    };
+
+    const bindManageListeners = () => {
+        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
+    };
+
+    // --- POP-UP JOIN CONFIRMATION ---
+    window.openStudyJoinForm = async (postId, teamName) => {
+        const existingOverlay = document.getElementById('join-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        const isZH = isAppZH();
+        const msgConfirm = isZH ? '確認申請加入' : 'Confirm Request';
+        const msgDesc = isZH ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`;
+
+        const formHtml = `
+            <div id="join-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
+                <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
+                    <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
+                    <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+                            ${t('common.cancel', '取消', 'Cancel')}
+                        </button>
+                        <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: linear-gradient(135deg, #FFB300, #FF9800); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+                            ${t('common.submit', '確認送出', 'Submit')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <style>@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }</style>
+        `;
+        document.body.insertAdjacentHTML('beforeend', formHtml);
+
+        document.getElementById('btn-confirm-join').onclick = async () => {
+            const currentUserStr = localStorage.getItem('userProfile');
+            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+
+            if (window.MockStore && window.MockStore.getUser) {
+                const fresh = window.MockStore.getUser(u.email);
+                if (fresh) u = { ...u, ...fresh };
+            }
+            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+            const freshMock = allUsers.find(mu => mu.email === u.email);
+            if (freshMock) u = { ...u, ...freshMock };
+
+            const appId = window.StudyAppEngine.saveApp({
+                postId: postId,
+                applicantId: u.email,
+                applicantName: u.displayName || u.name || 'Student',
+                applicantDept: u.department || u.major || '',
+                applicantBio: u.bio || u.about || '',
+                applicantHobby: u.hobby || u.hobbies || u.interests || '',
+                applicantPic: u.profile_pic || u.profilePic || u.avatar || u.picture || u.photo || u.profile_pic || '',
+                applicantStudyYear: u.study_year || u.studyYear || u.year || '',
+                status: 'pending'
+            });
+
+
+            try {
+                const response = await fetch('http://localhost:3000/studies');
+                const posts = await response.json();
+                const post = posts.find(p => String(p.id) === String(postId));
+
+                if (post && window.sendAppNotification) {
+                    const linkPayload = `action:review_study_app:${appId}:${postId}:${u.email}:${encodeURIComponent(teamName)}`;
+                    window.sendAppNotification(
+                        post.host_email,
+                        'action',
+                        isAppZH() ? `📚 ${u.displayName || u.name} 想加入您的讀書會「${teamName}」！` : `📚 ${u.displayName || u.name} wants to join "${teamName}"!`,
+                        linkPayload
+                    );
+                }
+            } catch (e) { }
+
+            alert(isAppZH() ? '申請已送出！' : 'Request sent!');
+            document.getElementById('join-overlay').remove();
+        };
+    };
+
+    window.updateStudyStatus = async (postId, newStatus) => {
+        if (!confirm(isAppZH() ? "確定要執行此操作嗎？" : "Are you sure?")) return;
+        try {
+            const response = await fetch(`http://localhost:3000/update-study-status/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (response.ok) {
+                if (window.refreshUserProfile) await window.refreshUserProfile();
+                updateView();
+            }
+        } catch (error) { }
+    };
+
+    window.acceptStudyApp = async (appId, postId, applicantId, applicantName, teamName) => {
+        window.StudyAppEngine.updateApp(appId, 'accepted');
+
+        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
+        let roomIndex = chatRooms.findIndex(r => String(r.id) === `study_${postId}`);
+        if (roomIndex === -1) {
+            chatRooms.push({
+                id: `study_${postId}`, postId: postId, roomType: 'study', teamName: teamName,
+                participants: [
+                    { id: user.email, name: user.displayName || user.name, role: 'host' },
+                    { id: applicantId, name: applicantName, role: 'participant' }
+                ]
+            });
+        } else {
+            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantId)) {
+                chatRooms[roomIndex].participants.push({ id: applicantId, name: applicantName, role: 'participant' });
+            }
+        }
+        localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
+
+        if (window.sendAppNotification) window.sendAppNotification(applicantId, 'success', `🎉 You are accepted to "${teamName}"!`, `messages?room=study_${postId}`);
+        alert("Accepted ✓");
+        updateView();
+    };
+
+    window.rejectStudyApp = async (appId, postId, applicantId, teamName) => {
+        window.StudyAppEngine.updateApp(appId, 'rejected');
+        updateView();
+    };
+
+    window.removeStudyApp = async (appId, postId, applicantId) => {
+        window.StudyAppEngine.updateApp(appId, 'rejected');
+        updateView();
+    };
+
+    // --- POPUP DETAIL STUDY ---
+    window.showStudyDetail = async (id) => {
+        try {
+            const response = await fetch('http://localhost:3000/studies');
+            const data = await response.json();
+            const p = data.find(item => String(item.id) === String(id));
+            if (!p) return;
+
+            const existingOverlay = document.getElementById('study-detail-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const isZH = isAppZH();
+            const dTime = new Date(p.event_time);
+            const timeStr = isZH
+                ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
+                : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+
+            const modalHtml = `
+                <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
+                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
+                        <button onclick="document.getElementById('study-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                        
+                        <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">
+                            ${p.event_type}
+                        </div>
+                        
+                        <h2 style="margin: 0 0 5px 0; color: #333; font-size: 1.4rem;">${p.title}</h2>
+                        <div style="font-size: 1.1rem; color: #1976D2; font-weight: bold; margin-bottom: 20px;">📚 ${p.subject}</div>
+                        
+                        <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-bottom: 20px;">
+                            <div style="margin-bottom: 10px;"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> ${p.location}</div>
+                            <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
+                            <div><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:#FF9800; font-weight:bold;">${p.people_needed}</span></div>
+                        </div>
+
+                        <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '備註說明' : 'Notes'}</div>
+                            <div style="color: #444; line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        } catch (e) { console.error(e); }
+    };
+
+    window.setState = (state, role) => {
+        currentState = state;
+        updateView();
+    };
+
+    // Taruh di bagian bawah file carpool.js dan study.js
+    window.openGroupChat = (activityId) => {
+        const userProfileStr = localStorage.getItem('userProfile');
+        if (!userProfileStr) {
+            alert(I18n.t('auth.err.login_required') || "Please login first!");
+            return;
+        }
+        // Ini kodingan ajaib yang melempar user ke messages.js
+        window.navigateTo(`messages?room=study_${activityId}`);
+    };
+
+    updateView();
+};
+
+window.showReviewStudyAppModal = (appId, postId, applicantEmail, teamName) => {
+    window.showReviewApplicationModal(appId, postId, applicantEmail, teamName, 'study');
+};

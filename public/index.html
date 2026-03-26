@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoinUp! 一起加入吧！</title>
+    <meta name="description" content="國立暨南國際大學校園互助平台，提供揪團運動、共乘、團購等服務。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <meta name="theme-color" content="#ffc200">
+    <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Views will be rendered here -->
+    </div>
+
+    <!-- Supabase Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseConfig.js"></script>
+
+    <script type="module" src="js/app.js?v=13"></script>
+    <script type="module" src="js/utils/installPrompt.js"></script>
+    <!-- Service Worker Registration Commented Out for Development -->
+    <!-- <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js?v=17')
+                    .then((reg) => console.log('Service Worker Registered!', reg))
+                    .catch((err) => console.log('Service Worker Registration Failed!', err));
+            });
+        }
+    </script> -->
+</body>
+
+</html>

@@ -1,0 +1,86 @@
+{
+    "common": {
+        "buttons": {
+            "confirm": "確定",
+            "cancel": "取消",
+            "back": "倒退",
+            "submit": "送出",
+            "save": "儲存"
+        },
+        "labels": {
+            "loading": "拍拚載入中...",
+            "success": "成功",
+            "error": "毋著"
+        }
+    },
+    "navigation": {
+        "home": "頭頁",
+        "messages": "消息",
+        "profile": "我的"
+    },
+    "profile": {
+        "titles": {
+            "profile": "個人檔案",
+            "account_info": "帳號設定",
+            "security": "安全設定"
+        },
+        "actions": {
+            "edit_profile": "編修資料",
+            "save_changes": "儲存",
+            "cancel": "取消",
+            "follow": "綴人",
+            "unfollow": "無欲綴",
+            "message_user": "寫批",
+            "logout": "出法"
+        },
+        "stats": {
+            "posts": "{count} 篇文章",
+            "followers": "{count} 位粉絲",
+            "following": "{count} 綴人中"
+        },
+        "placeholders": {
+            "displayName": "名號",
+            "no_bio": "這人真懶，啥攏無留下。",
+            "enter_name": "請寫你的名..."
+        },
+        "status": {
+            "member_since": "{date} 加入",
+            "private_account": "無公開",
+            "verified": "有驗證"
+        }
+    },
+    "messages": {
+        "navigation": {
+            "inbox": "收件箱",
+            "back": "倒退",
+            "archive": "封存",
+            "delete": "拿掉開講"
+        },
+        "chat_info": {
+            "active_now": "置咧",
+            "offline": "無置咧",
+            "last_seen": "上尾出現 {time}",
+            "typing": "寫字中...",
+            "read": "有看",
+            "unread": "無看",
+            "sent": "送出"
+        },
+        "placeholders": {
+            "search": "搜揣",
+            "type": "置遮寫字...",
+            "share_photo": "傳相片"
+        },
+        "actions": {
+            "send": "寫批"
+        },
+        "empty_states": {
+            "no_messages": "目前無訊息",
+            "start_new": "新開講"
+        },
+        "time_formats": {
+            "today": "今仔日",
+            "yesterday": "昨昏",
+            "just_now": "拄才"
+        }
+    }
+}

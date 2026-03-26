@@ -1,0 +1,86 @@
+{
+    "common": {
+        "buttons": {
+            "confirm": "Konfirmasi",
+            "cancel": "Batal",
+            "back": "Kembali",
+            "submit": "Kirim",
+            "save": "Simpan"
+        },
+        "labels": {
+            "loading": "Memuat...",
+            "success": "Berhasil",
+            "error": "Kesalahan"
+        }
+    },
+    "navigation": {
+        "home": "Beranda",
+        "messages": "Pesan",
+        "profile": "Profil"
+    },
+    "profile": {
+        "titles": {
+            "profile": "Profil",
+            "account_info": "Pengaturan Akun",
+            "security": "Keamanan"
+        },
+        "actions": {
+            "edit_profile": "Ubah Profil",
+            "save_changes": "Simpan Perubahan",
+            "cancel": "Batal",
+            "follow": "Ikuti",
+            "unfollow": "Batal Ikuti",
+            "message_user": "Kirim Pesan",
+            "logout": "Keluar"
+        },
+        "stats": {
+            "posts": "{count} Postingan",
+            "followers": "{count} Pengikut",
+            "following": "{count} Mengikuti"
+        },
+        "placeholders": {
+            "displayName": "Nama Pengguna",
+            "no_bio": "Pengguna ini belum menulis bio.",
+            "enter_name": "Masukkan nama Anda..."
+        },
+        "status": {
+            "member_since": "Anggota sejak {date}",
+            "private_account": "Akun Privat",
+            "verified": "Terverifikasi"
+        }
+    },
+    "messages": {
+        "navigation": {
+            "inbox": "Kotak Masuk",
+            "back": "Kembali",
+            "archive": "Arsipkan",
+            "delete": "Hapus percakapan"
+        },
+        "chat_info": {
+            "active_now": "Online",
+            "offline": "Offline",
+            "last_seen": "Terakhir dilihat {time}",
+            "typing": "Mengetik...",
+            "read": "Dibaca",
+            "unread": "Belum dibaca",
+            "sent": "Terkirim"
+        },
+        "placeholders": {
+            "search": "Cari",
+            "type": "Ketik di sini...",
+            "share_photo": "Bagikan foto"
+        },
+        "actions": {
+            "send": "Kirim Pesan"
+        },
+        "empty_states": {
+            "no_messages": "Belum ada pesan",
+            "start_new": "Mulai percakapan baru"
+        },
+        "time_formats": {
+            "today": "Hari ini",
+            "yesterday": "Kemarin",
+            "just_now": "Baru saja"
+        }
+    }
+}

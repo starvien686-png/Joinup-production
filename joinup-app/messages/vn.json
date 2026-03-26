@@ -1,0 +1,79 @@
+{
+    "common": {
+        "buttons": {
+            "confirm": "Xác nhận",
+            "cancel": "Hủy",
+            "back": "Quay lại",
+            "submit": "Gửi",
+            "save": "Lưu thay đổi"
+        },
+        "labels": {
+            "loading": "Đang tải...",
+            "success": "Thành công",
+            "error": "Lỗi"
+        }
+    },
+    "navigation": {
+        "home": "Trang chủ",
+        "messages": "Tin nhắn",
+        "profile": "Cá nhân"
+    },
+    "profile": {
+        "titles": {
+            "profile": "Hồ sơ",
+            "account_info": "Thông tin tài khoản",
+            "security": "Bảo mật"
+        },
+        "actions": {
+            "edit_profile": "Chỉnh sửa hồ sơ",
+            "save_changes": "Lưu thay đổi",
+            "cancel": "Hủy",
+            "follow": "Theo dõi",
+            "unfollow": "Bỏ theo dõi",
+            "message_user": "Nhắn tin"
+        },
+        "stats": {
+            "posts": "{count} Bài viết",
+            "followers": "{count} Người theo dõi",
+            "following": "{count} Đang theo dõi"
+        },
+        "placeholders": {
+            "no_bio": "Người dùng này chưa có tiểu sử.",
+            "enter_name": "Nhập tên của bạn..."
+        },
+        "status": {
+            "member_since": "Thành viên từ {date}",
+            "private_account": "Tài khoản riêng tư",
+            "verified": "Đã xác minh"
+        }
+    },
+    "messages": {
+        "navigation": {
+            "back": "Quay lại",
+            "archive": "Lưu trữ",
+            "delete": "Xóa cuộc trò chuyện"
+        },
+        "chat_info": {
+            "active_now": "Đang hoạt động",
+            "last_seen": "Hoạt động lần cuối {time}",
+            "typing": "Đang soạn tin...",
+            "read": "Đã đọc",
+            "sent": "Đã gửi"
+        },
+        "placeholders": {
+            "search": "Tìm kiếm người hoặc nhóm",
+            "type": "Nhập tin nhắn...",
+            "share_photo": "Chia sẻ ảnh"
+        },
+        "empty_states": {
+            "no_messages": "Chưa có tin nhắn",
+            "start_new": "Bắt đầu cuộc trò chuyện mới",
+            "no_results": "Không tìm thấy kết quả"
+        },
+        "time_formats": {
+            "today": "Hôm nay",
+            "yesterday": "Hôm qua",
+            "just_now": "Vừa xong"
+        }
+    }
+}

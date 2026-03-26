@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢查登入 Email</title>
+</head>
+
+<body>
+    <h1>檢查你的登入 Email</h1>
+    <div id="result"></div>
+
+    <script>
+        const userProfile = localStorage.getItem('userProfile');
+        const resultDiv = document.getElementById('result');
+
+        if (userProfile) {
+            const user = JSON.parse(userProfile);
+            resultDiv.innerHTML = `
+                <p><strong>你目前登入的 Email：</strong></p>
+                <p style="font-size: 1.5rem; color: blue;">${user.email}</p>
+                <hr>
+                <p><strong>白名單裡的 Email：</strong></p>
+                <ul>
+                    <li>s112212030@mail1.ncnu.edu.tw</li>
+                    <li>admin@mail1.ncnu.edu.tw</li>
+                    <li>testuser@mail1.ncnu.edu.tw</li>
+                </ul>
+                <hr>
+                <p><strong>檢查結果：</strong></p>
+                <p style="color: ${user.email === 's112212030@mail1.ncnu.edu.tw' ? 'green' : 'red'}; font-size: 1.2rem;">
+                    ${user.email === 's112212030@mail1.ncnu.edu.tw' ? '✅ 你的 Email 在白名單裡，應該可以進後台' : '❌ 你的 Email 不在白名單裡'}
+                </p>
+            `;
+        } else {
+            resultDiv.innerHTML = '<p style="color: red;">❌ 你還沒登入</p>';
+        }
+    </script>
+</body>
+
+</html>

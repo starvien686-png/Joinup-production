@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoinUp! 功能測試頁面</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .feature-section {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-section h2 {
+            margin-top: 0;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .test-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .test-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .secondary-btn {
+            background: #2196F3;
+        }
+
+        .secondary-btn:hover {
+            background: #0b7dda;
+        }
+
+        .info {
+            background: #E3F2FD;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #1565C0;
+        }
+
+        .banner {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="banner">
+        <h1>🎯 JoinUp! 功能測試中心</h1>
+        <p>快速測試所有已實現的功能</p>
+    </div>
+
+    <div class="feature-section">
+        <h2>💬 聊天室與訊息中心</h2>
+        <p><strong>位置：</strong>主頁面右上角的 💬 圖標 或 底部導航的「訊息」按鈕</p>
+        <button class="test-btn" onclick="testMessages()">進入訊息中心</button>
+        <div class="info">
+            <strong>功能說明：</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                <li>查看所有對話列表</li>
+                <li>包含發起人的貼文對話</li>
+                <li>包含已接受的申請聊天室</li>
+                <li>顯示最後訊息和時間</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature-section">
+        <h2>📊 數據分析頁面</h2>
+        <p><strong>位置：</strong>個人檔案 → 底部「[開發者] 進入統計後台」按鈕</p>
+        <button class="test-btn secondary-btn" onclick="testAnalytics()">進入數據分析後台</button>
+        <div class="info">
+            <strong>功能說明：</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                <li>查看總結案數量</li>
+                <li>成功媒合統計</li>
+                <li>所有結案記錄列表（類別、標題、狀態、人數、時間）</li>
+                <li>自動追蹤 Success / Full / Withdrawn / Failed 等狀態</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature-section">
+        <h2>✅ 最終成案確認功能</h2>
+        <p><strong>位置：</strong>需要先發起貼文並接受申請後，在管理頁面才能看到</p>
+        <button class="test-btn" onclick="testFinalMatch()">測試流程說明</button>
+        <button class="test-btn secondary-btn" onclick="createTestPost()">創建測試貼文</button>
+        <div class="info">
+            <strong>功能說明：</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                <li>發起人可以在管理介面執行「最終成案確認」</li>
+                <li>選擇最終確認的夥伴名單</li>
+                <li>確認後會記錄到 Analytics 數據</li>
+                <li>夥伴可以進行雙向確認</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature-section">
+        <h2>🏠 完整功能入口地圖</h2>
+        <p>以下是所有功能的快速訪問路徑：</p>
+        <button class="test-btn" onclick="location.href='index.html'">返回主頁面</button>
+        <button class="test-btn secondary-btn" onclick="showFeatureMap()">顯示功能地圖</button>
+        <div id="feature-map" style="display: none; margin-top: 1rem;">
+            <ul style="line-height: 1.8;">
+                <li><strong>主頁（Home）：</strong>顯示所有功能分類、右上角 💬 訊息入口</li>
+                <li><strong>訊息中心：</strong>主頁 → 右上角 💬 或底部導航「訊息」</li>
+                <li><strong>數據分析：</strong>底部導航「我的」→ 拉到底部「進入統計後台」</li>
+                <li><strong>合租功能：</strong>主頁 → 🛍️ 一起合租吧 → 發起人/夥伴路徑</li>
+                <li><strong>最終成案：</strong>發起合租貼文 → 管理我的貼文 → 查看申請 → 執行「最終成案確認」</li>
+                <li><strong>聊天室：</strong>接受申請後自動創建，可從訊息中心進入</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        window.testMessages = () => {
+            // Navigate to main app and open messages
+            localStorage.setItem('isLoggedIn', 'true');
+            if (!localStorage.getItem('userProfile')) {
+                localStorage.setItem('userProfile', JSON.stringify({
+                    displayName: '測試用戶',
+                    email: 'test@ncnu.edu.tw',
+                    department: '資訊工程系',
+                    phone: '0912345678'
+                }));
+            }
+            window.location.href = 'index.html';
+            setTimeout(() => {
+                if (window.navigateTo) {
+                    window.navigateTo('messages');
+                }
+            }, 500);
+        };
+
+        window.testAnalytics = () => {
+            localStorage.setItem('isLoggedIn', 'true');
+            if (!localStorage.getItem('userProfile')) {
+                localStorage.setItem('userProfile', JSON.stringify({
+                    displayName: '測試用戶',
+                    email: 'test@ncnu.edu.tw',
+                    department: '資訊工程系',
+                    phone: '0912345678'
+                }));
+            }
+            window.location.href = 'index.html';
+            setTimeout(() => {
+                if (window.navigateTo) {
+                    window.navigateTo('admin');
+                }
+            }, 500);
+        };
+
+        window.testFinalMatch = () => {
+            alert(`最終成案確認測試流程：
+
+步驟 1：發起合租貼文
+- 主頁 → 一起合租吧 → 我是發起人 → 填寫表單
+
+步驟 2：等待或創建申請
+- 可以用另一個瀏覽器或無痕模式註冊另一個帳號
+- 或者使用下面的「創建測試貼文」按鈕自動建立測試數據
+
+步驟 3：接受申請
+- 回到主帳號 → 一起合租吧 → 管理我的貼文 → 查看申請 → 點擊「接受」
+
+步驟 4：執行最終成案確認
+- 在管理介面找到「🤝 最終成案確認」功能
+- 選擇要確認的夥伴
+- 提交確認
+
+步驟 5：查看結果
+- 個人檔案 → 統計後台，查看成案記錄`);
+        };
+
+        window.createTestPost = () => {
+            if (!localStorage.getItem('userProfile')) {
+                localStorage.setItem('userProfile', JSON.stringify({
+                    displayName: '測試用戶',
+                    email: 'test@ncnu.edu.tw',
+                    department: '資訊工程系',
+                    phone: '0912345678'
+                }));
+            }
+
+            // Create a test post
+            const posts = JSON.parse(localStorage.getItem('joinup_posts_manual_test_v1') || '[]');
+            const testPost = {
+                id: 'post_test_' + Date.now(),
+                createdAt: new Date().toISOString(),
+                status: 'open',
+                category: 'groupbuy',
+                type: 'grad_dorm',
+                title: '【測試貼文】女研找室友',
+                peopleCount: 2,
+                budget: 3500,
+                facilities: '有冷氣、獨立衛浴、近總站',
+                tags: '早睡, 安靜, 不抽菸',
+                deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                authorId: 'test@ncnu.edu.tw',
+                authorName: '測試用戶'
+            };
+            posts.unshift(testPost);
+            localStorage.setItem('joinup_posts_manual_test_v1', JSON.stringify(posts));
+
+            alert('✅ 測試貼文已創建！\n\n現在你可以：\n1. 前往「一起合租吧」查看貼文\n2. 切換帳號進行申請\n3. 接受申請後測試聊天和最終成案確認功能');
+        };
+
+        window.showFeatureMap = () => {
+            const map = document.getElementById('feature-map');
+            map.style.display = map.style.display === 'none' ? 'block' : 'none';
+        };
+    </script>
+</body>
+
+</html>

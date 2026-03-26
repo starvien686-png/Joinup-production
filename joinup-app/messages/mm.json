@@ -1,0 +1,79 @@
+{
+    "common": {
+        "buttons": {
+            "confirm": "အတည်ပြုသည်",
+            "cancel": "ပယ်ဖျက်သည်",
+            "back": "နောက်သို့",
+            "submit": "ပေးပို့သည်",
+            "save": "သိမ်းဆည်းမည်"
+        },
+        "labels": {
+            "loading": "ခေတ္တစောင့်ဆိုင်းပါ...",
+            "success": "အောင်မြင်သည်",
+            "error": "အမှားအယွင်း"
+        }
+    },
+    "navigation": {
+        "home": "ပင်မစာမျက်နှာ",
+        "messages": "မက်ဆေ့ချ်များ",
+        "profile": "ပရိုဖိုင်"
+    },
+    "profile": {
+        "titles": {
+            "profile": "ပရိုဖိုင်",
+            "account_info": "အကောင့်အချက်အလက်",
+            "security": "လုံခြုံရေး"
+        },
+        "actions": {
+            "edit_profile": "ပရိုဖိုင်ပြင်ဆင်ရန်",
+            "save_changes": "အပြောင်းအလဲများသိမ်းရန်",
+            "cancel": "ပယ်ဖျက်သည်",
+            "follow": "Follow လုပ်မည်",
+            "unfollow": "Unfollow လုပ်မည်",
+            "message_user": "မက်ဆေ့ချ်ပို့မည်"
+        },
+        "stats": {
+            "posts": "{count} ပိုစ်များ",
+            "followers": "{count} Follower များ",
+            "following": "{count} Following များ"
+        },
+        "placeholders": {
+            "no_bio": "ဤအသုံးပြုသူမှာ အချက်အလက်ဖော်ပြထားခြင်းမရှိသေးပါ။",
+            "enter_name": "သင့်အမည်ကိုရိုက်ထည့်ပါ..."
+        },
+        "status": {
+            "member_since": "{date} မှစတင်၍ အဖွဲ့ဝင်ဖြစ်သည်",
+            "private_account": "သီးသန့်အကောင့်",
+            "verified": "အတည်ပြုပြီး"
+        }
+    },
+    "messages": {
+        "navigation": {
+            "back": "စကားဝိုင်းများသို့ပြန်သွားရန်",
+            "archive": "သိမ်းဆည်းမည်",
+            "delete": "စကားဝိုင်းကိုဖျက်မည်"
+        },
+        "chat_info": {
+            "active_now": "အွန်လိုင်းရှိနေသည်",
+            "last_seen": "နောက်ဆုံးတွေ့ရသည့်အချိန် {time}",
+            "typing": "စာရိုက်နေသည်...",
+            "read": "ဖတ်ပြီး",
+            "sent": "ပို့ပြီး"
+        },
+        "placeholders": {
+            "search": "လူများ သို့မဟုတ် အဖွဲ့များ ရှာဖွေရန်",
+            "type": "မက်ဆေ့ချ်ရိုက်ပါ",
+            "share_photo": "ဓာတ်ပုံမျှဝေပါ"
+        },
+        "empty_states": {
+            "no_messages": "မက်ဆေ့ချ်မရှိသေးပါ",
+            "start_new": "စကားဝိုင်းအသစ်စတင်ပါ",
+            "no_results": "ရှာမတွေ့ပါ"
+        },
+        "time_formats": {
+            "today": "ယနေ့",
+            "yesterday": "မနေ့က",
+            "just_now": "ယခုလေးတင်"
+        }
+    }
+}

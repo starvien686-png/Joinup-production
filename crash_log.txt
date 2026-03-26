@@ -1,0 +1,3 @@
+PUPPETEER ERROR: page.waitForTimeout is not a function
+TypeError: page.waitForTimeout is not a function
+    at C:\Users\User\OneDrive\Desktop\Joinup\test_crash.js:31:20

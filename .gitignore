@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Environment
+.env
+.env.local
+
+# Tunnel & Testing
+cloudflared.exe
+ngrok.exe
+ngrok.zip
+tunnel_*.txt
+start_tunnel.ps1
+
+# Test & Debug Files
+test_*.html
+fix_dupe.js
+fix_dupe.py
+verify_chat.js
+add-test-*.html
+download-*.html
+
+# Antigravity Brain (文檔已移至專案外)
+.gemini/

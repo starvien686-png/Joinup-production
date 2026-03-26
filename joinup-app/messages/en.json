@@ -1,0 +1,108 @@
+{
+    "common": {
+        "buttons": {
+            "confirm": "Confirm",
+            "cancel": "Cancel",
+            "back": "Back",
+            "submit": "Submit",
+            "save": "Save"
+        },
+        "labels": {
+            "loading": "Loading...",
+            "success": "Success",
+            "error": "Error"
+        }
+    },
+    "navigation": {
+        "home": "Home",
+        "messages": "Messages",
+        "profile": "Profile"
+    },
+    "home": {
+        "greeting": {
+            "morning": "Good Morning",
+            "afternoon": "Good Afternoon",
+            "evening": "Good Evening",
+            "night": "Good Night"
+        },
+        "categories": {
+            "sports": "Sports",
+            "carpool": "Carpool",
+            "housing": "Housing",
+            "study": "Study",
+            "outing": "Outing"
+        },
+        "section": {
+            "new_activity": "NEW ACTIVITIY🔥",
+            "new_desc": "查看校園內最新的揪團活動,或是發起你自己的活動!",
+            "upcoming": "Upcoming!",
+            "view_all": "view all",
+            "explore": "Explore"
+        }
+    },
+    "profile": {
+        "titles": {
+            "profile": "Profile",
+            "account_info": "Account Settings",
+            "security": "Security"
+        },
+        "actions": {
+            "edit_profile": "Edit Profile",
+            "save_changes": "Save Changes",
+            "cancel": "Cancel",
+            "follow": "Follow",
+            "unfollow": "Unfollow",
+            "message_user": "Message",
+            "logout": "Logout"
+        },
+        "stats": {
+            "posts": "{count} Posts",
+            "followers": "{count} Followers",
+            "following": "{count} Following"
+        },
+        "placeholders": {
+            "displayName": "Username",
+            "no_bio": "This user has no bio yet",
+            "enter_name": "Enter your name..."
+        },
+        "status": {
+            "member_since": "Member since {date}",
+            "private_account": "Private Account",
+            "verified": "Verified"
+        }
+    },
+    "messages": {
+        "navigation": {
+            "inbox": "Inbox",
+            "back": "Back",
+            "archive": "Archive",
+            "delete": "Delete conversation"
+        },
+        "chat_info": {
+            "active_now": "Online",
+            "offline": "Offline",
+            "last_seen": "Last seen {time}",
+            "typing": "Typing...",
+            "read": "Read",
+            "unread": "Unread",
+            "sent": "Sent"
+        },
+        "placeholders": {
+            "search": "Search",
+            "type": "Type here...",
+            "share_photo": "Share photo"
+        },
+        "actions": {
+            "send": "Send Message"
+        },
+        "empty_states": {
+            "no_messages": "No messages yet",
+            "start_new": "Start a new conversation"
+        },
+        "time_formats": {
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "just_now": "Just now"
+        }
+    }
+}

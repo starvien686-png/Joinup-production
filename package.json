@@ -1,0 +1,30 @@
+{
+  "name": "joinup",
+  "version": "1.0.0",
+  "description": "> 國立暨南國際大學校園互助平台 - PWA版本",
+  "main": "debug_posts.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Delia1203/Joinup.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Delia1203/Joinup/issues"
+  },
+  "homepage": "https://github.com/Delia1203/Joinup#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "mysql2": "^3.19.1",
+    "nodemailer": "^8.0.2",
+    "sequelize": "^6.37.8"
+  }
+}

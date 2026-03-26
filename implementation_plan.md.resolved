@@ -1,0 +1,40 @@
+# Implementation Plan - Let's Exercise (一起運動吧)
+
+This plan outlines the steps to implement the "Let's Exercise" feature, a campus sports partner matching system.
+
+## User Review Required
+> [!NOTE]
+> This feature heavily reuses the logic from "Let's Go Out" (Travel) as requested, but tailors the UI and categories specifically for sports.
+
+## Proposed Changes
+
+### Logic & Routing
+
+#### [NEW] [sports.js](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/views/sports.js)
+- Create a new view file based on [travel.js](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/views/travel.js).
+- **Key Changes**:
+    - Update title to "一起運動吧".
+    - Update `CATEGORY_ID` to `'sports'`.
+    - **Activity Types**: Customize dropdown options to focus on sports (Basketball, Badminton, Gym, Jogging, Tennis, Volleyball, etc.).
+    - **Locations**: customize default meeting points (Gym, Track, Basketball Courts, Swimming Pool).
+
+#### [MODIFY] [app.js](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/app.js)
+- Add routing logic for the `sports` key.
+- Dynamically import `sports.js` and call `renderSports()`.
+
+#### [MODIFY] [mockStore.js](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/models/mockStore.js)
+- Add `joinSportsActivity` method (cloned/aliased from [joinTravelActivity](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/models/mockStore.js#485-541)) to ensure consistent data handling for the new category.
+- Ensure [getPosts](file:///c:/Users/User/OneDrive/Desktop/Joinup/js/models/mockStore.js#112-135) correctly filters by `sports` category.
+
+## Verification Plan
+
+### Manual Verification
+1.  **Navigation**: Click "一起運動吧" on the home page and verify it loads the new landing page.
+2.  **Create Post**:
+    - Create a new "Basketball" activity.
+    - Verify it appears in the list.
+    - Check local storage to ensure `category` is saved as `'sports'`.
+3.  **Join Activity**:
+    - Use a different user (or incognito/simulated user) to join the activity.
+    - Verify instant join works (no approval required, matching Travel behavior).
+    - Verify Chat works.
