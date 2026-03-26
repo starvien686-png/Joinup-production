@@ -193,7 +193,12 @@ export const renderSettings = () => {
                         userProfile.profile_pic = fotoBase64;
                         userProfile.photoURL = fotoBase64; // <-- INI KUNCI BIAR LANGSUNG MUNCUL!
                     }
-                    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                    try {
+                        localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                    } catch (e) {
+                        const liteProfile = { ...userProfile, profile_pic: '', photoURL: '' };
+                        localStorage.setItem('userProfile', JSON.stringify(liteProfile));
+                    }
 
                     // 2. Show success message
                     alert("AWESOME! 🎉 Profile saved successfully.");
@@ -220,7 +225,12 @@ export const renderSettings = () => {
             userProfile.profile_pic = fotoBase64;
             userProfile.photoURL = fotoBase64;
             userProfile.study_year = currentYearString;
-            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            try {
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            } catch (e) {
+                const liteProfile = { ...userProfile, profile_pic: '', photoURL: '' };
+                localStorage.setItem('userProfile', JSON.stringify(liteProfile));
+            }
 
             window.navigateTo('home');
 
