@@ -159,7 +159,7 @@ export const renderSettings = () => {
     // 4. LOGIKA TOMBOL SAVE & AUTO-REDIRECT
     document.getElementById('settings-form').onsubmit = async (e) => {
         e.preventDefault();
-        if (!userProfile.email) return alert("Login dulu ya!");
+        if (!userProfile.email) return alert("Please login first!");
 
         const inputBio = document.getElementById('edit-bio').value;
         const inputHobby = document.getElementById('edit-hobby').value;

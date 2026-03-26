@@ -108,7 +108,7 @@ app.post('/update-profile', async (req, res) => {
             replacements: [bio, hobby, profile_pic, email]
         });
 
-        res.json({ message: 'Profil dan Foto berhasil diperbarui! ✨' });
+        res.json({ message: 'Profile and Photo updated successfully! ✨' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -139,17 +139,6 @@ app.post('/send-otp', async (req, res) => {
               <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
               <p style="color: red; font-size: 13px; font-weight: bold;">重要提示：請勿將此驗證碼告訴任何人！</p>
               <p style="color: #888; font-size: 12px; margin-top: 20px;">如果你沒有提出此請求，請忽略這封電子郵件。</p>
-            </div>`;
-        } else if (lang === 'id') {
-            emailSubject = '🔑 Kode Reset Password JoinUp';
-            emailHtml = `
-            <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
-              <h2 style="color: #d97706;">Reset Password JoinUp</h2>
-              <p>Halo <strong>${user.username}</strong>, seseorang mencoba mereset password akunmu.</p>
-              <p>Ini adalah kode rahasia (OTP) kamu:</p>
-              <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
-              <p style="color: red; font-size: 13px; font-weight: bold;">PENTING: Jangan berikan kode ini kepada siapapun!</p>
-              <p style="color: #888; font-size: 12px; margin-top: 20px;">Jika kamu tidak merasa meminta kode ini, abaikan saja email ini.</p>
             </div>`;
         } else {
             emailSubject = '🔑 JoinUp Password Reset Code';
@@ -332,7 +321,7 @@ app.put('/update-activity-status/:id', async (req, res) => {
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
         }
 
-        res.json({ message: 'Status berhasil diubah jadi ' + newStatus });
+        res.json({ message: 'Status successfully changed to ' + newStatus });
     } catch (error) { res.status(500).json({ error: 'Gagal update status: ' + error.message }); }
 });
 
@@ -972,7 +961,7 @@ app.get('/profile/:email', async (req, res) => {
         if (results.length > 0) {
             res.json(results); // 👈 WAJIB PAKAI DI SINI!
         } else {
-            res.status(404).json({ error: 'User tidak ditemukan' });
+            res.status(404).json({ error: 'User not found!' });
         }
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -65,9 +65,9 @@ export const renderRegister = () => {
                                 <div class="form-group">
                                     <label data-i18n="reg.role_label">I am a...</label>
                                     <select id="reg-role" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                                        <option value="student" selected data-i18n="reg.role_student">Student / Mahasiswa</option>
-                                        <option value="professor" data-i18n="reg.role_professor">Professor / Dosen</option>
-                                        <option value="staff" data-i18n="reg.role_staff">University Staff / Staf</option>
+                                        <option value="student" selected data-i18n="reg.role_student">Student</option>
+                                        <option value="professor" data-i18n="reg.role_professor">Professor / Faculty</option>
+                                        <option value="staff" data-i18n="reg.role_staff">Staff</option>
                                     </select>
                                 </div>
 
