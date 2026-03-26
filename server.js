@@ -18,6 +18,11 @@ app.get('/', (req, res) => {
     res.send('JoinUp Server is running 🚀');
 });
 
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.static('public'));
+
 const otpStorage = {};
 
 const transporter = nodemailer.createTransport({
@@ -1043,12 +1048,134 @@ app.get('/my-feedbacks/:email', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`SERVER SUCCESSFUL! 🚀 Cek di http://localhost:${PORT}`);
+
+async function syncAll() {
     try {
         await sequelize.authenticate();
-        console.log('Database connected to Server.');
+        console.log('Database connected successfully.');
+
+        // 1. Sync User Model (Create 'users' table if not exists)
+        await User.sync();
+        console.log('User model synchronized.');
+
+        // 2. Create tables for Raw Queries (If not exists)
+        const tables = [
+            `CREATE TABLE IF NOT EXISTS activities (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                host_email VARCHAR(255),
+                category VARCHAR(50),
+                title VARCHAR(255),
+                sport_type VARCHAR(100),
+                people_needed INT,
+                event_time DATETIME,
+                deadline DATETIME,
+                location VARCHAR(255),
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS carpools (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                host_email VARCHAR(255),
+                host_name VARCHAR(100),
+                host_dept VARCHAR(100),
+                title VARCHAR(255),
+                departure_loc VARCHAR(255),
+                destination_loc VARCHAR(255),
+                departure_time DATETIME,
+                deadline DATETIME,
+                available_seats INT,
+                price VARCHAR(50),
+                vehicle_type VARCHAR(50),
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS studies (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                host_email VARCHAR(255),
+                host_name VARCHAR(100),
+                host_dept VARCHAR(100),
+                title VARCHAR(255),
+                event_type VARCHAR(50),
+                subject VARCHAR(100),
+                location VARCHAR(255),
+                people_needed INT,
+                event_time DATETIME,
+                deadline DATETIME,
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS hangouts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                host_email VARCHAR(255),
+                title VARCHAR(255),
+                category VARCHAR(100),
+                host_name VARCHAR(100),
+                host_dept VARCHAR(100),
+                people_needed INT,
+                event_time DATETIME,
+                deadline DATETIME,
+                meeting_location VARCHAR(255),
+                destination VARCHAR(255),
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS housing (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                host_email VARCHAR(255),
+                title VARCHAR(255),
+                category VARCHAR(50),
+                people_needed INT,
+                location VARCHAR(255),
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS chat_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                activity_id VARCHAR(100),
+                sender_email VARCHAR(255),
+                sender_name VARCHAR(100),
+                sender_dept VARCHAR(100),
+                sender_student_id VARCHAR(50),
+                role VARCHAR(50),
+                message_type VARCHAR(50),
+                content TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS chat_participants (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                room_id VARCHAR(100),
+                user_email VARCHAR(255),
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS activity_feedback (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_id INT,
+                user_email VARCHAR(255),
+                category VARCHAR(50),
+                q1_rating INT,
+                q2_rating INT,
+                q3_success TINYINT(1),
+                feedback TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`
+        ];
+
+        for (let sql of tables) {
+            await sequelize.query(sql);
+        }
+        console.log('All raw tables verified/created.');
+
     } catch (err) {
-        console.log('Database connection error:', err);
+        console.error('Initial Database Sync Failed:', err);
     }
+}
+
+app.listen(PORT, async () => {
+    console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
+    await syncAll();
 });
