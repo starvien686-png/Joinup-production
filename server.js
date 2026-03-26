@@ -1,4 +1,7 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+// Force IPv4 first for environments like Render that don't support outbound IPv6
+dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./database');
@@ -27,9 +30,9 @@ const otpStorage = {};
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Port 587 is STARTTLS
-    family: 4,     // Force IPv4 to avoid ENETUNREACH on IPv6
+    port: 465,
+    secure: true, // Use SSL
+    family: 4,    // Force IPv4 to avoid ENETUNREACH on IPv6 in Render.com
     auth: {
         user: 'ncnujoinupadmin@gmail.com',
         pass: 'oabrqgtshscfjrvo'
