@@ -1,23 +1,47 @@
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 const dns = require('dns');
-// Force IPv4 first for environments like Render that don't support outbound IPv6
-dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./database');
 const User = require('./User');
-
-const app = express();
-
+const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
+const winston = require('winston');
+const validator = require('validator');
+const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-app.use(express.static('public'));
+// Force IPv4 first for environments like Render that don't support outbound IPv6
+dns.setDefaultResultOrder('ipv4first');
+
+const app = express();
+
+// --- LOGGING SETUP (WINSTON) ---
+const logger = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [
+        new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'logs/combined.log' }),
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.simple()
+            )
+        })
+    ]
+});
+
+// Create logs directory if it doesn't exist
+if (!fs.existsSync('logs')) fs.mkdirSync('logs');
 
 app.get('/', (req, res) => {
-    // If you want index.html to show, static('public') already handles it.
-    // This route can be kept as a health check or removed.
     res.send('JoinUp Server is running 🚀');
 });
 
@@ -26,16 +50,73 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 
-const otpStorage = {};
+// --- OTP STORAGE & UTILS ---
+const otpStorage = {}; // { email: { hash, expiresAt, attempts, requestId } }
 
+const maskEmail = (email) => {
+    const [name, domain] = email.split('@');
+    return `${name[0]}***@${domain[0]}***.${domain.split('.').pop()}`;
+};
+
+// --- EMAIL QUEUE & RETRY LOGIC ---
+class EmailQueue {
+    constructor() {
+        this.queue = [];
+        this.isProcessing = false;
+    }
+
+    async add(mailOptions, requestId, attempt = 1) {
+        this.queue.push({ mailOptions, requestId, attempt });
+        logger.info(`[Queue] added email for ${maskEmail(mailOptions.to)}`, { requestId });
+        this.process();
+    }
+
+    async process() {
+        if (this.isProcessing || this.queue.length === 0) return;
+        this.isProcessing = true;
+        const { mailOptions, requestId, attempt } = this.queue.shift();
+
+        try {
+            await transporter.sendMail({
+                ...mailOptions,
+                timeout: 10000 // 10s SMTP timeout
+            });
+            logger.info(`[Queue] sent successfully to ${maskEmail(mailOptions.to)}`, { requestId });
+        } catch (error) {
+            logger.error(`[Queue] failed attempt ${attempt} for ${maskEmail(mailOptions.to)}: ${error.message}`, { requestId });
+            if (attempt < 3) {
+                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                setTimeout(() => this.add(mailOptions, requestId, attempt + 1), delay);
+            } else {
+                logger.error(`[Queue] CRITICAL: Max retries reached for ${maskEmail(mailOptions.to)}`, { requestId });
+            }
+        } finally {
+            this.isProcessing = false;
+            this.process();
+        }
+    }
+}
+const emailQueue = new EmailQueue();
+
+// --- RATE LIMITING ---
+const otpRateLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 3, // 3 requests
+    message: { error: "Too many OTP requests. Please try again in 10 minutes." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// --- SMTP TRANSPORTER (POOLED) ---
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
-    family: 4,    // Force IPv4 to avoid ENETUNREACH on IPv6 in Render.com
+    pool: true, // Enable pooling for faster delivery
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT),
+    secure: true,
+    family: 4,
     auth: {
-        user: 'ncnujoinupadmin@gmail.com',
-        pass: 'oabrqgtshscfjrvo'
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     },
     tls: {
         rejectUnauthorized: false
@@ -120,83 +201,127 @@ app.post('/update-profile', async (req, res) => {
     }
 });
 
-app.post('/send-otp', async (req, res) => {
+app.post('/send-otp', otpRateLimiter, async (req, res) => {
+    const requestId = crypto.randomUUID();
     try {
         const { email, lang } = req.body;
 
+        if (!email || !validator.isEmail(email)) {
+            return res.status(400).json({ error: 'Invalid email format!' });
+        }
+
         const user = await User.findOne({ where: { email: email } });
         if (!user) {
+            logger.warn(`OTP request for unknown email: ${maskEmail(email)}`, { requestId });
             return res.status(404).json({ error: 'Email not found in JoinUp system!' });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        otpStorage[email] = otp;
-
-        let emailSubject = '';
-        let emailHtml = '';
-
-        if (lang === 'zh-TW') {
-            emailSubject = '🔑 JoinUp 密碼重置驗證碼';
-            emailHtml = `
-            <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
-              <h2 style="color: #d97706;">JoinUp 密碼重置</h2>
-              <p>你好 <strong>${user.username}</strong>，有人嘗試重置你的帳戶密碼。</p>
-              <p>這是你的專屬驗證碼 (OTP)：</p>
-              <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
-              <p style="color: red; font-size: 13px; font-weight: bold;">重要提示：請勿將此驗證碼告訴任何人！</p>
-              <p style="color: #888; font-size: 12px; margin-top: 20px;">如果你沒有提出此請求，請忽略這封電子郵件。</p>
-            </div>`;
-        } else {
-            emailSubject = '🔑 JoinUp Password Reset Code';
-            emailHtml = `
-            <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
-              <h2 style="color: #d97706;">JoinUp Password Reset</h2>
-              <p>Hello <strong>${user.username}</strong>, someone requested to reset your account password.</p>
-              <p>Here is your One-Time Password (OTP):</p>
-              <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
-              <p style="color: red; font-size: 13px; font-weight: bold;">IMPORTANT: Do not share this code with anyone!</p>
-              <p style="color: #888; font-size: 12px; margin-top: 20px;">If you didn't request this, please safely ignore this email.</p>
-            </div>`;
+        // --- IDEMPOTENCY CHECK ---
+        const existing = otpStorage[email];
+        if (existing && Date.now() - existing.createdAt < 30000) {
+            logger.info(`Idempotent request for ${maskEmail(email)}`, { requestId });
+            return res.status(200).json({ message: 'OTP is already being sent! Please check your email.' });
         }
 
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hash = await bcrypt.hash(otp, 10);
+        
+        // --- ATOMIC UPDATE (CONCURRENCY) ---
+        otpStorage[email] = {
+            hash,
+            expiresAt: Date.now() + (process.env.OTP_EXPIRY_MINUTES * 60 * 1000),
+            attempts: 0,
+            createdAt: Date.now(),
+            requestId 
+        };
+
+        const emailSubject = lang === 'zh-TW' ? '🔑 JoinUp 驗證碼' : '🔑 JoinUp OTP Code';
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
+                <h2 style="color: #d97706;">JoinUp</h2>
+                <p>Hello <strong>${user.username}</strong>,</p>
+                <p>Your OTP code is:</p>
+                <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
+                <p style="color: #888; font-size: 12px;">Valid for 5 minutes. Do not share this code.</p>
+            </div>`;
+
         const mailOptions = {
-            from: 'JoinUp Support <ncnujoinupadmin@gmail.com>',
+            sender: process.env.SMTP_FROM,
+            from: process.env.SMTP_FROM,
             to: email,
             subject: emailSubject,
             html: emailHtml
         };
 
-        await transporter.sendMail(mailOptions);
-        res.json({ message: 'OTP successfully sent to your email!' });
+        // FIRE AND FORGET (NON-BLOCKING)
+        emailQueue.add(mailOptions, requestId);
+
+        logger.info(`OTP generated and queued for ${maskEmail(email)}`, { requestId });
+        res.status(202).json({ message: 'OTP is being sent to your email! 🚀' });
 
     } catch (error) {
-        console.error("Failed to send email:", error);
-        res.status(500).json({ error: 'Failed to send email: ' + error.message });
+        logger.error(`Failed in /send-otp: ${error.message}`, { requestId });
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 app.post('/reset-password', async (req, res) => {
+    const requestId = crypto.randomUUID();
     try {
         const { email, otp, newPassword } = req.body;
 
-        if (otpStorage[email] !== otp) {
-            return res.status(400).json({ error: 'Kode OTP salah!' });
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ error: 'Missing required fields!' });
         }
 
+        const record = otpStorage[email];
+        if (!record) {
+            return res.status(400).json({ error: 'No OTP requested or security session expired!' });
+        }
+
+        if (Date.now() > record.expiresAt) {
+            delete otpStorage[email];
+            return res.status(400).json({ error: 'OTP has expired! Please request a new one.' });
+        }
+
+        if (record.attempts >= process.env.MAX_OTP_ATTEMPTS) {
+            delete otpStorage[email];
+            logger.warn(`Brute force attempt detected for ${maskEmail(email)}`, { requestId });
+            return res.status(403).json({ error: 'Too many failed attempts! Please request a new OTP.' });
+        }
+
+        const isMatch = await bcrypt.compare(otp, record.hash);
+        if (!isMatch) {
+            record.attempts++;
+            return res.status(401).json({ error: 'Invalid OTP code!' });
+        }
+
+        // SUCCESS
         await User.update(
             { password: newPassword },
             { where: { email: email } }
         );
 
         delete otpStorage[email];
-
-        res.json({ message: 'Password successfully changed! 🎉 Please login again.' });
+        logger.info(`Password successfully reset for ${maskEmail(email)}`, { requestId });
+        res.json({ message: 'Password successfully changed! 🎉' });
 
     } catch (error) {
-        console.error("Failed to reset password:", error);
-        res.status(500).json({ error: 'Failed to reset password: ' + error.message });
+        logger.error(`Failed in /reset-password: ${error.message}`, { requestId });
+        res.status(500).json({ error: 'Failed to reset password' });
     }
 });
+
+// --- AUTO-CLEANUP JOB ---
+setInterval(() => {
+    const now = Date.now();
+    Object.keys(otpStorage).forEach(email => {
+        if (now > otpStorage[email].expiresAt) {
+            delete otpStorage[email];
+            logger.info(`Cleaned up expired OTP for ${maskEmail(email)}`);
+        }
+    });
+}, 10 * 60 * 1000); // Every 10 minutes
 
 // Helper functions for Point System
 async function awardPoints(email, points) {
