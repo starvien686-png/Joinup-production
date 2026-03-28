@@ -41,9 +41,6 @@ const logger = winston.createLogger({
 // Create logs directory if it doesn't exist
 if (!fs.existsSync('logs')) fs.mkdirSync('logs');
 
-app.get('/', (req, res) => {
-    res.send('JoinUp Server is running 🚀');
-});
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
