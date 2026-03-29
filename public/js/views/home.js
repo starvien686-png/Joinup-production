@@ -525,6 +525,7 @@ export const renderHome = () => {
                     document.getElementById('join-confirm-overlay').remove();
 
                     if (res.ok) {
+                        alert('申請已送出！ / Application sent!');
                         btn.innerText = "⏳ Pending...";
                         btn.style.background = "#9E9E9E";
                         btn.style.cursor = "not-allowed";
@@ -532,12 +533,16 @@ export const renderHome = () => {
                         // Trigger immediate reconciliation sync if available
                         if (window.syncNotifications) window.syncNotifications();
                     } else {
-                        alert('Failed: ' + out.message);
+                        alert('Failed: ' + (out.message || 'Unknown error'));
+                        btn.innerText = "申請加入 / Apply to Join";
+                        btn.disabled = false;
                     }
                 } catch (e) {
                     console.error(e);
                     document.getElementById('join-confirm-overlay')?.remove();
-                    alert('Maaf, terjadi Network Error. Periksa koneksi Anda.');
+                    alert('Maaf, terjadi Network Error. Silakan coba lagi nanti.');
+                    btn.innerText = "申請加入 / Apply to Join";
+                    btn.disabled = false;
                 }
             };
         };
