@@ -469,48 +469,77 @@ export const renderHome = () => {
     // Quick Apply Function directly bridging the API
     if (!window.quickApply) {
         window.quickApply = async (eventId, category, btn) => {
-            btn.innerText = "Syncing...";
-            btn.disabled = true;
-
             const currentUserStr = localStorage.getItem('userProfile');
             let u = currentUserStr ? JSON.parse(currentUserStr) : {};
 
             if (!u.email) {
                 alert("Please login first!");
-                btn.innerText = "申請加入 / Apply to Join";
-                btn.disabled = false;
                 return;
             }
 
-            try {
-                const res = await fetch('/api/v1/join', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        event_type: category || 'sports',
-                        event_id: eventId,
-                        user_email: u.email
-                    })
-                });
+            // Custom Confirmation Modal
+            const confirmHtml = `
+                <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; animation: fadeIn 0.2s;">
+                    <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                        <h3 style="margin-top: 0; color: #333;">Yakin ingin bergabung?</h3>
+                        <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px;">
+                            Permintaan akan dikirim ke Host. Sambil menunggu persetujuan, status akan menjadi Pending.
+                        </p>
+                        <div style="display: flex; gap: 15px; justify-content: center;">
+                            <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
+                            <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', confirmHtml);
 
-                const out = await res.json();
-                if (res.ok) {
-                    alert('申請已送出！ / Application sent!');
-                    btn.innerText = "⏳ Pending...";
-                    btn.style.background = "#9E9E9E";
-                    btn.style.cursor = "not-allowed";
-                    btn.onclick = (e) => e.stopPropagation();
-                } else {
-                    alert('Failed: ' + out.message);
-                    btn.innerText = "申請加入 / Apply to Join";
-                    btn.disabled = false;
+            document.getElementById('join-cancel-btn').onclick = () => {
+                document.getElementById('join-confirm-overlay').remove();
+            };
+
+            document.getElementById('join-submit-btn').onclick = async () => {
+                document.getElementById('join-submit-btn').innerText = "Loading...";
+                document.getElementById('join-submit-btn').disabled = true;
+                
+                try {
+                    const res = await fetch('/api/v1/join', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event_type: category || 'sports',
+                            event_id: eventId,
+                            user_email: u.email
+                        })
+                    });
+
+                    // Safeguard against non-JSON server crash pages causing 'Network Error'
+                    let out;
+                    try {
+                        out = await res.json();
+                    } catch (err) {
+                        out = { message: "Server is unreachable or returned invalid data" };
+                    }
+
+                    document.getElementById('join-confirm-overlay').remove();
+
+                    if (res.ok) {
+                        btn.innerText = "⏳ Pending...";
+                        btn.style.background = "#9E9E9E";
+                        btn.style.cursor = "not-allowed";
+                        btn.onclick = (e) => e.stopPropagation();
+                        // Trigger immediate reconciliation sync if available
+                        if (window.syncNotifications) window.syncNotifications();
+                    } else {
+                        alert('Failed: ' + out.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('join-confirm-overlay')?.remove();
+                    alert('Maaf, terjadi Network Error. Periksa koneksi Anda.');
                 }
-            } catch (e) {
-                console.error(e);
-                alert('Network error.');
-                btn.innerText = "申請加入 / Apply to Join";
-                btn.disabled = false;
-            }
+            };
         };
     }
 
