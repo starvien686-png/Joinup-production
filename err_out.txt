@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>TypeError: Cannot read properties of undefined (reading &#39;ISOLATION_LEVELS&#39;)<br> &nbsp; &nbsp;at C:\Users\User\OneDrive\Desktop\Joinup\services\join_service.js:86:83<br> &nbsp; &nbsp;at Layer.handleRequest (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\lib\layer.js:152:17)<br> &nbsp; &nbsp;at next (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\lib\route.js:157:13)<br> &nbsp; &nbsp;at Route.dispatch (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\lib\route.js:117:3)<br> &nbsp; &nbsp;at handle (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\index.js:435:11)<br> &nbsp; &nbsp;at Layer.handleRequest (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\lib\layer.js:152:17)<br> &nbsp; &nbsp;at C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\index.js:295:15<br> &nbsp; &nbsp;at processParams (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\index.js:582:12)<br> &nbsp; &nbsp;at next (C:\Users\User\OneDrive\Desktop\Joinup\node_modules\router\index.js:291:5)<br> &nbsp; &nbsp;at withIdempotency (C:\Users\User\OneDrive\Desktop\Joinup\services\join_service.js:36:33)</pre>
+</body>
+</html>

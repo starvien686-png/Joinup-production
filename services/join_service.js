@@ -83,9 +83,10 @@ router.post('/join', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Missing fields' });
     }
 
-    const t = await sequelize.transaction({ isolationLevel: sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
-    
+    let t;
     try {
+        t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
+        
         // 1. Get User ID
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email], transaction: t });
         if (users.length === 0) throw new Error('User not found');
@@ -148,7 +149,7 @@ router.post('/join', async (req, res) => {
         logger.info(`Join request submitted by ${user_email} for ${event_type} ${event_id}`, { requestId: req.requestId });
         res.status(202).json({ success: true, message: 'Join request pending approval', data: { status: 'pending' } });
     } catch (err) {
-        await t.rollback();
+        if (t) await t.rollback();
         const msg = err.message;
         const status = msg.includes('found') ? 404 : (msg.includes('Already') || msg.includes('full') || msg.includes('locked') ? 400 : 500);
         logger.error(`Join error: ${msg}`, { requestId: req.requestId, correlationId: req.correlationId });
@@ -161,8 +162,9 @@ router.post('/join/cancel', async (req, res) => {
     const { event_type, event_id, user_email } = req.body;
     if (!event_type || !event_id || !user_email) return res.status(400).json({ success: false, message: 'Missing fields' });
 
-    const t = await sequelize.transaction({ isolationLevel: sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
+    let t;
     try {
+        t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email], transaction: t });
         if (users.length === 0) throw new Error('User not found');
         const user_id = users[0].id;
@@ -186,7 +188,7 @@ router.post('/join/cancel', async (req, res) => {
         await t.commit();
         res.status(200).json({ success: true, message: 'Join request cancelled', data: { status: 'cancelled' } });
     } catch (err) {
-        await t.rollback();
+        if (t) await t.rollback();
         res.status(400).json({ success: false, message: err.message });
     }
 });
@@ -196,8 +198,9 @@ router.post('/join/approve', async (req, res) => {
     const { event_type, event_id, target_user_email, host_email } = req.body;
     if (!event_type || !event_id || !target_user_email || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
 
-    const t = await sequelize.transaction({ isolationLevel: sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
+    let t;
     try {
+        t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [target_user_email], transaction: t });
         if (users.length === 0) throw new Error('Target user not found');
         const target_user_id = users[0].id;
@@ -267,7 +270,7 @@ router.post('/join/approve', async (req, res) => {
         await t.commit();
         res.status(200).json({ success: true, message: 'Approved successfully', data: { status: 'approved' } });
     } catch (err) {
-        await t.rollback();
+        if (t) await t.rollback();
         const msg = err.message;
         const status = msg.includes('found') ? 404 : (msg.includes('capacity') || msg.includes('Cannot') || msg.includes('Only') ? 400 : 500);
         res.status(status).json({ success: false, message: msg });
@@ -279,8 +282,9 @@ router.post('/join/reject', async (req, res) => {
     const { event_type, event_id, target_user_email, host_email } = req.body;
     if (!event_type || !event_id || !target_user_email || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
 
-    const t = await sequelize.transaction({ isolationLevel: sequelize.Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
+    let t;
     try {
+        t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [target_user_email], transaction: t });
         if (users.length === 0) throw new Error('Target user not found');
         const target_user_id = users[0].id;
@@ -317,7 +321,7 @@ router.post('/join/reject', async (req, res) => {
         await t.commit();
         res.status(200).json({ success: true, message: 'Rejected successfully', data: { status: 'rejected' } });
     } catch (err) {
-        await t.rollback();
+        if (t) await t.rollback();
         const msg = err.message;
         const status = msg.includes('found') ? 404 : (msg.includes('Cannot') || msg.includes('Only') ? 400 : 500);
         res.status(status).json({ success: false, message: msg });

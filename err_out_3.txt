@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>ReferenceError: t is not defined<br> &nbsp; &nbsp;at C:\Users\User\OneDrive\Desktop\Joinup\services\join_service.js:151:9<br> &nbsp; &nbsp;at process.processTicksAndRejections (node:internal/process/task_queues:104:5)</pre>
+</body>
+</html>
