@@ -421,9 +421,14 @@ export const renderHome = () => {
                         <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📍 <span style="color: #444;">${translatedLoc || I18n.t('common.location_tbd')}</span></div>
                     </div>
 
-                    <button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
-                        申請加入 / Apply to Join
-                    </button>
+                    ${(user.email && p.host_email && user.email === p.host_email) 
+                        ? `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
+                            💬 進入聊天室 / Enter Chat
+                           </button>` 
+                        : `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
+                            申請加入 / Apply to Join
+                           </button>`
+                    }
                 </div>
             `;
         }).join('');
