@@ -1251,22 +1251,40 @@ export const renderGroupBuy = () => {
         div.innerHTML = renderApplyForm(postId);
         document.body.appendChild(div);
 
-        document.getElementById('applyForm').addEventListener('submit', (e) => {
+        document.getElementById('applyForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            MockStore.createApplication({
-                postId,
-                applicantId: user.email,
-                applicantName: document.getElementById('applicantName').value,
-                applicantDept: document.getElementById('applicantDept').value,
-                applicantGender: document.getElementById('applicantGender').value,
-                scheduleDesc: document.getElementById('scheduleDesc').value,
-                habitDesc: document.getElementById('habitDesc').value
-            });
-            alert(I18n.t('housing.alert.app_submitted'));
-            window.closeApplyForm();
-            currentState = 'manage';
-            updateView();
-            bindListeners();
+            const btn = e.target.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.innerText = "Syncing...";
+                btn.disabled = true;
+            }
+
+            try {
+                const res = await fetch('/api/v1/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event_type: 'housing',
+                        event_id: postId,
+                        user_email: user.email
+                    })
+                });
+
+                const out = await res.json();
+                if (res.ok) {
+                    alert(I18n.t('housing.alert.app_submitted'));
+                } else {
+                    alert('Failed: ' + out.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error.');
+            } finally {
+                window.closeApplyForm();
+                currentState = 'manage';
+                updateView();
+                bindListeners();
+            }
         });
     };
 
@@ -1887,100 +1905,92 @@ export const renderGroupBuy = () => {
         document.body.insertAdjacentHTML('beforeend', formHtml);
 
         document.getElementById('btn-housing-confirm-join').onclick = async () => {
+            const btn = document.getElementById('btn-housing-confirm-join');
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
+
             const currentUserStr = localStorage.getItem('userProfile');
             let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-            if (window.MockStore && window.MockStore.getUser) {
-                const fresh = window.MockStore.getUser(u.email);
-                if (fresh) u = { ...u, ...fresh };
-            }
-            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            const freshMock = allUsers.find(mu => mu.email === u.email);
-            if (freshMock) u = { ...u, ...freshMock };
 
-            const appId = window.HousingAppEngine.saveApp({
-                postId: postId,
-                applicantId: u.email,
-                applicantName: u.displayName || u.name || 'User',
-                applicantDept: u.department || u.major || '',
-                applicantBio: u.bio || u.about || '',
-                applicantHobby: u.hobby || u.hobbies || u.interests || '',
-                applicantPic: u.profile_pic || u.profilePic || u.avatar || u.picture || u.photo || '',
-                applicantStudyYear: u.study_year || u.studyYear || u.year || '',
-                status: 'pending'
-            });
-
-            // Notify the host
             try {
-                const res = await fetch('/housing/' + postId);
-                if (res.ok) {
-                    const post = await res.json();
-                    if (post && post.host_email && window.sendAppNotification) {
-                        const linkPayload = `action:review_housing_app:${appId}:${postId}:${u.email}:${encodeURIComponent(teamName)}`;
-                        window.sendAppNotification(
-                            post.host_email,
-                            'action',
-                            isZH
-                                ? `🏠 ${u.displayName || u.name} 想加入您的合租貼文「${teamName}」！`
-                                : `🏠 ${u.displayName || u.name} wants to join your housing post "${teamName}"!`,
-                            linkPayload
-                        );
-                    }
-                }
-            } catch (e) { console.error(e); }
+                const res = await fetch('/api/v1/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event_type: 'housing',
+                        event_id: postId,
+                        user_email: u.email
+                    })
+                });
 
-            alert(isZH ? '申請已送出！等待發起人確認。' : 'Application sent! Waiting for host to confirm.');
-            const ov = document.getElementById('housing-join-overlay');
-            if (ov) ov.remove();
+                const out = await res.json();
+                if (res.ok) {
+                    alert(isZH ? '申請已送出！等待發起人確認。' : 'Application sent! Waiting for host to confirm.');
+                } else {
+                    alert((isZH ? '申請失敗: ' : 'Failed: ') + out.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Network error.');
+            } finally {
+                const ov = document.getElementById('housing-join-overlay');
+                if (ov) ov.remove();
+                updateView();
+            }
         };
     };
 
     // --- HOUSING ACCEPT / REJECT ---
     window.acceptHousingApp = async (appId, postId, applicantId, applicantName, teamName) => {
-        window.HousingAppEngine.updateApp(appId, 'accepted');
         const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-
-        // Add to chat room
-        const chatRoomId = `housing_${postId}`;
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-        let roomIndex = chatRooms.findIndex(r => String(r.id) === chatRoomId);
-        const hostName = user.displayName || user.name || 'Host';
-        if (roomIndex === -1) {
-            chatRooms.push({
-                id: chatRoomId, postId: postId, roomType: 'housing', teamName: teamName,
-                participants: [
-                    { id: user.email, name: hostName, role: 'host' },
-                    { id: applicantId, name: applicantName, role: 'participant' }
-                ]
+        try {
+            const res = await fetch('/api/v1/join/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: 'housing',
+                    event_id: postId,
+                    target_user_email: applicantId,
+                    host_email: user.email
+                })
             });
-        } else {
-            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantId)) {
-                chatRooms[roomIndex].participants.push({ id: applicantId, name: applicantName, role: 'participant' });
+            const out = await res.json();
+            if (res.ok) {
+                alert(isZH ? '已接受！ ✓' : 'Accepted! ✓');
+            } else {
+                alert((isZH ? '失敗: ' : 'Failed: ') + out.message);
             }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            updateView();
         }
-        localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantId, 'success',
-                isZH ? `🎉 恭喜！您的合租申請「${teamName}」已通過！進入聊天室！` : `🎉 Your housing application for "${teamName}" was ACCEPTED!`,
-                `messages?room=housing_${postId}`
-            );
-        }
-        alert(isZH ? '已接受！ ✓' : 'Accepted! ✓');
-        updateView();
     };
 
-    window.rejectHousingApp = (appId, postId, applicantId, teamName) => {
-        window.HousingAppEngine.updateApp(appId, 'rejected');
+    window.rejectHousingApp = async (appId, postId, applicantId, teamName) => {
         const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantId, 'info',
-                isZH ? `❌ 抱歉，您的合租申請「${teamName}」未通過。` : `❌ Sorry, your housing application for "${teamName}" was not accepted.`,
-                ''
-            );
+        try {
+            const res = await fetch('/api/v1/join/reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: 'housing',
+                    event_id: postId,
+                    target_user_email: applicantId,
+                    host_email: user.email
+                })
+            });
+            const out = await res.json();
+            if (res.ok) {
+                alert(isZH ? '已拒絕！' : 'Rejected!');
+            } else {
+                alert((isZH ? '失敗: ' : 'Failed: ') + out.message);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            updateView();
         }
-        updateView();
     };
 
     window.openGroupChat = (activityId) => {

@@ -45,11 +45,7 @@ export const renderProfile = () => {
                     <span>⚙️ ${I18n.t('profile.btn.settings')}</span>
                     <span>></span>
                 </button>
-                <button class="btn" style="width: 100%; margin-bottom: 1rem; background: white; color: #333; border: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;" onclick="window.navigateTo('contact')">
-                    <span>❓ ${I18n.t('profile.btn.help')}</span>
-                    <span>></span>
-                </button>
-                <button class="btn" style="width: 100%; margin-bottom: 1rem; background: white; color: #C62828; border: 1px solid #FFCDD2; display: flex; justify-content: space-between; align-items: center;" onclick="window.reportCurrentTarget('${user.email}', 'user')">
+                <button class="btn" style="width: 100%; margin-bottom: 1rem; background: white; color: #C62828; border: 1px solid #FFCDD2; display: flex; justify-content: space-between; align-items: center;" onclick="window.open('https://forms.gle/9yHV6z8gfPagaG5s8', '_blank')">
                     <span>⚠️ ${I18n.t('profile.btn.report_issue')}</span>
                     <span>></span>
                 </button>

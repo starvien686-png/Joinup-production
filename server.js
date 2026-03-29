@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const joinService = require('./services/join_service');
 
 // Force IPv4 first for environments like Render that don't support outbound IPv6
 dns.setDefaultResultOrder('ipv4first');
@@ -46,6 +47,9 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
+
+// --- MOUNT JOIN_SERVICE API ---
+app.use('/api/v1', joinService);
 
 // --- OTP STORAGE & UTILS ---
 const otpStorage = {}; // { email: { hash, expiresAt, attempts, requestId } }
@@ -1302,6 +1306,12 @@ async function syncAll() {
         console.error('Initial Database Sync Failed:', err);
     }
 }
+
+// ==========================================
+// --- START WORKER SERVICE ---
+// ==========================================
+const { startWorker } = require('./services/worker_service');
+startWorker();
 
 app.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);

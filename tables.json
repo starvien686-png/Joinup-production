@@ -1,0 +1,38 @@
+[
+  {
+    "Tables_in_joinup": "activities"
+  },
+  {
+    "Tables_in_joinup": "activity_feedback"
+  },
+  {
+    "Tables_in_joinup": "carpools"
+  },
+  {
+    "Tables_in_joinup": "chat_messages"
+  },
+  {
+    "Tables_in_joinup": "chat_participants"
+  },
+  {
+    "Tables_in_joinup": "chat_rooms"
+  },
+  {
+    "Tables_in_joinup": "contact_inquiries"
+  },
+  {
+    "Tables_in_joinup": "hangouts"
+  },
+  {
+    "Tables_in_joinup": "housing"
+  },
+  {
+    "Tables_in_joinup": "reports"
+  },
+  {
+    "Tables_in_joinup": "studies"
+  },
+  {
+    "Tables_in_joinup": "users"
+  }
+]

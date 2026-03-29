@@ -1437,3 +1437,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+// =====================================
+// === GLOBAL NOTIFICATION POLLING ===
+// =====================================
+// UX Resilience Strategy: Background polling checks every 15s using Page Visibility API 
+// to gracefully sync Eventual Consistency Side-Effects (like join approvals) from Outbox.
+
+let notificationPollInterval = null;
+const POLL_RATE = 15000;
+
+async function syncNotifications() {
+    if (document.visibilityState !== 'visible') return; // Pause Check
+
+    const userProfileStr = localStorage.getItem('userProfile');
+    if (!userProfileStr) return;
+
+    try {
+        const u = JSON.parse(userProfileStr);
+        const res = await fetch(`/api/v1/notifications?user_email=${encodeURIComponent(u.email)}&limit=5`);
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        if (data.success && data.data.list.length > 0) {
+            // Optional: Dispatch to a global notification tray if one exists
+            console.log("[Resilience] Synced Background Notifications:", data.data.list);
+            // Example map DB Truths into UI "syncing..." indicators
+            if (window.checkNotificationBadge) window.checkNotificationBadge();
+        }
+    } catch (e) {
+        // Silent fail for background tasks per UX specs
+        console.log("[Resilience] Syncing paused: Network boundary.");
+    }
+}
+
+function startGlobalPolling() {
+    if (notificationPollInterval) clearInterval(notificationPollInterval);
+    notificationPollInterval = setInterval(syncNotifications, POLL_RATE);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        syncNotifications(); // Cold-start recovery check immediately
+        startGlobalPolling();
+    } else {
+        if (notificationPollInterval) clearInterval(notificationPollInterval);
+    }
+});
+
+// Boot polling manually if authorized
+if (localStorage.getItem('userProfile')) {
+    startGlobalPolling();
+}
