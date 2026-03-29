@@ -1,6 +1,7 @@
 import { MockStore } from '../models/mockStore.js';
 import { I18n } from '../services/i18n.js';
 import { openRatingModal } from './rating.js';
+import api from '../utils/api.js';
 
 // --- MESIN PENDAFTARAN HOUSING ---
 window.HousingAppEngine = {
@@ -1260,21 +1261,17 @@ export const renderGroupBuy = () => {
             }
 
             try {
-                const res = await fetch('/api/v1/join', {
+                const out = await api.fetch('/api/v1/join', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                    body: {
                         event_type: 'housing',
                         event_id: postId,
                         user_email: user.email
-                    })
+                    }
                 });
 
-                const out = await res.json();
-                if (res.ok) {
+                if (out.success) {
                     alert(I18n.t('housing.alert.app_submitted'));
-                } else {
-                    alert('Failed: ' + out.message);
                 }
             } catch (err) {
                 console.error(err);
@@ -1913,21 +1910,17 @@ export const renderGroupBuy = () => {
             let u = currentUserStr ? JSON.parse(currentUserStr) : {};
 
             try {
-                const res = await fetch('/api/v1/join', {
+                const out = await api.fetch('/api/v1/join', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                    body: {
                         event_type: 'housing',
                         event_id: postId,
                         user_email: u.email
-                    })
+                    }
                 });
 
-                const out = await res.json();
-                if (res.ok) {
+                if (out.success) {
                     alert(isZH ? '申請已送出！等待發起人確認。' : 'Application sent! Waiting for host to confirm.');
-                } else {
-                    alert((isZH ? '申請失敗: ' : 'Failed: ') + out.message);
                 }
             } catch (e) {
                 console.error(e);
@@ -1944,21 +1937,17 @@ export const renderGroupBuy = () => {
     window.acceptHousingApp = async (appId, postId, applicantId, applicantName, teamName) => {
         const isZH = localStorage.getItem('language')?.includes('zh') !== false;
         try {
-            const res = await fetch('/api/v1/join/approve', {
+            const out = await api.fetch('/api/v1/join/approve', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     event_type: 'housing',
                     event_id: postId,
                     target_user_email: applicantId,
                     host_email: user.email
-                })
+                }
             });
-            const out = await res.json();
-            if (res.ok) {
+            if (out.success) {
                 alert(isZH ? '已接受！ ✓' : 'Accepted! ✓');
-            } else {
-                alert((isZH ? '失敗: ' : 'Failed: ') + out.message);
             }
         } catch (e) {
             console.error(e);
@@ -1970,21 +1959,17 @@ export const renderGroupBuy = () => {
     window.rejectHousingApp = async (appId, postId, applicantId, teamName) => {
         const isZH = localStorage.getItem('language')?.includes('zh') !== false;
         try {
-            const res = await fetch('/api/v1/join/reject', {
+            const out = await api.fetch('/api/v1/join/reject', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     event_type: 'housing',
                     event_id: postId,
                     target_user_email: applicantId,
                     host_email: user.email
-                })
+                }
             });
-            const out = await res.json();
-            if (res.ok) {
+            if (out.success) {
                 alert(isZH ? '已拒絕！' : 'Rejected!');
-            } else {
-                alert((isZH ? '失敗: ' : 'Failed: ') + out.message);
             }
         } catch (e) {
             console.error(e);

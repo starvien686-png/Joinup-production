@@ -1443,49 +1443,77 @@ document.addEventListener('DOMContentLoaded', () => {
 // =====================================
 // UX Resilience Strategy: Background polling checks every 15s using Page Visibility API 
 // to gracefully sync Eventual Consistency Side-Effects (like join approvals) from Outbox.
+import api from './utils/api.js';
 
-let notificationPollInterval = null;
-const POLL_RATE = 15000;
+// --- DEEP LINK HANDLER (BluePrint Item 3: Notification Action Contract) ---
+window.handleDeepLink = (data) => {
+    if (!data) return;
+    const { actionType, targetId } = data;
+
+    switch (actionType) {
+        case 'OPEN_REVIEW_MODAL':
+            if (window.openReviewModal) window.openReviewModal(targetId);
+            break;
+        case 'NAVIGATE_TO_EVENT_DETAIL':
+            window.navigateTo('event-detail', { id: targetId });
+            break;
+        case 'SHOW_TOAST':
+            notifications.info(data.message || "Update received");
+            break;
+    }
+};
 
 async function syncNotifications() {
-    if (document.visibilityState !== 'visible') return; // Pause Check
+    if (document.visibilityState !== 'visible') return;
 
     const userProfileStr = localStorage.getItem('userProfile');
     if (!userProfileStr) return;
 
     try {
         const u = JSON.parse(userProfileStr);
-        const res = await fetch(`/api/v1/notifications?user_email=${encodeURIComponent(u.email)}&limit=5`);
-        if (!res.ok) return;
+        // Use resilient API utility
+        const data = await api.fetch(`/api/v1/notifications?user_id=${u.id}&limit=5`, { idempotency: false });
         
-        const data = await res.json();
-        if (data.success && data.data.list.length > 0) {
-            // Optional: Dispatch to a global notification tray if one exists
-            console.log("[Resilience] Synced Background Notifications:", data.data.list);
-            // Example map DB Truths into UI "syncing..." indicators
+        if (data.success && data.data.length > 0) {
+            console.log("[Resilience] Synced Background Notifications:", data.data);
             if (window.checkNotificationBadge) window.checkNotificationBadge();
+            
+            // Re-render current view if critical state changed
+            if (window.currentView === 'home' && window.refreshHome) {
+                window.refreshHome();
+            }
         }
     } catch (e) {
-        // Silent fail for background tasks per UX specs
-        console.log("[Resilience] Syncing paused: Network boundary.");
+        console.warn("[Resilience] Syncing paused: Network boundary.");
     }
 }
+
+let notificationPollInterval;
+const POLL_RATE = 30000; // 30s fallback
 
 function startGlobalPolling() {
     if (notificationPollInterval) clearInterval(notificationPollInterval);
     notificationPollInterval = setInterval(syncNotifications, POLL_RATE);
 }
 
+// BluePrint Item 1: Client Consistency Rule (Focus Re-fetch)
+window.addEventListener('focus', () => {
+    console.log("[Resilience] Window Focused: Triggering reconciliation...");
+    syncNotifications();
+    if (window.currentView === 'home' && window.refreshHome) {
+        window.refreshHome();
+    }
+});
+
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        syncNotifications(); // Cold-start recovery check immediately
+        syncNotifications();
         startGlobalPolling();
     } else {
         if (notificationPollInterval) clearInterval(notificationPollInterval);
     }
 });
 
-// Boot polling manually if authorized
 if (localStorage.getItem('userProfile')) {
     startGlobalPolling();
 }

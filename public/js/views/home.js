@@ -1,6 +1,7 @@
 import { MockStore } from '../models/mockStore.js?v=17';
 import { I18n } from '../services/i18n.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
+import api from '../utils/api.js';
 
 export const renderHome = () => {
     const app = document.getElementById('app');
@@ -220,21 +221,17 @@ export const renderHome = () => {
             ];
 
             if (currentUser.email) {
-                fetchTasks.push(fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(currentUser.email)}`));
-            }
-
-            const responses = await Promise.all(fetchTasks);
-
-            const [activities, carpools, studies, hangouts, housings] = await Promise.all([
-                responses[0].json(), responses[1].json(), responses[2].json(), responses[3].json(), responses[4].json()
-            ]);
-
-            if (responses.length > 5) {
-                const statusData = await responses[5].json();
+                // Use api.fetch for my-statuses
+                const statusData = await api.fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(currentUser.email)}`, { idempotency: false });
                 if (statusData.success) {
                     myStatuses = statusData.data || {};
                 }
             }
+
+            const responses = await Promise.all(fetchTasks);
+            const [activities, carpools, studies, hangouts, housings] = await Promise.all([
+                responses[0].json(), responses[1].json(), responses[2].json(), responses[3].json(), responses[4].json()
+            ]);
 
             let dbPosts = [
                 ...(Array.isArray(activities) ? activities : []).map(p => ({ ...p, category: p.category || 'sports' })),
@@ -500,49 +497,33 @@ export const renderHome = () => {
             };
 
             document.getElementById('join-submit-btn').onclick = async () => {
-                document.getElementById('join-submit-btn').innerText = "Loading...";
-                document.getElementById('join-submit-btn').disabled = true;
+                const submitBtn = document.getElementById('join-submit-btn');
+                submitBtn.innerText = "Loading...";
+                submitBtn.disabled = true;
                 
                 try {
-                    const res = await fetch('/api/v1/join', {
+                    const out = await api.fetch('/api/v1/join', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
+                        body: {
                             event_type: category || 'sports',
                             event_id: eventId,
                             user_email: u.email
-                        })
+                        }
                     });
-
-                    // Safeguard against non-JSON server crash pages causing 'Network Error'
-                    let out;
-                    try {
-                        out = await res.json();
-                    } catch (err) {
-                        out = { message: "Server is unreachable or returned invalid data" };
-                    }
 
                     document.getElementById('join-confirm-overlay').remove();
 
-                    if (res.ok) {
-                        alert('申請已送出！ / Application sent!');
-                        btn.innerText = "⏳ Pending...";
-                        btn.style.background = "#9E9E9E";
-                        btn.style.cursor = "not-allowed";
-                        btn.onclick = (e) => e.stopPropagation();
-                        // Trigger immediate reconciliation sync if available
-                        if (window.syncNotifications) window.syncNotifications();
-                    } else {
-                        alert('Failed: ' + (out.message || 'Unknown error'));
-                        btn.innerText = "申請加入 / Apply to Join";
-                        btn.disabled = false;
-                    }
+                    alert('申請已送出！ / Application sent!');
+                    btn.innerText = "⏳ Pending...";
+                    btn.style.background = "#9E9E9E";
+                    btn.style.cursor = "not-allowed";
+                    btn.onclick = (e) => e.stopPropagation();
+                    
+                    if (window.syncNotifications) window.syncNotifications();
                 } catch (e) {
-                    console.error(e);
-                    document.getElementById('join-confirm-overlay')?.remove();
-                    alert('Maaf, terjadi Network Error. Silakan coba lagi nanti.');
-                    btn.innerText = "申請加入 / Apply to Join";
-                    btn.disabled = false;
+                    alert('Failed: ' + (e.message || 'Unknown error'));
+                    submitBtn.innerText = "申請加入 / Apply to Join";
+                    submitBtn.disabled = false;
                 }
             };
         };

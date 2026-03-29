@@ -22,7 +22,7 @@ class NonRetryableError extends Error {
 const MAX_RETRIES = 5; // Global Event Budget per event_id/job_type
 
 async function sendNotification(payload) {
-    const { recipient_email, type, metadata, requestId, correlationId } = payload;
+    const { recipient_email, type, aggregate_id, link, action_metadata, metadata, requestId, correlationId } = payload;
     
     if (!recipient_email || !type) throw new NonRetryableError("Missing notification routing data");
 
@@ -31,81 +31,99 @@ async function sendNotification(payload) {
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [recipient_email], transaction: t });
         if (users.length === 0) throw new NonRetryableError(`Recipient not found: ${recipient_email}`);
         
+        const recipient_id = users[0].id;
+
+        // Actionable V1 Schema Support
         await sequelize.query(
-            "INSERT INTO system_notifications (id, recipient_id, type, metadata, is_read, delivery_state) VALUES (UUID(), ?, ?, ?, false, 'sent')",
-            { replacements: [users[0].id, type, JSON.stringify(metadata || {})], transaction: t }
+            `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, link, metadata, action_metadata, is_read, delivery_state, created_at) 
+             VALUES (UUID(), ?, ?, ?, ?, ?, ?, false, 'delivered', NOW())
+             ON DUPLICATE KEY UPDATE delivery_state = 'delivered'`,
+            { 
+                replacements: [
+                    recipient_id, type, aggregate_id || null, link || null, 
+                    JSON.stringify(metadata || {}), JSON.stringify(action_metadata || {}),
+                ], 
+                transaction: t 
+            }
         );
         
         await t.commit();
         logger.info(`Notification sent to ${recipient_email} [Type: ${type}]`, { requestId, correlationId });
     } catch (e) {
-        await t.rollback();
-        throw e; // Pass up for classification
+        if (t) await t.rollback();
+        throw e;
     }
 }
 
 async function processOutbox() {
-    // 1. Fetch pending jobs
-    // In a true multi-instance distributed system, we would SELECT FOR UPDATE SKIP LOCKED
-    // Here we use a simpler lock strategy or standard update
     let jobs = [];
     const t = await sequelize.transaction();
     try {
         const [pending] = await sequelize.query(
-            "SELECT * FROM outbox_events WHERE status = 'pending' ORDER BY created_at ASC LIMIT 50 FOR UPDATE",
-            { transaction: t }
+            "SELECT * FROM outbox_events WHERE status IN ('pending', 'retrying') AND retry_count < ? ORDER BY created_at ASC LIMIT 50 FOR UPDATE",
+            { replacements: [MAX_RETRIES], transaction: t }
         );
         
         if (pending.length === 0) {
             await t.commit();
-            return; // No work
+            return;
         }
 
         const ids = pending.map(p => p.id);
         await sequelize.query(
-            "UPDATE outbox_events SET status = 'processing' WHERE id IN (?)",
+            "UPDATE outbox_events SET status = 'processing', last_attempt_at = NOW() WHERE id IN (?)",
             { replacements: [ids], transaction: t }
         );
         await t.commit();
         jobs = pending;
     } catch (e) {
-        await t.rollback();
+        if (t) await t.rollback();
         logger.error(`Failed to fetch outbox jobs: ${e.message}`);
         return;
     }
 
-    // 2. Process Jobs
     for (const job of jobs) {
         let payload;
         try {
             payload = typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
             const requestId = payload.requestId || 'unknown';
-            const correlationId = payload.correlationId || 'unknown';
-
-            // Route to domain consumer (Notification Service logic)
+            
+            // Notification routing
             if (job.type.startsWith('join_')) {
                 payload.type = job.type;
+                payload.aggregate_id = job.aggregate_id;
+                // Map actionable metadata
+                if (payload.actionType) {
+                    payload.action_metadata = { actionType: payload.actionType, targetId: payload.targetId };
+                    payload.link = `/review/${payload.targetId}`; // Example link
+                }
                 await sendNotification(payload);
             }
 
-            // Success
-            await sequelize.query("UPDATE outbox_events SET status = 'processed' WHERE id = ?", { replacements: [job.id] });
-            logger.info(`Job processed successfully`, { jobId: job.id, requestId, correlationId });
+            await sequelize.query("UPDATE outbox_events SET status = 'processed', error_message = NULL WHERE id = ?", { replacements: [job.id] });
+            logger.info(`Job processed successfully`, { jobId: job.id, requestId });
 
         } catch (error) {
-            // Failure Classification
-            let newStatus = 'failed'; // Dead letter queue state
-            if (error instanceof RetryableError) {
-                // Implement retry counters dynamically in a real schema, but here we just DLQ immediately if max budget exceeded
-                // For simplicity without a retry_count column, we mark failed (DLQ). A robust system adds a attempts column.
-                logger.warn(`Retryable Error on job ${job.id}: ${error.message}`);
-            } else if (error instanceof NonRetryableError) {
-                logger.error(`Non-Retryable Error on job ${job.id}: ${error.message}`);
+            const isRetryable = !(error instanceof NonRetryableError);
+            const nextRetryCount = job.retry_count + 1;
+            
+            if (nextRetryCount >= MAX_RETRIES) {
+                // PUSH TO DLQ
+                await sequelize.query(
+                    `INSERT INTO dead_letter_queue (id, original_event_id, idempotency_key, aggregate_type, aggregate_id, type, payload, error_message, failed_at) 
+                     VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    { replacements: [job.id, job.idempotency_key, job.aggregate_type, job.aggregate_id, job.type, job.payload, error.message] }
+                );
+                await sequelize.query("UPDATE outbox_events SET status = 'failed', error_message = ? WHERE id = ?", { replacements: [error.message, job.id] });
+                logger.error(`Job ${job.id} moved to DLQ after ${nextRetryCount} attempts: ${error.message}`);
             } else {
-                logger.error(`Critical/Unknown Error on job ${job.id}: ${error.message}`);
+                const nextStatus = isRetryable ? 'retrying' : 'failed';
+                await sequelize.query(
+                    "UPDATE outbox_events SET status = ?, retry_count = ?, error_message = ? WHERE id = ?", 
+                    { replacements: [nextStatus, nextRetryCount, error.message, job.id] }
+                );
+                logger.warn(`Job ${job.id} failed (attempt ${nextRetryCount}): ${error.message}`);
             }
-
-            await sequelize.query("UPDATE outbox_events SET status = ? WHERE id = ?", { replacements: [newStatus, job.id] });
         }
     }
 }
@@ -113,12 +131,15 @@ async function processOutbox() {
 // Data Drift & Cleanup Reconciliation Job
 async function runReconciliation() {
     try {
-        // Cleanup old processed outbox (retention strategy)
-        await sequelize.query("DELETE FROM outbox_events WHERE status = 'processed' AND created_at < NOW() - INTERVAL 1 DAY");
+        // 1. Reset stuck jobs (processing for > 5 mins)
+        await sequelize.query(
+            "UPDATE outbox_events SET status = 'retrying' WHERE status = 'processing' AND last_attempt_at < NOW() - INTERVAL 5 MINUTE"
+        );
         
-        // Reconcile capacities (Data Drift Protection)
-        // Check if any activity has more approved participants than people_needed
-        logger.info("Executed 5-minute Data Drift Reconciliation & Cleanup");
+        // 2. Cleanup old processed outbox
+        await sequelize.query("DELETE FROM outbox_events WHERE status = 'processed' AND created_at < NOW() - INTERVAL 7 DAY");
+        
+        logger.info("Executed Outbox Reconciliation & Cleanup");
     } catch(e) {
         logger.error("Reconciliation failed", { error: e.message });
     }

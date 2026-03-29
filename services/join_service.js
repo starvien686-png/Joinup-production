@@ -13,147 +13,192 @@ const logger = winston.createLogger({
     ]
 });
 
-// Idempotency storage (In-memory for now, could be Redis in true prod)
-const idempotencyStore = new Map();
-
-function getTableName(eventType) {
-    const map = {
-        'activity': 'activities',
+// 1. Helper: Domain mapping to Table Name
+function getTableName(category) {
+    const mapping = {
+        'sports': 'activities',
         'carpool': 'carpools',
         'study': 'studies',
         'hangout': 'hangouts',
-        'housing': 'housing'
+        'housing': 'housing',
+        'groupbuy': 'housing'
     };
-    return map[eventType] || 'activities';
+    return mapping[category] || 'activities';
 }
 
-// Middleware: Idempotency & Correlation
-function withIdempotency(req, res, next) {
+// 2. Idempotency DB-backed middleware
+async function withIdempotency(req, res, next) {
     req.requestId = crypto.randomUUID();
     req.correlationId = req.headers['x-correlation-id'] || req.requestId;
     
-    const idempotencyKey = req.headers['x-idempotency-key'];
-    if (!idempotencyKey) return next();
+    const idempotencyKey = req.headers['idempotency-key'] || req.headers['x-idempotency-key'];
+    if (!idempotencyKey || req.method === 'GET') return next();
 
-    const stored = idempotencyStore.get(idempotencyKey);
-    if (stored) {
-        // Idempotency Conflict Handling
-        const payloadHash = crypto.createHash('sha256').update(JSON.stringify(req.body)).digest('hex');
-        if (stored.payloadHash !== payloadHash) {
-            logger.warn(`Idempotency Conflict (409) for key ${idempotencyKey}`, { requestId: req.requestId });
-            return res.status(409).json({ success: false, message: 'Idempotency key reused with different payload' });
+    try {
+        const [records] = await sequelize.query(
+            'SELECT request_hash, response_snapshot, expires_at FROM request_idempotency WHERE idempotency_key = ?',
+            { replacements: [idempotencyKey] }
+        );
+
+        const currentHash = crypto.createHash('sha1').update(JSON.stringify(req.body)).digest('hex');
+
+        if (records.length > 0) {
+            const stored = records[0];
+            if (new Date() > new Date(stored.expires_at)) {
+                await sequelize.query('DELETE FROM request_idempotency WHERE idempotency_key = ?', { replacements: [idempotencyKey] });
+            } else if (stored.request_hash !== currentHash) {
+                return res.status(409).json({ 
+                    errorCode: 'IDEMPOTENCY_CONFLICT',
+                    message: 'Idempotency key reused with different payload',
+                    requestId: req.requestId 
+                });
+            } else {
+                return res.status(200).json(JSON.parse(stored.response_snapshot));
+            }
         }
-        logger.info(`Idempotent hit for key ${idempotencyKey}`, { requestId: req.requestId });
-        return res.status(200).json(stored.response);
+
+        req.idempotencyKey = idempotencyKey;
+        req.requestHash = currentHash;
+
+        const originalJson = res.json;
+        res.json = function(body) {
+            if (res.statusCode >= 200 && res.statusCode < 300 && req.idempotencyKey) {
+                const expiresAt = new Date(Date.now() + 5 * 60000); // 5 mins TTL
+                sequelize.query(
+                    'INSERT INTO request_idempotency (idempotency_key, request_hash, response_snapshot, expires_at) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE expires_at = ?',
+                    { replacements: [req.idempotencyKey, req.requestHash, JSON.stringify(body), expiresAt, expiresAt] }
+                ).catch(err => logger.error('Failed to save idempotency:', err));
+            }
+            return originalJson.call(this, body);
+        };
+        next();
+    } catch (err) {
+        logger.error('Idempotency middleware error:', err);
+        next();
     }
-    
-    req.idempotencyKey = idempotencyKey;
-    req.payloadHash = crypto.createHash('sha256').update(JSON.stringify(req.body)).digest('hex');
-    
-    // Hook into response to save memory
-    const originalJson = res.json;
-    res.json = function(body) {
-        if (res.statusCode >= 200 && res.statusCode < 300 && req.idempotencyKey) {
-            idempotencyStore.set(req.idempotencyKey, {
-                payloadHash: req.payloadHash,
-                response: body,
-                expires: Date.now() + 5 * 60000 // 5 mins TTL
+}
+
+// 3. Timeout middleware (5s bound)
+function withTimeout(req, res, next) {
+    const timeout = 5000;
+    res.setTimeout(timeout, () => {
+        if (!res.headersSent) {
+            res.status(408).json({ 
+                errorCode: 'REQUEST_TIMEOUT',
+                message: 'Request execution time exceeded 5s limit.',
+                requestId: req.requestId 
             });
         }
-        return originalJson.call(this, body);
-    };
-    
+    });
     next();
 }
 
-// Cleanup idempotency keys periodically
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of idempotencyStore.entries()) {
-        if (now > value.expires) idempotencyStore.delete(key);
-    }
-}, 60000);
-
+router.use(withTimeout);
 router.use(withIdempotency);
+
+// --- ENDPOINTS ---
 
 // 1. POST /api/v1/join
 router.post('/join', async (req, res) => {
     const { event_type, event_id, user_email } = req.body;
     if (!event_type || !event_id || !user_email) {
-        return res.status(400).json({ success: false, message: 'Missing fields' });
+        return res.status(400).json({ errorCode: 'MISSING_FIELDS', message: 'Missing fields', requestId: req.requestId });
     }
 
     let t;
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         
-        // 1. Get User ID
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email], transaction: t });
-        if (users.length === 0) throw new Error('User not found');
-        const user_id = users[0].id;
-
-        // 2. Lock Event (Primary Lock)
-        const tableName = getTableName(event_type);
-        const [events] = await sequelize.query(`SELECT status, host_email, people_needed FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
-        if (events.length === 0) throw new Error('Event not found');
-        const event = events[0];
-
-        if (event.status !== 'open') throw new Error('Event is locked or no longer open');
-        if (event.host_email === user_email) throw new Error('Host cannot join their own event');
+        const [users] = await sequelize.query(
+            'SELECT id, name, avatar_url, bio FROM users WHERE email = ?', 
+            { replacements: [user_email], transaction: t }
+        );
+        if (users.length === 0) throw { status: 404, errorCode: 'USER_NOT_FOUND', message: 'User not found' };
         
-        // Count approved participants
+        const user = users[0];
+        const snapshot_display_name = user.name;
+        const snapshot_avatar_url = user.avatar_url;
+        const snapshot_bio = user.bio;
+        const user_id = user.id;
+
+        const tableName = getTableName(event_type);
+        const [events] = await sequelize.query(
+            `SELECT status, host_email, people_needed, deadline FROM ${tableName} WHERE id = ? FOR UPDATE`, 
+            { replacements: [event_id], transaction: t }
+        );
+        if (events.length === 0) throw { status: 404, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found' };
+        
+        const event = events[0];
+        if (event.status !== 'open' && event.status !== 'active') {
+            throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
+        }
+        if (new Date(event.deadline) < new Date()) {
+            throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
+        }
+        if (event.host_email === user_email) {
+            throw { status: 400, errorCode: 'SELF_JOIN_FORBIDDEN', message: 'Host cannot join their own event' };
+        }
+
         const [approved] = await sequelize.query(
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
         );
         if (approved[0].count >= event.people_needed) {
-            throw new Error('Event is full');
+            throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
         }
 
-        // 3. Lock Participant (Secondary Lock)
         const [parts] = await sequelize.query(
-            "SELECT id, status, version FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
+            "SELECT id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
             { replacements: [event_type, event_id, user_id], transaction: t }
         );
 
-        let finalParticipantState = 'pending';
         if (parts.length > 0) {
             const current = parts[0];
             if (['pending', 'approved'].includes(current.status)) {
-                throw new Error(`Already applied. Status: ${current.status}`);
+                throw { status: 400, errorCode: 'ALREADY_APPLIED', message: `Already applied. Status: ${current.status}` };
             }
-            // Allow re-apply if rejected or cancelled
             await sequelize.query(
-                "UPDATE event_participants SET status = 'pending', version = version + 1 WHERE id = ?",
-                { replacements: [current.id], transaction: t }
+                `UPDATE event_participants 
+                 SET status = 'pending', version = version + 1, 
+                     snapshot_display_name = ?, snapshot_avatar_url = ?, snapshot_bio = ?,
+                     updated_at = NOW()
+                 WHERE id = ?`,
+                { replacements: [snapshot_display_name, snapshot_avatar_url, snapshot_bio, current.id], transaction: t }
             );
         } else {
             await sequelize.query(
-                "INSERT INTO event_participants (event_type, event_id, user_id, status) VALUES (?, ?, ?, 'pending')",
-                { replacements: [event_type, event_id, user_id], transaction: t }
+                `INSERT INTO event_participants 
+                 (event_type, event_id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at) 
+                 VALUES (?, ?, ?, 'pending', ?, ?, ?, NOW(), NOW())`,
+                { replacements: [event_type, event_id, user_id, snapshot_display_name, snapshot_avatar_url, snapshot_bio], transaction: t }
             );
         }
 
-        // 4. Outbox Side Effect
+        await sequelize.query(
+            `INSERT INTO audit_logs (id, actor_id, event_id, action, new_state, request_id, timestamp) 
+             VALUES (UUID(), ?, ?, 'JOIN_REQUEST', 'pending', ?, NOW())`,
+            { replacements: [user_id, event_id, req.requestId], transaction: t }
+        );
+
         const outboxPayload = JSON.stringify({
             recipient_email: event.host_email,
             event_type, event_id, user_email,
-            requestId: req.requestId, correlationId: req.correlationId
+            snapshot_display_name, snapshot_avatar_url,
+            actionType: 'OPEN_REVIEW_MODAL',
+            targetId: event_id,
+            version: '1'
         });
         await sequelize.query(
-            "INSERT INTO outbox_events (id, aggregate_type, aggregate_id, type, payload) VALUES (UUID(), 'participant', ?, 'join_request', ?)",
-            { replacements: [`${event_type}_${event_id}_${user_id}`, outboxPayload], transaction: t }
+            `INSERT INTO outbox_events (id, idempotency_key, aggregate_type, aggregate_id, type, payload, created_at) 
+             VALUES (UUID(), ?, 'participant', ?, 'join_request', ?, NOW())`,
+            { replacements: [req.idempotencyKey || req.requestId, `join_${event_type}_${event_id}_${user_id}`, outboxPayload], transaction: t }
         );
 
         await t.commit();
-        logger.info(`Join request submitted by ${user_email} for ${event_type} ${event_id}`, { requestId: req.requestId });
-        res.status(202).json({ success: true, message: 'Join request pending approval', data: { status: 'pending' } });
+        res.status(202).json({ success: true, message: 'Join request pending approval', data: { status: 'pending' }, requestId: req.requestId });
     } catch (err) {
         if (t) await t.rollback();
-        const msg = err.message;
-        const status = msg.includes('found') ? 404 : (msg.includes('Already') || msg.includes('full') || msg.includes('locked') ? 400 : 500);
-        logger.error(`Join error: ${msg}`, { requestId: req.requestId, correlationId: req.correlationId });
-        res.status(status).json({ success: false, message: msg });
+        res.status(err.status || 500).json({ success: false, errorCode: err.errorCode || 'INTERNAL_ERROR', message: err.message, requestId: req.requestId });
     }
 });
 
@@ -166,264 +211,213 @@ router.post('/join/cancel', async (req, res) => {
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email], transaction: t });
-        if (users.length === 0) throw new Error('User not found');
+        if (users.length === 0) throw { status: 404, message: 'User not found' };
         const user_id = users[0].id;
-
-        const tableName = getTableName(event_type);
-        await sequelize.query(`SELECT id FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
 
         const [parts] = await sequelize.query(
             "SELECT id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
             { replacements: [event_type, event_id, user_id], transaction: t }
         );
-        if (parts.length === 0) throw new Error('No join request exists');
-        if (parts[0].status === 'cancelled') throw new Error('Already cancelled');
+        if (parts.length === 0) throw { status: 404, message: 'No request exists' };
+        
+        if (parts[0].status === 'approved') {
+            await t.commit();
+            return res.status(200).json({ success: true, message: 'Already approved', data: { status: 'approved' } });
+        }
+        if (parts[0].status !== 'pending') throw { status: 400, message: 'Can only cancel pending requests' };
 
         await sequelize.query(
-            "UPDATE event_participants SET status = 'cancelled', version = version + 1 WHERE id = ?",
+            "UPDATE event_participants SET status = 'cancelled', version = version + 1, updated_at = NOW() WHERE id = ?",
             { replacements: [parts[0].id], transaction: t }
         );
 
-        // Optional outbox notification here
+        await sequelize.query(
+            `INSERT INTO audit_logs (id, actor_id, event_id, action, previous_state, new_state, request_id, timestamp) 
+             VALUES (UUID(), ?, ?, 'JOIN_CANCEL', 'pending', 'cancelled', ?, NOW())`,
+            { replacements: [user_id, event_id, req.requestId], transaction: t }
+        );
+
         await t.commit();
-        res.status(200).json({ success: true, message: 'Join request cancelled', data: { status: 'cancelled' } });
+        res.status(200).json({ success: true, message: 'Cancelled', data: { status: 'cancelled' } });
     } catch (err) {
         if (t) await t.rollback();
-        res.status(400).json({ success: false, message: err.message });
+        res.status(err.status || 500).json({ success: false, message: err.message });
     }
 });
 
 // 3. POST /api/v1/join/approve
 router.post('/join/approve', async (req, res) => {
-    const { event_type, event_id, target_user_email, host_email } = req.body;
-    if (!event_type || !event_id || !target_user_email || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
+    const { event_type, event_id, participant_id, host_email } = req.body;
+    if (!event_type || !event_id || !participant_id || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
 
     let t;
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [target_user_email], transaction: t });
-        if (users.length === 0) throw new Error('Target user not found');
-        const target_user_id = users[0].id;
-
         const tableName = getTableName(event_type);
         const [events] = await sequelize.query(`SELECT host_email, people_needed FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
-        if (events.length === 0) throw new Error('Event not found');
-        
-        // Authorization
-        if (events[0].host_email !== host_email) throw new Error('Only the host can approve');
+        if (events.length === 0) throw { status: 404, message: 'Event not found' };
+        if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        // Capacity re-check
+        let finalPartId = participant_id;
+        if (!finalPartId && req.body.target_user_email) {
+            const [lookup] = await sequelize.query(
+                "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = (SELECT id FROM users WHERE email = ?) FOR UPDATE",
+                { replacements: [event_type, event_id, req.body.target_user_email], transaction: t }
+            );
+            if (lookup.length > 0) finalPartId = lookup[0].id;
+        }
+        if (!finalPartId) throw { status: 404, message: 'Participant not found' };
+
         const [approved] = await sequelize.query(
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
         );
-        if (approved[0].count >= events[0].people_needed) {
-            throw new Error('Event has reached maximum capacity');
-        }
+        if (approved[0].count >= events[0].people_needed) throw { status: 409, message: 'Event full' };
 
         const [parts] = await sequelize.query(
-            "SELECT id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
-            { replacements: [event_type, event_id, target_user_id], transaction: t }
+            "SELECT id, user_id, status FROM event_participants WHERE id = ? FOR UPDATE",
+            { replacements: [finalPartId], transaction: t }
         );
-        if (parts.length === 0) throw new Error('No pending request found');
-        if (parts[0].status !== 'pending') throw new Error(`Cannot approve a ${parts[0].status} request`);
+        if (parts.length === 0) throw { status: 404, message: 'Participant not found' };
+        if (parts[0].status !== 'pending') throw { status: 400, message: 'Not pending' };
 
-        await sequelize.query(
-            "UPDATE event_participants SET status = 'approved', version = version + 1 WHERE id = ?",
-            { replacements: [parts[0].id], transaction: t }
-        );
-
-        // Add user to chat room automatically
-        let roomIdPrefix = '';
-        if (event_type === 'carpool') roomIdPrefix = 'carpool_';
-        else if (event_type === 'study') roomIdPrefix = 'study_';
-        else if (event_type === 'hangout') roomIdPrefix = 'hangout_';
-        else if (event_type === 'housing') roomIdPrefix = 'housing_';
-        else roomIdPrefix = 'sports_'; 
+        await sequelize.query("UPDATE event_participants SET status = 'approved', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
         
-        const room_id = roomIdPrefix + event_id;
-
-        // Retrieve target user profile details to insert naturally into chat_participants
-        const [tUserDetails] = await sequelize.query("SELECT username FROM users WHERE email = ?", { replacements: [target_user_email], transaction: t });
-        const targetUserName = tUserDetails[0].username;
-
-        // Ensure not already in chat
-        const [existingChat] = await sequelize.query("SELECT id FROM chat_participants WHERE room_id = ? AND user_email = ? FOR UPDATE", { replacements: [room_id, target_user_email], transaction: t});
-        if (existingChat.length === 0) {
+        // Auto Chat Join
+        const roomId = `${event_type}_${event_id}`;
+        const [targetUser] = await sequelize.query("SELECT email, name FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
+        if (targetUser.length > 0) {
             await sequelize.query(
-                "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member')",
-                { replacements: [room_id, target_user_email, targetUserName], transaction: t }
+                "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member') ON DUPLICATE KEY UPDATE role = 'member'",
+                { replacements: [roomId, targetUser[0].email, targetUser[0].name], transaction: t }
             );
         }
 
-        // Outbox side effect (Notify participant)
         const outboxPayload = JSON.stringify({
-            recipient_email: target_user_email,
-            event_type, event_id,
-            requestId: req.requestId, correlationId: req.correlationId
+            recipient_email: targetUser[0]?.email,
+            event_type, event_id, status: 'approved',
+            actionType: 'NAVIGATE_TO_EVENT_DETAIL',
+            targetId: event_id,
+            version: '1'
         });
         await sequelize.query(
-            "INSERT INTO outbox_events (id, aggregate_type, aggregate_id, type, payload) VALUES (UUID(), 'participant', ?, 'join_approved', ?)",
-            { replacements: [`${event_type}_${event_id}_${target_user_id}`, outboxPayload], transaction: t }
+            `INSERT INTO outbox_events (id, idempotency_key, aggregate_type, aggregate_id, type, payload, created_at) 
+             VALUES (UUID(), ?, 'participant', ?, 'join_approved', ?, NOW())`,
+            { replacements: [req.idempotencyKey || req.requestId, `approve_${participant_id}`, outboxPayload], transaction: t }
         );
 
         await t.commit();
-        res.status(200).json({ success: true, message: 'Approved successfully', data: { status: 'approved' } });
+        res.status(200).json({ success: true, message: 'Approved' });
     } catch (err) {
         if (t) await t.rollback();
-        const msg = err.message;
-        const status = msg.includes('found') ? 404 : (msg.includes('capacity') || msg.includes('Cannot') || msg.includes('Only') ? 400 : 500);
-        res.status(status).json({ success: false, message: msg });
+        res.status(err.status || 500).json({ success: false, message: err.message });
     }
 });
 
 // 4. POST /api/v1/join/reject
 router.post('/join/reject', async (req, res) => {
-    const { event_type, event_id, target_user_email, host_email } = req.body;
-    if (!event_type || !event_id || !target_user_email || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
-
+    const { event_type, event_id, participant_id, host_email } = req.body;
     let t;
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [target_user_email], transaction: t });
-        if (users.length === 0) throw new Error('Target user not found');
-        const target_user_id = users[0].id;
-
         const tableName = getTableName(event_type);
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
-        if (events.length === 0) throw new Error('Event not found');
-        
-        if (events[0].host_email !== host_email) throw new Error('Only the host can reject');
+        if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        const [parts] = await sequelize.query(
-            "SELECT id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
-            { replacements: [event_type, event_id, target_user_id], transaction: t }
-        );
-        if (parts.length === 0) throw new Error('No pending request found');
-        if (parts[0].status !== 'pending') throw new Error(`Cannot reject a ${parts[0].status} request`);
+        let finalPartId = participant_id;
+        if (!finalPartId && req.body.target_user_email) {
+            const [lookup] = await sequelize.query(
+                "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = (SELECT id FROM users WHERE email = ?) FOR UPDATE",
+                { replacements: [event_type, event_id, req.body.target_user_email], transaction: t }
+            );
+            if (lookup.length > 0) finalPartId = lookup[0].id;
+        }
+        if (!finalPartId) throw { status: 404, message: 'Not found' };
 
-        await sequelize.query(
-            "UPDATE event_participants SET status = 'rejected', version = version + 1 WHERE id = ?",
-            { replacements: [parts[0].id], transaction: t }
-        );
+        const [parts] = await sequelize.query("SELECT user_id FROM event_participants WHERE id = ? FOR UPDATE", { replacements: [finalPartId], transaction: t });
+        if (parts.length === 0) throw { status: 404, message: 'Not found' };
 
-        // Outbox side effect (Notify participant)
+        await sequelize.query("UPDATE event_participants SET status = 'rejected', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
+
+        const [targetUser] = await sequelize.query("SELECT email FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
         const outboxPayload = JSON.stringify({
-            recipient_email: target_user_email,
-            event_type, event_id,
-            requestId: req.requestId, correlationId: req.correlationId
+            recipient_email: targetUser[0]?.email,
+            event_type, event_id, status: 'rejected',
+            version: '1'
         });
         await sequelize.query(
-            "INSERT INTO outbox_events (id, aggregate_type, aggregate_id, type, payload) VALUES (UUID(), 'participant', ?, 'join_rejected', ?)",
-            { replacements: [`${event_type}_${event_id}_${target_user_id}`, outboxPayload], transaction: t }
+            `INSERT INTO outbox_events (id, idempotency_key, aggregate_type, aggregate_id, type, payload, created_at) 
+             VALUES (UUID(), ?, 'participant', ?, 'join_rejected', ?, NOW())`,
+            { replacements: [req.idempotencyKey || req.requestId, `reject_${participant_id}`, outboxPayload], transaction: t }
         );
 
         await t.commit();
-        res.status(200).json({ success: true, message: 'Rejected successfully', data: { status: 'rejected' } });
+        res.status(200).json({ success: true, message: 'Rejected' });
     } catch (err) {
         if (t) await t.rollback();
-        const msg = err.message;
-        const status = msg.includes('found') ? 404 : (msg.includes('Cannot') || msg.includes('Only') ? 400 : 500);
-        res.status(status).json({ success: false, message: msg });
+        res.status(err.status || 500).json({ success: false, message: err.message });
     }
 });
 
-// GET /api/v1/notifications
+// 5. GET /api/v1/notifications
 router.get('/notifications', async (req, res) => {
     const { user_email, limit = 20, cursor } = req.query;
-    if (!user_email) return res.status(400).json({ success: false, message: 'Missing user_email' });
-
     try {
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
         if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-        const user_id = users[0].id;
-
-        // CQRS-lite Read Model using Direct DB read for queries, pagination explicitly managed
+        
         let queryStr = `SELECT id, type, metadata, is_read, created_at FROM system_notifications WHERE recipient_id = ?`;
-        const replacements = [user_id];
-
+        const replacements = [users[0].id];
         if (cursor) {
             queryStr += ` AND created_at < ?`;
             replacements.push(new Date(cursor));
         }
-        
         queryStr += ` ORDER BY created_at DESC LIMIT ?`;
-        replacements.push(parseInt(limit) + 1); // +1 to check if hasMore
+        replacements.push(parseInt(limit) + 1);
 
         const [results] = await sequelize.query(queryStr, { replacements });
-
-        const hasMore = results.length > limit;
-        const list = hasMore ? results.slice(0, limit) : results;
-        const nextCursor = hasMore ? list[list.length - 1].created_at : null;
-
-        res.json({
-            success: true,
-            data: {
-                list,
-                paginationInfo: {
-                    total: list.length, // approximation
-                    limit: parseInt(limit),
-                    cursor: nextCursor,
-                    hasMore
-                }
-            }
-        });
+        const hasMore = results.length > parseInt(limit);
+        const list = hasMore ? results.slice(0, parseInt(limit)) : results;
+        res.json({ success: true, data: { list, paginationInfo: { cursor: hasMore ? list[list.length-1].created_at : null, hasMore } } });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// GET /api/v1/join/status
-// Strongly Consistent read 
-router.get('/join/status', async (req, res) => {
-    const { event_type, event_id, user_email } = req.query;
-    if (!event_type || !event_id || !user_email) return res.status(400).json({ success: false, message: 'Missing fields' });
-
-    try {
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
-        if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-        const user_id = users[0].id;
-        
-        const [parts] = await sequelize.query(
-            "SELECT status, version FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ?",
-            { replacements: [event_type, event_id, user_id] }
-        );
-        
-        if (parts.length > 0) {
-            res.json({ success: true, data: { status: parts[0].status, version: parts[0].version } });
-        } else {
-            res.json({ success: true, data: { status: 'none' } });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// GET /api/v1/join/my-statuses
-// Bulk read to prevent N+1 queries on the frontend
+// 6. GET /api/v1/join/my-statuses
 router.get('/join/my-statuses', async (req, res) => {
     const { user_email } = req.query;
-    if (!user_email) return res.status(400).json({ success: false, message: 'Missing user_email' });
-
     try {
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
         if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-        const user_id = users[0].id;
-        
-        const [parts] = await sequelize.query(
-            "SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?",
-            { replacements: [user_id] }
-        );
-        
-        // Return a hashmap: "type_id": "status"
+        const [parts] = await sequelize.query("SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?", { replacements: [users[0].id] });
         const statusMap = {};
-        parts.forEach(p => {
-            statusMap[`${p.event_type}_${p.event_id}`] = p.status;
-        });
-
+        parts.forEach(p => statusMap[`${p.event_type}_${p.event_id}`] = p.status);
         res.json({ success: true, data: statusMap });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// 7. GET /api/v1/host/participants
+router.get('/host/participants', async (req, res) => {
+    const { event_type, event_id, host_email, status, limit = 20, cursor_at, cursor_id } = req.query;
+    try {
+        const tableName = getTableName(event_type);
+        const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
+        if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
+
+        let queryStr = `SELECT id, user_id, status, snapshot_display_name, snapshot_avatar_url, created_at, updated_at FROM event_participants WHERE event_type = ? AND event_id = ?`;
+        const replacements = [event_type, event_id];
+        if (status) { queryStr += ` AND status = ?`; replacements.push(status); }
+        if (cursor_at && cursor_id) { queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); }
+        queryStr += ` ORDER BY created_at DESC, id DESC LIMIT ?`;
+        replacements.push(parseInt(limit));
+
+        const [results] = await sequelize.query(queryStr, { replacements });
+        res.json({ success: true, data: results });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.message });
     }
 });
 

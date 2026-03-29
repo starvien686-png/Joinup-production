@@ -1301,33 +1301,70 @@ async function syncAll() {
                 event_id INT,
                 user_id INT,
                 status VARCHAR(50) DEFAULT 'pending',
+                snapshot_display_name VARCHAR(255),
+                snapshot_avatar_url TEXT,
+                snapshot_bio TEXT,
                 version INT DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(event_type, event_id, user_id)
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE(event_type, event_id, user_id),
+                INDEX(event_id, status, created_at),
+                INDEX(event_id, status, updated_at)
             )`,
             `CREATE TABLE IF NOT EXISTS system_notifications (
                 id VARCHAR(36) PRIMARY KEY,
                 recipient_id INT,
                 type VARCHAR(50),
+                aggregate_id VARCHAR(100),
+                link TEXT,
                 metadata TEXT,
+                action_metadata TEXT,
                 is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                delivery_state VARCHAR(50) DEFAULT 'delivered',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(recipient_id, type, aggregate_id)
             )`,
             `CREATE TABLE IF NOT EXISTS outbox_events (
                 id VARCHAR(36) PRIMARY KEY,
+                idempotency_key VARCHAR(100) UNIQUE,
                 aggregate_type VARCHAR(50),
                 aggregate_id VARCHAR(100),
                 type VARCHAR(100),
                 payload TEXT,
                 status VARCHAR(50) DEFAULT 'pending',
+                retry_count INT DEFAULT 0,
+                last_attempt_at TIMESTAMP NULL,
+                error_message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS audit_logs (
                 id VARCHAR(36) PRIMARY KEY,
-                action VARCHAR(100),
                 actor_id INT,
                 event_id INT,
+                participant_id INT,
+                action VARCHAR(100),
+                previous_state TEXT,
+                new_state TEXT,
+                request_id VARCHAR(100),
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS dead_letter_queue (
+                id VARCHAR(36) PRIMARY KEY,
+                original_event_id VARCHAR(36),
+                idempotency_key VARCHAR(100),
+                aggregate_type VARCHAR(50),
+                aggregate_id VARCHAR(100),
+                type VARCHAR(100),
+                payload TEXT,
+                error_message TEXT,
+                failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS request_idempotency (
+                idempotency_key VARCHAR(100) PRIMARY KEY,
+                request_hash VARCHAR(100),
+                response_snapshot TEXT,
+                expires_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];
 
