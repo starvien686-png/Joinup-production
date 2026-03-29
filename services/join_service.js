@@ -395,4 +395,32 @@ router.get('/join/status', async (req, res) => {
     }
 });
 
+// GET /api/v1/join/my-statuses
+// Bulk read to prevent N+1 queries on the frontend
+router.get('/join/my-statuses', async (req, res) => {
+    const { user_email } = req.query;
+    if (!user_email) return res.status(400).json({ success: false, message: 'Missing user_email' });
+
+    try {
+        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
+        if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+        const user_id = users[0].id;
+        
+        const [parts] = await sequelize.query(
+            "SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?",
+            { replacements: [user_id] }
+        );
+        
+        // Return a hashmap: "type_id": "status"
+        const statusMap = {};
+        parts.forEach(p => {
+            statusMap[`${p.event_type}_${p.event_id}`] = p.status;
+        });
+
+        res.json({ success: true, data: statusMap });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;
