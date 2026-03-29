@@ -110,14 +110,14 @@ router.post('/join', async (req, res) => {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         
         const [users] = await sequelize.query(
-            'SELECT id, name, avatar_url, bio FROM users WHERE email = ?', 
+            'SELECT id, username, profile_pic, bio FROM users WHERE email = ?', 
             { replacements: [user_email], transaction: t }
         );
         if (users.length === 0) throw { status: 404, errorCode: 'USER_NOT_FOUND', message: 'User not found' };
         
         const user = users[0];
-        const snapshot_display_name = user.name;
-        const snapshot_avatar_url = user.avatar_url;
+        const snapshot_display_name = user.username;
+        const snapshot_avatar_url = user.profile_pic;
         const snapshot_bio = user.bio;
         const user_id = user.id;
 
@@ -285,11 +285,11 @@ router.post('/join/approve', async (req, res) => {
         
         // Auto Chat Join
         const roomId = `${event_type}_${event_id}`;
-        const [targetUser] = await sequelize.query("SELECT email, name FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
+        const [targetUser] = await sequelize.query("SELECT email, username FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
         if (targetUser.length > 0) {
             await sequelize.query(
                 "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member') ON DUPLICATE KEY UPDATE role = 'member'",
-                { replacements: [roomId, targetUser[0].email, targetUser[0].name], transaction: t }
+                { replacements: [roomId, targetUser[0].email, targetUser[0].username], transaction: t }
             );
         }
 
