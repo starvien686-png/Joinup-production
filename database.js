@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 
 // Format: new Sequelize('database_name', 'username', 'password', ...)
 const sequelize = new Sequelize(
-    process.env.DB_NAME || 'JoinUp', 
+    process.env.DB_NAME || 'joinup', 
     process.env.DB_USER || 'root', 
     process.env.DB_PASS || 'Vicdata.base8', 
     {

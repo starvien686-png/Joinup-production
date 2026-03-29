@@ -1294,6 +1294,40 @@ async function syncAll() {
                 q3_success TINYINT(1),
                 q4_message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS event_participants (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_type VARCHAR(50),
+                event_id INT,
+                user_id INT,
+                status VARCHAR(50) DEFAULT 'pending',
+                version INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(event_type, event_id, user_id)
+            )`,
+            `CREATE TABLE IF NOT EXISTS system_notifications (
+                id VARCHAR(36) PRIMARY KEY,
+                recipient_id INT,
+                type VARCHAR(50),
+                metadata TEXT,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS outbox_events (
+                id VARCHAR(36) PRIMARY KEY,
+                aggregate_type VARCHAR(50),
+                aggregate_id VARCHAR(100),
+                type VARCHAR(100),
+                payload TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS audit_logs (
+                id VARCHAR(36) PRIMARY KEY,
+                action VARCHAR(100),
+                actor_id INT,
+                event_id INT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];
 
