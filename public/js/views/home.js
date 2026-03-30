@@ -220,18 +220,22 @@ export const renderHome = () => {
                 fetch('/housing')
             ];
 
-            if (currentUser.email) {
-                // Use api.fetch for my-statuses
-                const statusData = await api.fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(currentUser.email)}`, { idempotency: false });
-                if (statusData.success) {
-                    myStatuses = statusData.data || {};
-                }
-            }
-
             const responses = await Promise.all(fetchTasks);
             const [activities, carpools, studies, hangouts, housings] = await Promise.all([
                 responses[0].json(), responses[1].json(), responses[2].json(), responses[3].json(), responses[4].json()
             ]);
+
+            // Fetch user join statuses separately so a failure here doesn't block activities
+            if (currentUser.email) {
+                try {
+                    const statusData = await api.fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(currentUser.email)}`, { idempotency: false });
+                    if (statusData.success) {
+                        myStatuses = statusData.data || {};
+                    }
+                } catch (statusErr) {
+                    console.warn('Could not fetch join statuses (non-blocking):', statusErr.message || statusErr);
+                }
+            }
 
             let dbPosts = [
                 ...(Array.isArray(activities) ? activities : []).map(p => ({ ...p, category: p.category || 'sports' })),
@@ -312,7 +316,7 @@ export const renderHome = () => {
         if (posts.length === 0) {
             scrollContainer.innerHTML = `
             <div class="card" onclick="window.navigateTo('activities')" style="min-width: 280px;">
-                <h3 style="color: white; margin-bottom: 0.5rem;">${I18n.t('home.section.new_activi')}</h3>
+                <h3 style="color: white; margin-bottom: 0.5rem;">${I18n.t('home.section.new_activity')}</h3>
                 <p style="opacity: 0.9; font-size: 0.9rem;">${I18n.t('home.section.new_desc')}</p>
             </div>`;
             return;
