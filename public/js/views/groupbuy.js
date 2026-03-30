@@ -193,11 +193,11 @@ export const renderGroupBuy = () => {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
                             <label>${I18n.t('reg.name_label')} *</label>
-                            <input type="text" id="authorName" value="${userProfile.name || userProfile.displayName || ''}" required>
+                            <input type="text" id="authorName" value="${userProfile.username || userProfile.name || ''}" required>
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('reg.major_label')} *</label>
-                            <input type="text" id="authorDept" value="${userProfile.department || ''}" placeholder="" required>
+                            <input type="text" id="authorDept" value="${userProfile.major || userProfile.department || ''}" placeholder="" required>
                         </div>
                     </div>
 
@@ -341,11 +341,11 @@ export const renderGroupBuy = () => {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
                             <label>${I18n.t('reg.name_label')} *</label>
-                            <input type="text" id="authorName" value="${userProfile.name || userProfile.displayName || ''}" required>
+                            <input type="text" id="authorName" value="${userProfile.username || userProfile.name || ''}" required>
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('reg.major_label')} *</label>
-                            <input type="text" id="authorDept" value="${userProfile.department || ''}" placeholder="" required>
+                            <input type="text" id="authorDept" value="${userProfile.major || userProfile.department || ''}" placeholder="" required>
                         </div>
                     </div>
 
@@ -495,8 +495,8 @@ export const renderGroupBuy = () => {
             budget: p.rent_amount,
             address: p.location,
             genderPreference: p.gender_req,
-            scheduleTags: [],
-            habitTags: p.habits ? p.habits.split(',') : [],
+            scheduleTags: p.schedule_tags ? p.schedule_tags.split(', ') : [],
+            habitTags: p.habits ? p.habits.split(', ') : [],
             createdAt: p.created_at,
             status: p.status || 'open'
         }));
@@ -679,9 +679,9 @@ export const renderGroupBuy = () => {
                     budget: p.rent_amount,
                     address: p.location,
                     genderPreference: p.gender_req,
-                    scheduleTags: [],
-                    habitTags: p.habits ? p.habits.split(',') : [],
-                    facilities: p.facilities ? p.facilities.split(',') : [],
+                    scheduleTags: p.schedule_tags ? p.schedule_tags.split(', ') : [],
+                    habitTags: p.habits ? p.habits.split(', ') : [],
+                    facilities: p.facilities ? p.facilities.split(', ') : [],
                     leaseTerm: p.rental_period,
                     offCampusDetail: p.description,
                     createdAt: p.created_at,
@@ -1712,8 +1712,8 @@ export const renderGroupBuy = () => {
 
                 const postData = {
                     host_email: user.email,
-                    host_name: authorNameInput ? authorNameInput.value : user.displayName,
-                    host_dept: authorDeptInput ? authorDeptInput.value : (user.department || ''),
+                    host_name: authorNameInput ? authorNameInput.value : user.username,
+                    host_dept: authorDeptInput ? authorDeptInput.value : (user.major || ''),
                     housing_type: postType,
                     title: title,
                     location: addressInput ? addressInput.value : '',
@@ -1722,12 +1722,18 @@ export const renderGroupBuy = () => {
                     deposit: document.getElementById('deposit') ? document.getElementById('deposit').value : '',
                     people_needed: peopleCount,
                     gender_req: genderPreferenceInput ? genderPreferenceInput.value : 'any',
+                    schedule_tags: scheduleTags || '',
                     deadline: deadline,
                     rental_period: leaseTermInput ? leaseTermInput.value : '',
                     facilities: facilitiesInput ? facilitiesInput.value : (document.querySelectorAll('input[name="facilityTags"]:checked').length ? Array.from(document.querySelectorAll('input[name="facilityTags"]:checked')).map(cb => cb.value).join(', ') : ''),
                     habits: habitTags || null,
                     description: (postType === 'off_campus' && document.getElementById('offCampusDetail')) ? document.getElementById('offCampusDetail').value : (scheduleDetailInput ? scheduleDetailInput.value : '')
                 };
+
+                const btnSubmit = e.target.querySelector('button[type="submit"]');
+                const originalText = btnSubmit.innerText;
+                btnSubmit.innerText = "⏳ Submitting...";
+                btnSubmit.disabled = true;
 
                 try {
                     const response = await fetch('/create-housing', {
@@ -1743,11 +1749,14 @@ export const renderGroupBuy = () => {
                         bindListeners();
                     } else {
                         const err = await response.json();
-                        alert('Error: ' + err.error);
+                        alert('Error: ' + (err.error || 'Failed to save to database.'));
                     }
                 } catch (e) {
                     console.error('Failed to create housing:', e);
                     alert('Failed to connect to server.');
+                } finally {
+                    btnSubmit.innerText = originalText;
+                    btnSubmit.disabled = false;
                 }
             });
         }

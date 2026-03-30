@@ -992,16 +992,16 @@ app.post('/send-message', async (req, res) => {
 // 1. API CREATE HOUSING
 app.post('/create-housing', async (req, res) => {
     try {
-        const { host_email, host_name, host_dept, housing_type, title, location, room_number, rent_amount, deposit, people_needed, gender_req, deadline, rental_period, facilities, habits, description } = req.body;
+        const { host_email, host_name, host_dept, housing_type, title, location, room_number, rent_amount, deposit, people_needed, gender_req, schedule_tags, deadline, rental_period, facilities, habits, description } = req.body;
 
         const query = `
             INSERT INTO housing 
-            (host_email, host_name, host_dept, housing_type, title, location, room_number, rent_amount, deposit, people_needed, gender_req, deadline, rental_period, facilities, habits, description, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+            (host_email, host_name, host_dept, housing_type, title, location, room_number, rent_amount, deposit, people_needed, gender_req, schedule_tags, deadline, rental_period, facilities, habits, description, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
         `;
 
         const [results] = await sequelize.query(query, {
-            replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, deadline, rental_period, facilities || '', habits || '', description || '']
+            replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, schedule_tags || '', deadline, rental_period, facilities || '', habits || '', description || '']
         });
 
         await awardPoints(host_email, 1); // +1 Point for creating housing!
@@ -1252,10 +1252,11 @@ async function syncAll() {
                 title VARCHAR(255),
                 location VARCHAR(255),
                 room_number VARCHAR(50),
-                rent_amount DECIMAL(10,2),
-                deposit DECIMAL(10,2),
+                rent_amount VARCHAR(50),
+                deposit VARCHAR(100),
                 people_needed INT,
                 gender_req VARCHAR(50),
+                schedule_tags TEXT,
                 deadline DATETIME,
                 rental_period VARCHAR(100),
                 facilities TEXT,
