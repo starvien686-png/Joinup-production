@@ -1374,6 +1374,42 @@ async function syncAll() {
         }
         console.log('All raw tables verified/created.');
 
+        // --- MIGRATION: ADD MISSING COLUMNS IF THEY DON'T EXIST ---
+        console.log('Running migrations...');
+        const addColumnSafe = async (table, column, definition) => {
+            try {
+                await sequelize.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+                console.log(`[Migration] Added column ${column} to ${table}`);
+            } catch (err) {
+                if (!err.message.includes('Duplicate column name')) {
+                    console.error(`[Migration] Error adding ${column} to ${table}:`, err.message);
+                }
+            }
+        };
+
+        const modifyColumnSafe = async (table, column, definition) => {
+            try {
+                await sequelize.query(`ALTER TABLE ${table} MODIFY COLUMN ${column} ${definition}`);
+                console.log(`[Migration] Modified column ${column} in ${table}`);
+            } catch (err) {
+                console.error(`[Migration] Error modifying ${column} in ${table}:`, err.message);
+            }
+        };
+
+        // Housing Migrations
+        await addColumnSafe('housing', 'host_name', 'VARCHAR(255) AFTER host_email');
+        await addColumnSafe('housing', 'host_dept', 'VARCHAR(255) AFTER host_name');
+        await addColumnSafe('housing', 'schedule_tags', 'TEXT AFTER gender_req');
+        await addColumnSafe('housing', 'deadline', 'DATETIME AFTER schedule_tags');
+        await addColumnSafe('housing', 'rental_period', 'VARCHAR(100) AFTER deadline');
+        await addColumnSafe('housing', 'facilities', 'TEXT AFTER rental_period');
+        await addColumnSafe('housing', 'habits', 'TEXT AFTER facilities');
+
+        // Field Type Optimizations for Flexible Input
+        await modifyColumnSafe('housing', 'rent_amount', 'VARCHAR(100)');
+        await modifyColumnSafe('housing', 'deposit', 'VARCHAR(100)');
+        await modifyColumnSafe('housing', 'room_number', 'VARCHAR(100)');
+
     } catch (err) {
         console.error('Initial Database Sync Failed:', err);
     }
