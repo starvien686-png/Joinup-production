@@ -648,73 +648,60 @@ window.handleNotificationClick = (link) => {
 // ==========================================================
 
 // --- POP-UP BIODATA PELAMAR UNTUK HOST (SINKRON & BAHASA) -
-
 // ==========================================================
-
-window.showReviewApplicationModal = (appId, postId, applicantEmail, teamName, category) => {
-
+window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamName, category, serverSnapshot = null) => {
     const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
-
     const isZH = currentLang.toLowerCase().includes('zh');
 
+    let application = serverSnapshot;
+    
+    // If no serverSnapshot, try to find in Local Storage (legacy) or Fetch from Server (modern)
+    if (!application) {
+        // 1. Try to fetch from server first (Production Rule)
+        try {
+            const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+            const data = await api.fetch(`/api/v1/host/participants?event_type=${category || 'sports'}&event_id=${postId}&host_email=${userProfile.email}`, { idempotency: false });
+            if (data.success && data.data) {
+                // For direct deep links, find the specific app
+                application = data.data.find(a => String(a.id) === String(appId) || a.user_id === applicantEmail);
+            }
+        } catch (e) { console.warn("Server fetch failed, falling back to local snapshots.", e); }
+    }
 
-
-    // Pilih kunci localStorage yang tepat berdasarkan kategori
-    const storageKeyMap = {
-        'carpool': 'joinup_carpool_apps',
-        'hangout': 'joinup_hangout_apps',
-        'study': 'joinup_study_apps',
-        'housing': 'joinup_housing_apps',
-        'sports': 'joinup_applications'
-    };
-    const storageKey = storageKeyMap[category] || 'joinup_applications';
-    const apps = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const application = apps.find(a => String(a.id) === String(appId));
-
-
+    if (!application) {
+        const storageKeyMap = {
+            'carpool': 'joinup_carpool_apps',
+            'hangout': 'joinup_hangout_apps',
+            'study': 'joinup_study_apps',
+            'housing': 'joinup_housing_apps',
+            'sports': 'joinup_applications'
+        };
+        const storageKey = storageKeyMap[category] || 'joinup_applications';
+        const apps = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        application = apps.find(a => String(a.id) === String(appId) || a.applicantId === applicantEmail);
+    }
 
     // AMBIL DATA PROFIL PALING FRESH DARI DATABASE / ACCOUNT SETTINGS
-
     let freshUser = null;
-
     if (window.MockStore && window.MockStore.getUser) {
-
         freshUser = window.MockStore.getUser(applicantEmail);
-
     }
-
     if (!freshUser) {
-
         const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-
         freshUser = allUsers.find(u => u.email === applicantEmail);
-
     }
 
-
-
-    // Set Data Biodata (Ambil freshUser duluan, kalau kosong baru ambil dari Pendaftaran)
-
-    let applicantName = freshUser?.displayName || freshUser?.name || application?.applicantName || 'Applicant';
-
+    // Set Data Biodata (Ambil Snapshot dari DB duluan, baru Fresh User, baru Legacy App)
+    let applicantName = application?.snapshot_display_name || freshUser?.displayName || freshUser?.name || application?.applicantName || 'Applicant';
     let applicantDept = freshUser?.department || freshUser?.major || application?.applicantDept || (isZH ? '學生' : 'Student');
-
     let studyYear = freshUser?.study_year || freshUser?.studyYear || freshUser?.year || application?.applicantStudyYear || '';
-
-    let bio = freshUser?.bio || freshUser?.about || application?.applicantBio || '';
-
+    let bio = application?.snapshot_bio || freshUser?.bio || freshUser?.about || application?.applicantBio || '';
     let hobby = freshUser?.hobby || freshUser?.hobbies || freshUser?.interests || application?.applicantHobby || '';
 
-
-
-    // PENYEDOT FOTO UNIVERSAL (Nyari semua kemungkinan nama kunci foto)
-
-    let avatar = freshUser?.profile_pic || freshUser?.profilePic || freshUser?.avatar || freshUser?.picture || freshUser?.photo || application?.applicantPic || application?.profile_pic || application?.profilePic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-
-
+    // PENYEDOT FOTO UNIVERSAL
+    let avatar = application?.snapshot_avatar_url || freshUser?.profile_pic || freshUser?.profilePic || freshUser?.avatar || application?.applicantPic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
     if (!bio) bio = isZH ? '希望能加入這個活動！' : 'I would love to join this activity!';
-
     if (!hobby) hobby = isZH ? '熱愛交流' : 'Loves connecting with people';
 
 
@@ -821,10 +808,10 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
         await api.fetch(endpoint, {
             method: 'POST',
             body: {
-                event_type: category || 'general',
+                event_type: category || 'sports',
                 event_id: postId,
-                participant_id: appId, // Internal ID if available
-                target_user_email: applicantEmail, // Robust lookup
+                participant_id: appId,
+                target_user_email: applicantEmail,
                 host_email: userProfile.email
             }
         });
