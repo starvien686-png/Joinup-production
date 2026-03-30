@@ -527,9 +527,25 @@ export const renderCarpool = () => {
         const txtCreateBtn = t('cp.btn.create', '+ 建立新共乘', '+ Create New Ride');
 
         const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            const apps = window.CarpoolAppEngine.getApps(p.id) || [];
-            const pendingApps = apps.filter(a => a.status === 'pending');
-            const acceptedApps = apps.filter(a => a.status === 'accepted');
+            let pendingApps = [];
+            let acceptedApps = [];
+
+            // 1. Fetch from Server (Source of Truth)
+            try {
+                const data = await api.fetch(`/api/v1/host/participants?event_type=carpool&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                if (data.success && data.data) {
+                    pendingApps = data.data.filter(a => a.status === 'pending');
+                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
+                }
+            } catch (e) { console.warn("Failed to fetch server participants.", e); }
+
+            // 2. Legacy Fallback
+            if (pendingApps.length === 0 && acceptedApps.length === 0) {
+                const legacyApps = window.CarpoolAppEngine.getApps(p.id) || [];
+                pendingApps = legacyApps.filter(a => a.status === 'pending');
+                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
+            }
+
             const participantCount = acceptedApps.length;
 
             let statusBadge = '';
@@ -538,35 +554,26 @@ export const renderCarpool = () => {
             else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${t('common.success', '已成案', 'Success')}</span>`;
             else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${t('common.cancel', '已取消', 'Cancelled')}</span>`;
 
-            let participantsView = `
-                <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${t('cp.passengers', '乘客名單', 'Participants')} (${participantCount}/${p.available_seats})</div>
-            `;
-
+            let appsHtml = '';
             if (pendingApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${t('cp.pending', '待確認:', 'Pending Confirmation:')}</div>`;
-                participantsView += pendingApps.map(app => `
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${t('cp.pending', '待確認:', 'Pending Confirmation:')}:</div>`;
+                appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName} <span style="color: #888; font-weight: normal;">(${app.applicantDept})</span></span>
-                        <div style="display: flex; gap: 5px;">
-                            <button onclick="window.acceptCarpoolApp('${app.id}', '${p.id}', '${app.applicantId}', '${app.applicantName}', '${p.departure_loc} ➔ ${p.destination_loc}')" style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '接受 ✓' : 'Accept'}</button>
-                            <button onclick="window.rejectCarpoolApp('${app.id}', '${p.id}', '${app.applicantId}', '${p.departure_loc} ➔ ${p.destination_loc}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '拒絕 ✗' : 'Reject'}</button>
-                        </div>
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', encodeURIComponent('${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\\\'")}'), 'carpool', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
             }
-
             if (acceptedApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
-                participantsView += acceptedApps.map(app => `
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
+                appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName} <span style="color: #888; font-weight: normal;">(${app.applicantDept})</span></span>
-                        <button onclick="window.removeCarpoolApp('${app.id}', '${p.id}', '${app.applicantId}')" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">${isZH ? '移除' : 'Remove'}</button>
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已在前座' : 'Joined'}</span>
                     </div>
                 `).join('');
             }
-
-            participantsView += `</div>`;
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
 
             const cpTitle = p.title || `${p.departure_loc} ➔ ${p.destination_loc}`;
             const dTime = new Date(p.departure_time);
@@ -578,11 +585,12 @@ export const renderCarpool = () => {
                         <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${cpTitle}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
-                        🗓️ ${dateStr}
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr}</div>
+                    
+                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${t('cp.passengers', '乘客名單', 'Participants')} (${participantCount}/${p.available_seats})</div>
+                        ${appsHtml}
                     </div>
-
-                    ${participantsView}
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="window.navigateTo('messages?room=carpool_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('cp.chat', '進入聊天室', 'Enter Chat Room')}</button>
@@ -868,30 +876,8 @@ export const renderCarpool = () => {
 };
 
 window.openCarpoolJoinForm = async (postId, teamName) => {
-    const existingOverlay = document.getElementById('join-overlay');
-    if (existingOverlay) existingOverlay.remove();
-
-    const isAppZH = () => {
-        try {
-            const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-            if (langObj.includes('en')) return false;
-            if (langObj.includes('zh')) return true;
-        } catch (e) { }
-        const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW').toLowerCase();
-        if (ls.includes('en')) return false;
-        return true;
-    };
-
-    const t = (key, zhText, enText) => {
-        try {
-            if (typeof window.I18n !== 'undefined' && typeof window.I18n.t === 'function') {
-                const trans = window.I18n.t(key);
-                if (trans && trans !== key && trans.trim() !== '') return trans;
-            }
-        } catch (e) { }
-        return isAppZH() ? zhText : enText;
-    };
-
+    const isZH = isAppZH();
+    
     const msgConfirm = t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
     const msgDesc = t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
     const txtFinancial = t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues');
@@ -901,9 +887,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
             <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
                 <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
                 <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
-                
                 <div style="color: #888888; font-size: 11px; text-align: center; margin-bottom: 1.5rem; border-top: 1px dashed #eee; padding-top: 10px;">⚠️ ${txtFinancial}</div>
-                
                 <div style="display: flex; gap: 1rem;">
                     <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
                         ${t('common.cancel', '取消', 'Cancel')}
@@ -919,218 +903,44 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
     document.body.insertAdjacentHTML('beforeend', formHtml);
 
     document.getElementById('btn-confirm-join').onclick = async () => {
-        const currentUserStr = localStorage.getItem('userProfile');
-        let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-
-        if (window.MockStore && window.MockStore.getUser) {
-            const fresh = window.MockStore.getUser(u.email);
-            if (fresh) u = { ...u, ...fresh };
-        }
-        const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-        const freshMock = allUsers.find(mu => mu.email === u.email);
-        if (freshMock) u = { ...u, ...freshMock };
-
-        const finalAvatar = u.profile_pic || u.profilePic || u.avatar || u.picture || u.photo || '';
-
-        const appId = window.CarpoolAppEngine.saveApp({
-            postId: postId,
-            applicantId: u.email,
-            applicantName: u.displayName || u.name || 'Passenger',
-            applicantDept: u.department || u.major || '',
-            applicantBio: u.bio || '',
-            applicantHobby: u.hobby || '',
-            applicantPic: finalAvatar,
-            status: 'pending'
-        });
+        const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+        const btnSubmit = document.getElementById('btn-confirm-join');
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "...";
 
         try {
-            const response = await fetch('/carpools');
-            const posts = await response.json();
-            const post = posts.find(p => String(p.id) === String(postId));
-
-            if (post && window.sendAppNotification) {
-                const linkPayload = `action:review_carpool_app:${appId}:${postId}:${u.email}:${encodeURIComponent(teamName)}`;
-                window.sendAppNotification(
-                    post.host_email,
-                    'action',
-                    t('cp.notif.request', `🚗 ${u.displayName || u.name} 申請加入您的共乘「${teamName}」！`, `🚗 ${u.displayName || u.name} wants to join your ride "${teamName}"!`),
-                    linkPayload
-                );
-            }
-        } catch (e) { }
-
-        alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
-        document.getElementById('join-overlay').remove();
-    };
-};
-
-window.showReviewCarpoolAppModal = (appId, postId, applicantEmail, teamName) => {
-    const isAppZH = () => {
-        try {
-            const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-            if (langObj.includes('en')) return false;
-            if (langObj.includes('zh')) return true;
-        } catch (e) { }
-        const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
-        if (ls.includes('en')) return false;
-        return true;
-    };
-
-    const t = (key, zhText, enText) => {
-        try {
-            if (typeof window.I18n !== 'undefined' && typeof window.I18n.t === 'function') {
-                const trans = window.I18n.t(key);
-                if (trans && trans !== key && trans.trim() !== '') return trans;
-            }
-        } catch (e) { }
-        return isAppZH() ? zhText : enText;
-    };
-
-    const apps = JSON.parse(localStorage.getItem('joinup_carpool_apps') || '[]');
-    const application = apps.find(a => String(a.id) === String(appId));
-
-    let freshUser = null;
-    if (window.MockStore && window.MockStore.getUser) {
-        freshUser = window.MockStore.getUser(applicantEmail);
-    }
-    if (!freshUser) {
-        const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-        freshUser = allUsers.find(u => u.email === applicantEmail);
-    }
-
-    const uData = { ...(application || {}), ...(freshUser || {}) };
-
-    let applicantName = uData.displayName || uData.name || uData.applicantName || 'Applicant';
-    let applicantDept = uData.department || uData.major || uData.dept || uData.applicantDept || t('profile.student', '學生', 'Student');
-    let bio = uData.bio || uData.about || uData.description || uData.intro || uData.applicantBio || '';
-    let hobby = uData.hobby || uData.hobbies || uData.interests || uData.sport || uData.applicantHobby || '';
-    let avatar = uData.profile_pic || uData.profilePic || uData.avatar || uData.picture || uData.photo || uData.applicantPic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-
-    if (!bio) bio = t('cp.def.bio', '希望能一起共乘！', 'I would love to join this ride!');
-    if (!hobby) hobby = t('cp.def.hobby', '熱愛旅行', 'Loves traveling');
-
-    const txtTitle = t('cp.rev.title', '審核共乘申請', 'Review Ride Request');
-    const txtAccept = t('common.accept', '接受 ✓', 'Accept ✓');
-    const txtDecline = t('common.reject', '拒絕 ✗', 'Decline ✗');
-    const txtHobbyLabel = t('profile.hobby', '興趣', 'Hobby');
-    const txtBioLabel = t('profile.bio', '個人簡介', 'Bio');
-    const txtApplyFor = t('cp.applyfor', '申請搭乘路線：', 'Applying for route:');
-
-    const modalHtml = `
-        <div id="review-carpool-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px);">
-            <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out; text-align: center;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                    <h3 style="margin: 0; color: #333; font-size: 1.2rem;">🚗 ${txtTitle}</h3>
-                    <button onclick="document.getElementById('review-carpool-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888;">×</button>
-                </div>
-
-                <img src="${avatar}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #FF8C00; margin-bottom: 10px;">
-                <h4 style="margin: 0 0 5px 0; font-size: 1.3rem; color: #333;">${applicantName}</h4>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">🎓 ${applicantDept}</div>
-
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; color: #444; text-align: left; line-height: 1.5;">
-                    <div style="margin-bottom: 8px;"><strong>🎯 ${txtHobbyLabel}:</strong> ${hobby}</div>
-                    <div><strong>📝 ${txtBioLabel}:</strong><br> <span style="font-style: italic; opacity: 0.8;">"${bio}"</span></div>
-                </div>
-
-                <div style="font-size: 0.85rem; color: #888; margin-bottom: 1rem;">
-                    ${txtApplyFor} <strong>${teamName}</strong>
-                </div>
-
-                <div style="display: flex; gap: 1rem;">
-                    <button onclick="window.handleCarpoolReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}')" style="flex: 1; padding: 0.8rem; background: #F44336; color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(244,67,54,0.3);">
-                        ${txtDecline}
-                    </button>
-                    <button onclick="window.handleCarpoolReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}')" style="flex: 1; padding: 0.8rem; background: #4CAF50; color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(76,175,80,0.3);">
-                        ${txtAccept}
-                    </button>
-                </div>
-            </div>
-        </div>
-        <style>@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }</style>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-};
-
-window.handleCarpoolReviewAction = (action, appId, postId, applicantEmail, teamName) => {
-    const isAppZH = () => {
-        try {
-            const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-            if (langObj.includes('en')) return false;
-            if (langObj.includes('zh')) return true;
-        } catch (e) { }
-        const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
-        if (ls.includes('en')) return false;
-        return true;
-    };
-
-    const t = (key, zhText, enText) => {
-        try {
-            if (typeof window.I18n !== 'undefined' && typeof window.I18n.t === 'function') {
-                const trans = window.I18n.t(key);
-                if (trans && trans !== key && trans.trim() !== '') return trans;
-            }
-        } catch (e) { }
-        return isAppZH() ? zhText : enText;
-    };
-
-    const apps = JSON.parse(localStorage.getItem('joinup_carpool_apps') || '[]');
-    const appIndex = apps.findIndex(a => String(a.id) === String(appId));
-    let applicantName = 'Passenger';
-
-    if (appIndex > -1) {
-        apps[appIndex].status = action === 'accept' ? 'accepted' : 'rejected';
-        applicantName = apps[appIndex].applicantName;
-        localStorage.setItem('joinup_carpool_apps', JSON.stringify(apps));
-    }
-
-    if (action === 'accept') {
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-        let roomIndex = chatRooms.findIndex(r => String(r.id) === `carpool_${postId}`);
-        if (roomIndex === -1) {
-            chatRooms.push({
-                id: `carpool_${postId}`,
-                postId: postId,
-                roomType: 'carpool',
-                teamName: teamName,
-                participants: [
-                    { id: JSON.parse(localStorage.getItem('userProfile')).email, name: 'Host', role: 'host' },
-                    { id: applicantEmail, name: applicantName, role: 'participant' }
-                ]
+            // 1. Fetch Backend API (Source of Truth)
+            const result = await api.fetch('/api/v1/join', {
+                method: 'POST',
+                body: { event_type: 'carpool', event_id: postId, user_email: userProfile.email }
             });
-        } else {
-            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantEmail)) {
-                chatRooms[roomIndex].participants.push({ id: applicantEmail, name: applicantName, role: 'participant' });
+
+            if (result.success) {
+                // 2. Legacy Local Fallback
+                window.CarpoolAppEngine.saveApp({
+                    postId: postId,
+                    applicantId: userProfile.email,
+                    applicantName: userProfile.displayName || userProfile.name || 'Passenger',
+                    applicantDept: userProfile.department || '',
+                    status: 'pending'
+                });
+
+                alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
+                document.getElementById('join-overlay').remove();
+            } else {
+                alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
             }
+        } catch (e) {
+            console.error("Join Request Error:", e);
+            alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
         }
-        localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantEmail, 'success',
-                t('cp.notif.acc', `🎉 恭喜！您在「${teamName}」的共乘申請已通過。進入聊天室！`, `🎉 Congrats! Your ride request for "${teamName}" was ACCEPTED!`),
-                `messages?room=carpool_${postId}`
-            );
-        }
-        alert(t('cp.alert.acc', "已接受！ ✓", "Accepted! ✓"));
-    } else {
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantEmail, 'info',
-                t('cp.notif.rej', `❌ 抱歉，您在「${teamName}」的共乘申請未通過。`, `❌ Sorry, your ride request for "${teamName}" was rejected.`),
-                ''
-            );
-        }
-        alert(t('common.reject', "已拒絕 ✗", "Declined ✗"));
-    }
-
-    document.getElementById('review-carpool-overlay').remove();
-
-    if (window.location.hash.includes('carpool') || document.querySelector('.post-list')) {
-        window.navigateTo('carpool');
-        setTimeout(() => { if (window.setState) window.setState('manage'); }, 300);
-    }
+    };
 };
+
 
 /// --- FITUR POP-UP DETAIL CARPOOL DENGAN GOOGLE MAPS ---
 window.showCarpoolDetail = async (id) => {

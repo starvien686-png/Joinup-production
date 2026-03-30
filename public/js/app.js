@@ -811,81 +811,48 @@ window.showReviewApplicationModal = (appId, postId, applicantEmail, teamName, ca
 
 
 
-window.handleReviewAction = (action, appId, postId, applicantEmail, teamName, category) => {
-
+window.handleReviewAction = async (action, appId, postId, applicantEmail, teamName, category) => {
     const isZH = localStorage.getItem('language')?.includes('zh') || false;
+    const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
-    // Update status in the correct category-specific storage
-    const storageKeyMap = {
-        'carpool': 'joinup_carpool_apps',
-        'hangout': 'joinup_hangout_apps',
-        'study': 'joinup_study_apps',
-        'housing': 'joinup_housing_apps',
-        'sports': 'joinup_applications'
-    };
+    // 1. Sync with Server (Atomic Transaction)
+    try {
+        const endpoint = action === 'accept' ? '/api/v1/join/approve' : '/api/v1/join/reject';
+        await api.fetch(endpoint, {
+            method: 'POST',
+            body: {
+                event_type: category || 'general',
+                event_id: postId,
+                participant_id: appId, // Internal ID if available
+                target_user_email: applicantEmail, // Robust lookup
+                host_email: userProfile.email
+            }
+        });
+
+        console.log(`[Sync] Join request ${action}ed successfully on server.`);
+    } catch (err) {
+        console.error("Action Sync Failed:", err);
+        alert(isZH ? "伺服器同步失敗，請稍後再試。" : "Server sync failed. Please try again.");
+        return;
+    }
+
+    // 2. Legacy Local Fallback (for UI consistency in transition)
+    const storageKeyMap = { 'carpool': 'joinup_carpool_apps', 'hangout': 'joinup_hangout_apps', 'study': 'joinup_study_apps', 'housing': 'joinup_housing_apps', 'sports': 'joinup_applications' };
     const storageKey = storageKeyMap[category] || 'joinup_applications';
     const apps = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const appIndex = apps.findIndex(a => String(a.id) === String(appId));
-    let applicantName = 'User';
+    const appIndex = apps.findIndex(a => String(a.id) === String(appId) || a.applicantId === applicantEmail);
 
     if (appIndex > -1) {
         apps[appIndex].status = action === 'accept' ? 'accepted' : 'rejected';
-        applicantName = apps[appIndex].applicantName;
         localStorage.setItem(storageKey, JSON.stringify(apps));
-    }
-
-    // Build chat room ID based on category
-    const roomPrefixMap = {
-        'carpool': `carpool_${postId}`,
-        'hangout': `hangout_${postId}`,
-        'study': `study_${postId}`,
-        'housing': `housing_${postId}`,
-        'sports': postId
-    };
-    const chatRoomId = roomPrefixMap[category] || postId;
-
-    if (action === 'accept') {
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-        let roomIndex = chatRooms.findIndex(r => String(r.id) === String(chatRoomId));
-        if (roomIndex > -1) {
-            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantEmail)) {
-                chatRooms[roomIndex].participants.push({ id: applicantEmail, name: applicantName, role: 'participant' });
-                localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-            }
-        }
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantEmail, 'success',
-                isZH ? `🎉 恭喜！您在「${teamName}」的申請已通過。進入聊天室！` : `🎉 Congrats! Your request for "${teamName}" was ACCEPTED!`,
-                `messages?room=${chatRoomId}`
-            );
-        }
-        alert(isZH ? "已接受！ ✓" : "Accepted! ✓");
-    } else {
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantEmail, 'info',
-                isZH ? `❌ 抱歉，您在「${teamName}」的申請未通過。` : `❌ Sorry, your request for "${teamName}" was rejected.`,
-                ''
-            );
-        }
-        alert(isZH ? "已拒絕 ✗" : "Declined ✗");
     }
 
     const overlay = document.getElementById('review-app-overlay');
     if (overlay) overlay.remove();
 
-    // Remove the 'action' notification that triggered this review, so it disappears immediately
-    const currentUserStr = localStorage.getItem('userProfile');
-    if (currentUserStr) {
-        const currentUser = JSON.parse(currentUserStr);
-        const notifKey = `joinup_notifs_${currentUser.email}`;
-        const notifs = JSON.parse(localStorage.getItem(notifKey) || '[]');
-        const filtered = notifs.filter(n => !(n.type === 'action' && n.link && n.link.includes(`:${appId}:`)));
-        localStorage.setItem(notifKey, JSON.stringify(filtered));
-        if (window.checkNotificationBadge) window.checkNotificationBadge();
-    }
+    alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
 
+    if (window.checkNotificationBadge) window.checkNotificationBadge();
 };
 
 
@@ -1452,7 +1419,11 @@ window.handleDeepLink = (data) => {
 
     switch (actionType) {
         case 'OPEN_REVIEW_MODAL':
-            if (window.openReviewModal) window.openReviewModal(targetId);
+            if (window.showReviewApplicationModal) {
+                // If data has full metadata (from background fetch), use it
+                const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || {};
+                window.showReviewApplicationModal(data.aggregate_id, data.targetId, meta.user_email || data.user_email, 'Event', meta.event_type || 'sports', meta);
+            }
             break;
         case 'NAVIGATE_TO_EVENT_DETAIL':
             window.navigateTo('event-detail', { id: targetId });
@@ -1473,11 +1444,11 @@ async function syncNotifications() {
         const u = JSON.parse(userProfileStr);
         // Use resilient API utility
         const data = await api.fetch(`/api/v1/notifications?user_id=${u.id}&limit=5`, { idempotency: false });
-        
+
         if (data.success && data.data.length > 0) {
             console.log("[Resilience] Synced Background Notifications:", data.data);
             if (window.checkNotificationBadge) window.checkNotificationBadge();
-            
+
             // Re-render current view if critical state changed
             if (window.currentView === 'home' && window.refreshHome) {
                 window.refreshHome();

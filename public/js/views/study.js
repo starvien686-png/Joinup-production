@@ -424,9 +424,25 @@ export const renderStudy = () => {
         const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
 
         const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            const apps = window.StudyAppEngine.getApps(p.id) || [];
-            const pendingApps = apps.filter(a => a.status === 'pending');
-            const acceptedApps = apps.filter(a => a.status === 'accepted');
+            let pendingApps = [];
+            let acceptedApps = [];
+
+            // 1. Fetch from Server (Source of Truth)
+            try {
+                const data = await api.fetch(`/api/v1/host/participants?event_type=study&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                if (data.success && data.data) {
+                    pendingApps = data.data.filter(a => a.status === 'pending');
+                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
+                }
+            } catch (e) { console.warn("Failed to fetch server participants.", e); }
+
+            // 2. Legacy Fallback
+            if (pendingApps.length === 0 && acceptedApps.length === 0) {
+                const legacyApps = window.StudyAppEngine.getApps(p.id) || [];
+                pendingApps = legacyApps.filter(a => a.status === 'pending');
+                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
+            }
+
             const participantCount = acceptedApps.length;
 
             let statusBadge = '';
@@ -435,39 +451,27 @@ export const renderStudy = () => {
             else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${isZH ? '已成案' : 'Success'}</span>`;
             else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${isZH ? '已取消' : 'Cancelled'}</span>`;
 
-            let participantsView = `
-                <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Participants'} (${participantCount}/${p.people_needed})</div>
-            `;
-
+            let appsHtml = '';
             if (pendingApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認:' : 'Pending Confirmation:'}</div>`;
-                participantsView += pendingApps.map(app => `
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認:' : 'Pending Confirmation:'}</div>`;
+                appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
-                        <div style="display: flex; gap: 5px;">
-                            <button onclick="window.acceptStudyApp('${app.id}', '${p.id}', '${app.applicantId}', '${app.applicantName}', '${p.title}')" style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '接受 ✓' : 'Accept'}</button>
-                            <button onclick="window.rejectStudyApp('${app.id}', '${p.id}', '${app.applicantId}', '${p.title}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '拒絕 ✗' : 'Reject'}</button>
-                        </div>
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', encodeURIComponent('${p.title.replace(/'/g, "\\\\'")}'), 'study', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
             }
 
             if (acceptedApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
-                participantsView += acceptedApps.map(app => `
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
+                appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
-                        <button onclick="window.removeStudyApp('${app.id}', '${p.id}', '${app.applicantId}')" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">${isZH ? '移除' : 'Remove'}</button>
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已加入' : 'Joined'}</span>
                     </div>
                 `).join('');
             }
-
-            // --- ACTION BUTTONS (Memanjang / Stacking) ---
-            const chatAction = `window.navigateTo('messages?room=travel_${p.id}')`;
-            let actionButtonsHtml = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-
-            participantsView += `</div>`;
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
 
             const dTime = new Date(p.event_time);
             const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
@@ -478,11 +482,12 @@ export const renderStudy = () => {
                         <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
-                        🗓️ ${dateStr}
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr}</div>
+                    
+                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Participants'} (${participantCount}/${p.people_needed})</div>
+                        ${appsHtml}
                     </div>
-
-                    ${participantsView}
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="window.navigateTo('messages?room=study_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('study.chat', '進入聊天室', 'Enter Chat Room')}</button>
@@ -646,9 +651,6 @@ export const renderStudy = () => {
 
     // --- POP-UP JOIN CONFIRMATION ---
     window.openStudyJoinForm = async (postId, teamName) => {
-        const existingOverlay = document.getElementById('join-overlay');
-        if (existingOverlay) existingOverlay.remove();
-
         const isZH = isAppZH();
         const msgConfirm = isZH ? '確認申請加入' : 'Confirm Request';
         const msgDesc = isZH ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`;
@@ -658,7 +660,6 @@ export const renderStudy = () => {
                 <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
                     <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
                     <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
-                    
                     <div style="display: flex; gap: 1rem;">
                         <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
                             ${t('common.cancel', '取消', 'Cancel')}
@@ -674,48 +675,41 @@ export const renderStudy = () => {
         document.body.insertAdjacentHTML('beforeend', formHtml);
 
         document.getElementById('btn-confirm-join').onclick = async () => {
-            const currentUserStr = localStorage.getItem('userProfile');
-            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-
-            if (window.MockStore && window.MockStore.getUser) {
-                const fresh = window.MockStore.getUser(u.email);
-                if (fresh) u = { ...u, ...fresh };
-            }
-            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            const freshMock = allUsers.find(mu => mu.email === u.email);
-            if (freshMock) u = { ...u, ...freshMock };
-
-            const appId = window.StudyAppEngine.saveApp({
-                postId: postId,
-                applicantId: u.email,
-                applicantName: u.displayName || u.name || 'Student',
-                applicantDept: u.department || u.major || '',
-                applicantBio: u.bio || u.about || '',
-                applicantHobby: u.hobby || u.hobbies || u.interests || '',
-                applicantPic: u.profile_pic || u.profilePic || u.avatar || u.picture || u.photo || u.profile_pic || '',
-                applicantStudyYear: u.study_year || u.studyYear || u.year || '',
-                status: 'pending'
-            });
-
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            const btnSubmit = document.getElementById('btn-confirm-join');
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "...";
 
             try {
-                const response = await fetch('/studies');
-                const posts = await response.json();
-                const post = posts.find(p => String(p.id) === String(postId));
+                // 1. Fetch Backend API (Source of Truth)
+                const result = await api.fetch('/api/v1/join', {
+                    method: 'POST',
+                    body: { event_type: 'study', event_id: postId, user_email: userProfile.email }
+                });
 
-                if (post && window.sendAppNotification) {
-                    const linkPayload = `action:review_study_app:${appId}:${postId}:${u.email}:${encodeURIComponent(teamName)}`;
-                    window.sendAppNotification(
-                        post.host_email,
-                        'action',
-                        isAppZH() ? `📚 ${u.displayName || u.name} 想加入您的讀書會「${teamName}」！` : `📚 ${u.displayName || u.name} wants to join "${teamName}"!`,
-                        linkPayload
-                    );
+                if (result.success) {
+                    // 2. Legacy Local Fallback
+                    window.StudyAppEngine.saveApp({
+                        postId: postId,
+                        applicantId: userProfile.email,
+                        applicantName: userProfile.displayName || userProfile.name || 'Student',
+                        applicantDept: userProfile.department || '',
+                        status: 'pending'
+                    });
+
+                    alert(isZH ? '申請已送出！' : 'Request sent!');
+                    document.getElementById('join-overlay').remove();
+                } else {
+                    alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
                 }
-            } catch (e) { }
-
-            alert(isAppZH() ? '申請已送出！' : 'Request sent!');
-            document.getElementById('join-overlay').remove();
+            } catch (e) {
+                console.error("Join Request Error:", e);
+                alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
+            }
         };
     };
 
@@ -734,40 +728,6 @@ export const renderStudy = () => {
         } catch (error) { }
     };
 
-    window.acceptStudyApp = async (appId, postId, applicantId, applicantName, teamName) => {
-        window.StudyAppEngine.updateApp(appId, 'accepted');
-
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-        let roomIndex = chatRooms.findIndex(r => String(r.id) === `study_${postId}`);
-        if (roomIndex === -1) {
-            chatRooms.push({
-                id: `study_${postId}`, postId: postId, roomType: 'study', teamName: teamName,
-                participants: [
-                    { id: user.email, name: user.displayName || user.name, role: 'host' },
-                    { id: applicantId, name: applicantName, role: 'participant' }
-                ]
-            });
-        } else {
-            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantId)) {
-                chatRooms[roomIndex].participants.push({ id: applicantId, name: applicantName, role: 'participant' });
-            }
-        }
-        localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-
-        if (window.sendAppNotification) window.sendAppNotification(applicantId, 'success', `🎉 You are accepted to "${teamName}"!`, `messages?room=study_${postId}`);
-        alert("Accepted ✓");
-        updateView();
-    };
-
-    window.rejectStudyApp = async (appId, postId, applicantId, teamName) => {
-        window.StudyAppEngine.updateApp(appId, 'rejected');
-        updateView();
-    };
-
-    window.removeStudyApp = async (appId, postId, applicantId) => {
-        window.StudyAppEngine.updateApp(appId, 'rejected');
-        updateView();
-    };
 
     // --- POPUP DETAIL STUDY ---
     window.showStudyDetail = async (id) => {

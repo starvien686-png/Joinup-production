@@ -582,9 +582,25 @@ export const renderSports = () => {
         const txtCreateBtn = isZH ? '+ 建立新活動' : '+ Create New Event';
 
         const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            const apps = window.AppEngine.getApps(p.id) || [];
-            const pendingApps = apps.filter(a => a.status === 'pending');
-            const acceptedApps = apps.filter(a => a.status === 'accepted');
+            let pendingApps = [];
+            let acceptedApps = [];
+            
+            // 1. Fetch from Server (Source of Truth)
+            try {
+                const data = await api.fetch(`/api/v1/host/participants?event_type=sports&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                if (data.success && data.data) {
+                    pendingApps = data.data.filter(a => a.status === 'pending');
+                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
+                }
+            } catch (e) { console.warn("Failed to fetch server participants, falling back to local.", e); }
+
+            // 2. Legacy Fallback
+            if (pendingApps.length === 0 && acceptedApps.length === 0) {
+                const legacyApps = window.AppEngine.getApps(p.id) || [];
+                pendingApps = legacyApps.filter(a => a.status === 'pending');
+                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
+            }
+
             const participantCount = acceptedApps.length;
 
             let statusBadge = '';
@@ -602,14 +618,15 @@ export const renderSports = () => {
                     ${pendingApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #ff9800; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #ffe0b2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>` : ''}
                     ${pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-                        <span style="font-size: 0.9rem; color: #333;"><b>${app.applicantName}</b> <span style="color: #888;">(${app.applicantDept})</span></span>
+                        <span style="font-size: 0.9rem; color: #333;"><b>${app.snapshot_display_name || app.applicantName}</b> <span style="color: #888;">(${app.applicantDept || ''})</span></span>
+                        <button class="btn" onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', '${p.teamName.replace(/'/g, "\\'")}', 'sports', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="padding: 4px 10px; font-size: 0.75rem; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                     `).join('')}
 
                     ${acceptedApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #4caf50; margin-top: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>` : ''}
                     ${acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-                        <span style="font-size: 0.9rem; color: #333;">${app.applicantName} <span style="color: #888;">(${app.applicantDept})</span></span>
+                        <span style="font-size: 0.9rem; color: #333;">${app.snapshot_display_name || app.applicantName} <span style="color: #888;">(${app.applicantDept || ''})</span></span>
                     </div>
                     `).join('')}
                 </div>`;

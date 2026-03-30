@@ -1023,7 +1023,6 @@ export const renderGroupBuy = () => {
             }
         } catch (e) { console.error(e); }
 
-        // MENGATASI ERROR FOTO 1: Mendeklarasikan variabel yang hilang
         const isZH = localStorage.getItem('language') === 'zh-TW' || localStorage.getItem('language') === 'zh-CN';
         const txtManageTitle = I18n.t('common.manage') || 'Manage My Events';
         const txtNoData = I18n.t('common.no_data') || 'No records found.';
@@ -1039,13 +1038,30 @@ export const renderGroupBuy = () => {
             status: p.status || 'open'
         }));
 
-        // Render card mirip seperti di FOTO 2
-        const postsHtmlArray = combinedPosts.map(p => {
+        const postsHtmlArray = await Promise.all(combinedPosts.map(async p => {
+            let pendingApps = [];
+            let acceptedApps = [];
+            
+            // 1. Fetch from Server (Source of Truth)
+            try {
+                const data = await api.fetch(`/api/v1/host/participants?event_type=housing&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                if (data.success && data.data) {
+                    pendingApps = data.data.filter(a => a.status === 'pending');
+                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
+                }
+            } catch (e) { console.warn("Failed to fetch server participants.", e); }
+
+            // 2. Legacy Fallback
+            if (pendingApps.length === 0 && acceptedApps.length === 0) {
+                const legacyApps = window.HousingAppEngine.getApps(p.id) || [];
+                pendingApps = legacyApps.filter(a => a.status === 'pending');
+                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
+            }
+
             let statusColor = '#9e9e9e';
             let statusIcon = '';
             let statusText = p.status;
 
-            // Logika Status Badge
             switch (p.status) {
                 case 'open': statusColor = '#4CAF50'; statusIcon = '🟢'; statusText = isZH ? '招募中' : 'Status: OK'; break;
                 case 'paused': statusColor = '#ff9800'; statusIcon = '⏸️'; statusText = isZH ? '暫停' : 'Paused'; break;
@@ -1053,32 +1069,44 @@ export const renderGroupBuy = () => {
                 case 'cancelled': statusColor = '#f44336'; statusIcon = '✗'; statusText = isZH ? '已取消' : 'Cancelled'; break;
             }
 
-            // Badge UI mirip Foto 2
             const statusBadge = `<span style="font-size: 0.85rem; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 12px; border-radius: 4px; font-weight: normal;">${statusIcon} ${statusText}</span>`;
-
             const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-';
-
-            // Perintah untuk masuk ke Chat Kuning
             const chatAction = `window.openHousingChat('${p.id}', '${(p.title || '').replace(/'/g, "\\\\'")}')`;
 
-            // Logic Tombol Aksi
-            let actionButtons = `
-                <button onclick="${chatAction}" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>
-            `;
+            let actionButtons = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
 
             if (p.status === 'open') {
                 actionButtons += `
-                    <button onclick="window.pausePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">⏸️ ${isZH ? '暫停招募' : 'Pause Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">${isZH ? '取消' : 'Cancel'}</button>
-                `;
+                    <button onclick="window.pausePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${isZH ? '暫停招募' : 'Pause Recruiting'}</button>
+                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
+                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
             } else if (p.status === 'paused') {
                 actionButtons += `
-                    <button onclick="window.resumePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: opacity 0.2s;">${isZH ? '取消' : 'Cancel'}</button>
-                `;
+                    <button onclick="window.resumePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
+                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
+                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
             }
+
+            let appsHtml = '';
+            if (pendingApps.length > 0) {
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending'}:</div>`;
+                appsHtml += pendingApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', encodeURIComponent('${(p.title || '').replace(/'/g, "\\\\'") || 'Housing'}'), 'housing', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
+                    </div>
+                `).join('');
+            }
+            if (acceptedApps.length > 0) {
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已接受' : 'Accepted'}:</div>`;
+                appsHtml += acceptedApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ Joined</span>
+                    </div>
+                `).join('');
+            }
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '尚無人申請' : 'No applications yet.'}</div>`;
 
             return `
                 <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -1086,55 +1114,14 @@ export const renderGroupBuy = () => {
                         <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
-                        🗓️ ${dateStr}
-                    </div>
-
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">🗓️ ${dateStr}</div>
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">
-                            👥 ${isZH ? '申請名單' : 'Applications'}
-                        </div>
-                        ${(() => {
-                    const housingApps = window.HousingAppEngine.getApps(p.id);
-                    const pendingApps = housingApps.filter(a => a.status === 'pending');
-                    const acceptedApps = housingApps.filter(a => a.status === 'accepted');
-                    let html = '';
-                    if (pendingApps.length > 0) {
-                        html += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending'}:</div>`;
-                        html += pendingApps.map(app => `
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
-                                        <div style="display: flex; gap: 5px;">
-                                            <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.applicantId}', encodeURIComponent('${(p.title || '').replace(/'/g, "\\\\'")}'), 'housing')" style="background: #2196F3; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看' : 'View'}</button>
-                                            <button onclick="window.acceptHousingApp('${app.id}', '${p.id}', '${app.applicantId}', '${app.applicantName}', '${(p.title || '').replace(/'/g, "\\\\'")}')" style="background: #4caf50; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '接受 ✓' : 'Accept'}</button>
-                                            <button onclick="window.rejectHousingApp('${app.id}', '${p.id}', '${app.applicantId}', '${(p.title || '').replace(/'/g, "\\\\'")}')" style="background: #f44336; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">${isZH ? '拒絕 ✗' : 'Reject'}</button>
-                                        </div>
-                                    </div>
-                                `).join('');
-                    }
-                    if (acceptedApps.length > 0) {
-                        html += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已接受' : 'Accepted'}:</div>`;
-                        html += acceptedApps.map(app => `
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName}</span>
-                                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓</span>
-                                    </div>
-                                `).join('');
-                    }
-                    if (!pendingApps.length && !acceptedApps.length) {
-                        html = `<div style="font-size: 0.85rem; color: #999; text-align: center; padding: 8px 0;">${isZH ? '目前沒有申請' : 'No applications yet'}</div>`;
-                    }
-                    return html;
-                })()}
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
+                        ${appsHtml}
                     </div>
-
-
-                    <div style="display: flex; flex-direction: column;">
-                        ${actionButtons}
-                    </div>
-                </div>
-            `;
-        });
+                    <div style="display: flex; flex-direction: column; gap: 10px;">${actionButtons}</div>
+                </div>`;
+        }));
 
         return `
             <div class="container fade-in" style="padding-bottom: 80px;">

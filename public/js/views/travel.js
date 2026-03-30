@@ -1,3 +1,6 @@
+import { api } from '../utils/api.js';
+import { I18n } from '../services/i18n.js';
+
 // --- MESIN PENDAFTARAN HANGOUT ---
 window.HangoutAppEngine = {
     saveApp: (appData) => {
@@ -480,9 +483,25 @@ export const renderTravel = () => {
         const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
 
         const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            const apps = window.HangoutAppEngine.getApps(p.id) || [];
-            const pendingApps = apps.filter(a => a.status === 'pending');
-            const acceptedApps = apps.filter(a => a.status === 'accepted');
+            let pendingApps = [];
+            let acceptedApps = [];
+
+            // 1. Fetch from Server (Source of Truth)
+            try {
+                const data = await api.fetch(`/api/v1/host/participants?event_type=hangout&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                if (data.success && data.data) {
+                    pendingApps = data.data.filter(a => a.status === 'pending');
+                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
+                }
+            } catch (e) { console.warn("Failed to fetch server participants.", e); }
+
+            // 2. Legacy Fallback
+            if (pendingApps.length === 0 && acceptedApps.length === 0) {
+                const legacyApps = window.HangoutAppEngine.getApps(p.id) || [];
+                pendingApps = legacyApps.filter(a => a.status === 'pending');
+                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
+            }
+
             const participantCount = acceptedApps.length;
 
             let statusColor = '#9e9e9e';
@@ -497,43 +516,35 @@ export const renderTravel = () => {
             }
             const statusBadge = `<span style="font-size: 0.8rem; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 10px; border-radius: 20px; font-weight: bold;">${statusIcon} ${statusText}</span>`;
 
-            let participantsView = `
-                <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Members'} (${participantCount}/${p.people_needed})</div>
-            `;
-
+            let appsHtml = '';
             if (pendingApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>`;
-                participantsView += pendingApps.map(app => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                    <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName} <span style="color: #888; font-weight: normal;">(${app.applicantDept})</span></span>
-                    <div style="display: flex; gap: 5px;">
-                        <button onclick="window.acceptHangoutApp('${app.id}', '${p.id}', '${app.applicantId}', '${app.applicantName}', '${p.title}')" style="background: #4caf50; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">✓</button>
-                        <button onclick="window.rejectHangoutApp('${app.id}', '${p.id}', '${app.applicantId}', '${p.title}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">✗</button>
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>`;
+                appsHtml += pendingApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', encodeURIComponent('${p.title.replace(/'/g, "\\\\'")}'), 'hangout', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
-                </div>
                 `).join('');
             }
 
             if (acceptedApps.length > 0) {
-                participantsView += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>`;
-                participantsView += acceptedApps.map(app => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                    <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.applicantName} <span style="color: #888; font-weight: normal;">(${app.applicantDept})</span></span>
-                    <button onclick="window.removeHangoutApp('${app.id}', '${p.id}', '${app.applicantId}')" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">${t('common.remove', '移除', 'Remove')}</button>
-                </div>
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>`;
+                appsHtml += acceptedApps.map(app => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已加入' : 'Joined'}</span>
+                    </div>
                 `).join('');
             }
-            participantsView += `</div>`;
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
 
             const dTime = new Date(p.event_time);
             const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
 
             // --- ACTION BUTTONS (Memanjang / Stacking) ---
-            const chatAction = `window.navigateTo('messages?room=travel_${p.id}')`;
+            const chatAction = `window.navigateTo('messages?room=hangout_${p.id}')`;
             let actionButtonsHtml = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
 
-            // Ini bagian yang bikin tombol sakti nongol
             if (p.status === 'open') {
                 actionButtonsHtml += `
                     <button onclick="window.updateHangoutStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
@@ -543,7 +554,7 @@ export const renderTravel = () => {
             } else if (p.status === 'paused') {
                 actionButtonsHtml += `
                     <button onclick="window.updateHangoutStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
-                    <button onclick="window.updateHangoutStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
+                    <button onclick="window.updateHangoutStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
                     <button onclick="window.updateHangoutStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✗ ${t('common.cancel', '取消', 'Cancel')}</button>
                 `;
             }
@@ -554,11 +565,12 @@ export const renderTravel = () => {
                         <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
-                        🗓️ ${dateStr} | 📍 ${p.destination}
-                    </div>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr} | 📍 ${p.destination}</div>
                     
-                    ${participantsView}
+                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Members'} (${participantCount}/${p.people_needed})</div>
+                        ${appsHtml}
+                    </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         ${actionButtonsHtml}
@@ -716,9 +728,6 @@ export const renderTravel = () => {
 
     // --- POP-UP JOIN CONFIRMATION ---
     window.openHangoutJoinForm = async (postId, teamName) => {
-        const existingOverlay = document.getElementById('join-overlay');
-        if (existingOverlay) existingOverlay.remove();
-
         const isZH = isAppZH();
         const msgConfirm = isZH ? '確認報名參加' : 'Confirm Request';
         const msgDesc = isZH ? `您確定要報名參加 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`;
@@ -728,7 +737,6 @@ export const renderTravel = () => {
                 <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
                     <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
                     <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
-                    
                     <div style="display: flex; gap: 1rem;">
                         <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
                             ${t('common.cancel', '取消', 'Cancel')}
@@ -744,44 +752,42 @@ export const renderTravel = () => {
         document.body.insertAdjacentHTML('beforeend', formHtml);
 
         document.getElementById('btn-confirm-join').onclick = async () => {
-            const currentUserStr = localStorage.getItem('userProfile');
-            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-
-            if (window.MockStore && window.MockStore.getUser) {
-                const fresh = window.MockStore.getUser(u.email);
-                if (fresh) u = { ...u, ...fresh };
-            }
-            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            const freshMock = allUsers.find(mu => mu.email === u.email);
-            if (freshMock) u = { ...u, ...freshMock };
-
-            const appId = window.HangoutAppEngine.saveApp({
-                postId: postId,
-                applicantId: u.email,
-                applicantName: u.displayName || u.name || 'Friend',
-                applicantDept: u.department || u.major || '',
-                applicantBio: u.bio || u.about || '',
-                applicantHobby: u.hobby || u.hobbies || u.interests || '',
-                applicantPic: u.profile_pic || u.profilePic || u.avatar || u.picture || u.photo || '',
-                applicantStudyYear: u.study_year || u.studyYear || u.year || '',
-                status: 'pending'
-            });
-
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            const btnSubmit = document.getElementById('btn-confirm-join');
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "...";
 
             try {
-                const response = await fetch('/hangouts');
-                const posts = await response.json();
-                const post = posts.find(p => String(p.id) === String(postId));
+                // 1. Fetch Backend API (Source of Truth)
+                const result = await api.fetch('/api/v1/join', {
+                    method: 'POST',
+                    body: { event_type: 'hangout', event_id: postId, user_email: userProfile.email }
+                });
 
-                if (post && window.sendAppNotification) {
-                    const linkPayload = `action:review_hangout_app:${appId}:${postId}:${u.email}:${encodeURIComponent(teamName)}`;
-                    window.sendAppNotification(post.host_email, 'action', isAppZH() ? `🎉 ${u.displayName || u.name} 報名了您的活動「${teamName}」！` : `🎉 ${u.displayName || u.name} wants to join "${teamName}"!`, linkPayload);
+                if (result.success) {
+                    // 2. Legacy Local Fallback
+                    window.HangoutAppEngine.saveApp({
+                        postId: postId,
+                        applicantId: userProfile.email,
+                        applicantName: userProfile.displayName || userProfile.name || 'Friend',
+                        applicantDept: userProfile.department || '',
+                        status: 'pending'
+                    });
+
+                    alert(isZH ? '報名成功！請等待發起人確認。' : 'Request sent!');
+                    document.getElementById('join-overlay').remove();
+                    updateView();
+                } else {
+                    alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
                 }
-            } catch (e) { }
-
-            alert(isAppZH() ? '報名成功！請等待發起人確認。' : 'Request sent!');
-            document.getElementById('join-overlay').remove();
-            updateView();
+            } catch (e) {
+                console.error("Join Request Error:", e);
+                alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
+            }
         };
     };
 
@@ -828,42 +834,6 @@ export const renderTravel = () => {
         }
     };
 
-    window.acceptHangoutApp = async (appId, postId, applicantId, applicantName, teamName) => {
-        window.HangoutAppEngine.updateApp(appId, 'accepted');
-
-        try {
-            const roomId = `hangout_${postId}`;
-            // Tambahkan user yang di-accept ke database MySQL
-            await fetch('/setup-chat-room', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    room_id: roomId,
-                    post_id: postId,
-                    room_type: 'hangout',
-                    team_name: teamName,
-                    participants: [
-                        { id: applicantId, name: applicantName, role: 'participant' }
-                    ]
-                })
-            });
-        } catch (e) {
-            console.error(e);
-        }
-
-        alert("Accepted ✓");
-        updateView();
-    };
-
-    window.rejectHangoutApp = async (appId, postId, applicantId, teamName) => {
-        window.HangoutAppEngine.updateApp(appId, 'rejected');
-        updateView();
-    };
-
-    window.removeHangoutApp = async (appId, postId, applicantId) => {
-        window.HangoutAppEngine.updateApp(appId, 'rejected');
-        updateView();
-    };
 
     // --- POPUP DETAIL ---
     window.showHangoutDetail = async (id) => {
