@@ -8,7 +8,23 @@
     "Extra": "auto_increment"
   },
   {
-    "Field": "username",
+    "Field": "host_email",
+    "Type": "varchar(100)",
+    "Null": "NO",
+    "Key": "",
+    "Default": null,
+    "Extra": ""
+  },
+  {
+    "Field": "category",
+    "Type": "varchar(50)",
+    "Null": "YES",
+    "Key": "",
+    "Default": "sports",
+    "Extra": ""
+  },
+  {
+    "Field": "title",
     "Type": "varchar(255)",
     "Null": "NO",
     "Key": "",
@@ -16,47 +32,47 @@
     "Extra": ""
   },
   {
-    "Field": "email",
-    "Type": "varchar(255)",
-    "Null": "NO",
-    "Key": "UNI",
-    "Default": null,
-    "Extra": ""
-  },
-  {
-    "Field": "password",
-    "Type": "varchar(255)",
-    "Null": "NO",
-    "Key": "",
-    "Default": null,
-    "Extra": ""
-  },
-  {
-    "Field": "major",
-    "Type": "varchar(255)",
+    "Field": "sport_type",
+    "Type": "varchar(100)",
     "Null": "YES",
     "Key": "",
     "Default": null,
     "Extra": ""
   },
   {
-    "Field": "study_year",
+    "Field": "people_needed",
     "Type": "int",
+    "Null": "NO",
+    "Key": "",
+    "Default": null,
+    "Extra": ""
+  },
+  {
+    "Field": "event_time",
+    "Type": "varchar(100)",
+    "Null": "NO",
+    "Key": "",
+    "Default": null,
+    "Extra": ""
+  },
+  {
+    "Field": "deadline",
+    "Type": "varchar(100)",
     "Null": "YES",
     "Key": "",
     "Default": null,
     "Extra": ""
   },
   {
-    "Field": "role",
+    "Field": "location",
     "Type": "varchar(255)",
-    "Null": "YES",
+    "Null": "NO",
     "Key": "",
-    "Default": "student",
+    "Default": null,
     "Extra": ""
   },
   {
-    "Field": "bio",
+    "Field": "description",
     "Type": "text",
     "Null": "YES",
     "Key": "",
@@ -64,27 +80,19 @@
     "Extra": ""
   },
   {
-    "Field": "hobby",
-    "Type": "varchar(255)",
+    "Field": "status",
+    "Type": "varchar(50)",
     "Null": "YES",
     "Key": "",
-    "Default": null,
+    "Default": "open",
     "Extra": ""
   },
   {
-    "Field": "profile_pic",
-    "Type": "longtext",
+    "Field": "created_at",
+    "Type": "timestamp",
     "Null": "YES",
     "Key": "",
-    "Default": null,
-    "Extra": ""
-  },
-  {
-    "Field": "credit_points",
-    "Type": "int",
-    "Null": "YES",
-    "Key": "",
-    "Default": "0",
-    "Extra": ""
+    "Default": "CURRENT_TIMESTAMP",
+    "Extra": "DEFAULT_GENERATED"
   }
 ]

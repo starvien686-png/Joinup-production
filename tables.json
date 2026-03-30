@@ -6,6 +6,9 @@
     "Tables_in_joinup": "activity_feedback"
   },
   {
+    "Tables_in_joinup": "audit_logs"
+  },
+  {
     "Tables_in_joinup": "carpools"
   },
   {
@@ -21,16 +24,31 @@
     "Tables_in_joinup": "contact_inquiries"
   },
   {
+    "Tables_in_joinup": "dead_letter_queue"
+  },
+  {
+    "Tables_in_joinup": "event_participants"
+  },
+  {
     "Tables_in_joinup": "hangouts"
   },
   {
     "Tables_in_joinup": "housing"
   },
   {
+    "Tables_in_joinup": "outbox_events"
+  },
+  {
     "Tables_in_joinup": "reports"
   },
   {
+    "Tables_in_joinup": "request_idempotency"
+  },
+  {
     "Tables_in_joinup": "studies"
+  },
+  {
+    "Tables_in_joinup": "system_notifications"
   },
   {
     "Tables_in_joinup": "users"

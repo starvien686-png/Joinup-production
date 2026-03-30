@@ -23,7 +23,19 @@ function getTableName(category) {
         'housing': 'housing',
         'groupbuy': 'housing'
     };
+    // Hangout sub-categories all map to the 'hangouts' table
+    const hangoutSubCategories = ['travel', 'food', 'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife'];
+    if (hangoutSubCategories.includes(category)) return 'hangouts';
     return mapping[category] || 'activities';
+}
+
+// 1.1 Helper: Column mappings for different event types
+function getCapacityColumn(category) {
+    return category === 'carpool' ? 'available_seats' : 'people_needed';
+}
+
+function getTimeColumn(category) {
+    return category === 'carpool' ? 'departure_time' : 'event_time';
 }
 
 // 2. Idempotency DB-backed middleware
@@ -122,8 +134,13 @@ router.post('/join', async (req, res) => {
         const user_id = user.id;
 
         const tableName = getTableName(event_type);
+        const capacityCol = getCapacityColumn(event_type);
+        const timeCol = getTimeColumn(event_type);
+
         const [events] = await sequelize.query(
-            `SELECT status, host_email, people_needed, deadline FROM ${tableName} WHERE id = ? FOR UPDATE`, 
+            `SELECT status, host_email, ${capacityCol} as capacity, deadline, 
+             ${(event_type === 'housing' || event_type === 'groupbuy') ? 'deadline' : timeCol} as start_time 
+             FROM ${tableName} WHERE id = ? FOR UPDATE`, 
             { replacements: [event_id], transaction: t }
         );
         if (events.length === 0) throw { status: 404, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found' };
@@ -132,7 +149,9 @@ router.post('/join', async (req, res) => {
         if (event.status !== 'open' && event.status !== 'active') {
             throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
         }
-        if (new Date(event.deadline) < new Date()) {
+        
+        const deadline = event.deadline || event.start_time;
+        if (deadline && new Date(deadline) < new Date()) {
             throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
         }
         if (event.host_email === user_email) {
@@ -143,7 +162,7 @@ router.post('/join', async (req, res) => {
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
         );
-        if (approved[0].count >= event.people_needed) {
+        if (approved[0].count >= event.capacity) {
             throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
         }
 

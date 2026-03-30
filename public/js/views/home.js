@@ -440,28 +440,28 @@ export const renderHome = () => {
                     </div>
 
                     ${(() => {
-                        if (user.email && p.host_email && user.email === p.host_email) {
-                            return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
+                    if (user.email && p.host_email && user.email === p.host_email) {
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
-                        }
+                    }
 
-                        // Determine participant status
-                        const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
-                        if (roleStatus === 'approved') {
-                            return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
+                    // Determine participant status
+                    const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
+                    if (roleStatus === 'approved') {
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
-                        } else if (roleStatus === 'pending') {
-                            return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
+                    } else if (roleStatus === 'pending') {
+                        return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
                                 ⏳ Pending...
                             </button>`;
-                        } else {
-                            return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
+                    } else {
+                        return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
                                 申請加入 / Apply to Join
                             </button>`;
-                        }
-                    })()}
+                    }
+                })()}
                 </div>
             `;
         }).join('');
@@ -482,9 +482,9 @@ export const renderHome = () => {
             const confirmHtml = `
                 <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; animation: fadeIn 0.2s;">
                     <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                        <h3 style="margin-top: 0; color: #333;">Yakin ingin bergabung?</h3>
+                        <h3 style="margin-top: 0; color: #333;">Are you sure you want to join?</h3>
                         <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px;">
-                            Permintaan akan dikirim ke Host. Sambil menunggu persetujuan, status akan menjadi Pending.
+                            The request will be sent to the Host. While waiting for approval, the status will be Pending.
                         </p>
                         <div style="display: flex; gap: 15px; justify-content: center;">
                             <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
@@ -493,7 +493,7 @@ export const renderHome = () => {
                     </div>
                 </div>
             `;
-            
+
             document.body.insertAdjacentHTML('beforeend', confirmHtml);
 
             document.getElementById('join-cancel-btn').onclick = () => {
@@ -504,7 +504,7 @@ export const renderHome = () => {
                 const submitBtn = document.getElementById('join-submit-btn');
                 submitBtn.innerText = "Loading...";
                 submitBtn.disabled = true;
-                
+
                 try {
                     const out = await api.fetch('/api/v1/join', {
                         method: 'POST',
@@ -522,7 +522,7 @@ export const renderHome = () => {
                     btn.style.background = "#9E9E9E";
                     btn.style.cursor = "not-allowed";
                     btn.onclick = (e) => e.stopPropagation();
-                    
+
                     if (window.syncNotifications) window.syncNotifications();
                 } catch (e) {
                     alert('Failed: ' + (e.message || 'Unknown error'));
