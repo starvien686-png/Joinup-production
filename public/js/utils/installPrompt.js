@@ -137,25 +137,38 @@ class PWAInstallPrompt {
   }
 
   getWebViewPrompt(appName, isIOS, isAndroid) {
-    let browserName = 'Safari';
-    let instructions = '';
+    let browserName = isAndroid ? 'Chrome' : 'Safari';
+    let instructionsZH = '';
+    let instructionsEN = '';
 
     if (isIOS) {
-      browserName = 'Safari';
-      instructions = `
-        <ol style="margin: 1rem 0; padding-left: 1.5rem; font-size: 1.1rem; line-height: 1.8;">
-          <li>點擊右上角 <strong>···</strong> 按鈕</li>
-          <li>選擇「<strong>在 Safari 中開啟</strong>」</li>
-          <li>然後點擊分享 <span style="font-size: 1.5rem;">⎋</span> → 選擇「<strong>加入主畫面</strong>」</li>
+      instructionsZH = `
+        <ol style="margin: 0; padding-left: 1.5rem; font-size: 1rem; line-height: 1.6; color: #eee;">
+          <li>點選右下角 「三個直點 ⋮ 」</li>
+          <li>選擇 「在瀏覽器中開啟」</li>
+          <li>點選底部 「分享 ⎋」 → 選擇「加入主畫面 ➕」</li>
+        </ol>
+      `;
+      instructionsEN = `
+        <ol style="margin: 0; padding-left: 1.5rem; font-size: 1rem; line-height: 1.6; color: #eee; opacity: 0.9;">
+          <li>Click the "three dots ⋮" in the bottom right</li>
+          <li>Select "Open in Browser"</li>
+          <li>Click "Share ⎋" → Select "Add to Home Screen ➕"</li>
         </ol>
       `;
     } else if (isAndroid) {
-      browserName = 'Chrome';
-      instructions = `
-        <ol style="margin: 1rem 0; padding-left: 1.5rem; font-size: 1.1rem; line-height: 1.8;">
-          <li>點擊右上角 <strong>⋮</strong> 按鈕</li>
-          <li>選擇「<strong>在 Chrome 中開啟</strong>」</li>
-          <li>然後點擊選單 <strong>⋮</strong> → 選擇「<strong>新增至主畫面</strong>」</li>
+      instructionsZH = `
+        <ol style="margin: 0; padding-left: 1.5rem; font-size: 1rem; line-height: 1.6; color: #eee;">
+          <li>點選右下角 「三個直點 ⋮ 」</li>
+          <li>選擇 「在瀏覽器中開啟」</li>
+          <li>點選右上角 「三個直點 ⋮」 → 選擇「新增至主畫面 ➕」</li>
+        </ol>
+      `;
+      instructionsEN = `
+        <ol style="margin: 0; padding-left: 1.5rem; font-size: 1rem; line-height: 1.6; color: #eee; opacity: 0.9;">
+          <li>Click the "three dots ⋮" in the bottom right</li>
+          <li>Select "Open in Browser"</li>
+          <li>Click the "three dots ⋮" at the top → Select "Add to Home Screen ➕"</li>
         </ol>
       `;
     }
@@ -163,19 +176,33 @@ class PWAInstallPrompt {
     return `
       <div class="pwa-fullscreen-overlay">
         <div class="pwa-fullscreen-content">
-          <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
-            <h2 style="margin: 0; font-size: 1.8rem; color: white;">在 ${browserName} 中開啟</h2>
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">📱</div>
+            <h2 style="margin: 0; font-size: 1.5rem; color: white;">歡迎來到 JoinUp! 暨大專屬揪團平台</h2>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.1rem; color: #FFD54F; font-weight: bold;">(不佔空間、即開即用！)</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 12px;">
-            <p style="margin: 0 0 1rem 0; font-size: 1.1rem;">
-              您目前在 <strong>${appName}</strong> app 中開啟此連結。<br>
-              要安裝 JoinUp! PWA，請依照以下步驟：
-            </p>
-            ${instructions}
+          
+          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2);">
+            <h3 style="margin: 0 0 0.8rem 0; font-size: 1.1rem; color: #fff;">如何安裝 JoinUp! / How to Install</h3>
+            
+            <div style="margin-bottom: 1.2rem;">
+              <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #fff; font-weight: bold;">[中文] 簡單 3 步將 App 釘在桌面！</p>
+              ${instructionsZH}
+            </div>
+            
+            <div>
+              <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #ccc; font-weight: bold;">[English] Pin App to desktop in 3 steps!</p>
+              ${instructionsEN}
+            </div>
           </div>
+          
+          <div style="text-align: center; font-size: 0.9rem; color: #eee; margin-top: 1rem;">
+            大功告成！你現在可以從桌面直接開啟 JoinUp! 囉！ ✨<br>
+            <span style="opacity: 0.8;">Done! Open JoinUp! directly from your home screen!</span>
+          </div>
+
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            我知道了
+            我知道了 / Got it
           </button>
         </div>
       </div>
@@ -188,20 +215,35 @@ class PWAInstallPrompt {
         <div class="pwa-fullscreen-content">
           <div style="text-align: center; margin-bottom: 2rem;">
             <div style="font-size: 4rem; margin-bottom: 1rem;">📱</div>
-            <h2 style="margin: 0; font-size: 2rem; color: white;">安裝 JoinUp! 到主畫面</h2>
-            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">像 App 一樣使用，更方便！</p>
+            <h2 style="margin: 0; font-size: 1.6rem; color: white;">歡迎來到 JoinUp! 暨大專屬揪團平台</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; color: #FFD54F;">免下載，簡單 3 步將 App 釘在桌面！</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 12px; text-align: center;">
-            <p style="margin: 0; font-size: 1.3rem; line-height: 1.8;">
-              1. 點擊底部 <strong style="font-size: 1.5rem;">分享</strong> 按鈕 <span style="font-size: 2rem;">⎋</span>
-            </p>
-            <p style="margin: 1.5rem 0 0 0; font-size: 1.3rem; line-height: 1.8;">
-              2. 選擇「<strong style="font-size: 1.5rem;">加入主畫面</strong>」
-            </p>
-            <div style="margin-top: 1.5rem; font-size: 3rem;">↓</div>
+          
+          <div style="background: rgba(255,255,255,0.15); padding: 1.8rem; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+            <div style="margin-bottom: 1.5rem;">
+              <p style="margin: 0; font-size: 1.2rem; line-height: 1.6; color: white;">
+                1️⃣ 點選底部 「<strong>分享</strong>」 <span style="font-size: 1.8rem;">⎋</span>
+              </p>
+              <p style="margin: 0; font-size: 0.9rem; color: #eee; opacity: 0.8;">Tap the <strong>Share</strong> button at the bottom</p>
+            </div>
+            
+            <div>
+              <p style="margin: 0; font-size: 1.2rem; line-height: 1.6; color: white;">
+                2️⃣ 點選 「<strong>加入主畫面 ➕</strong>」
+              </p>
+              <p style="margin: 0; font-size: 0.9rem; color: #eee; opacity: 0.8;">Select "<strong>Add to Home Screen ➕</strong>"</p>
+            </div>
+            
+            <div style="margin-top: 1.5rem; font-size: 2.5rem; animation: bounce 2s infinite;">✨</div>
           </div>
+          
+          <p style="text-align: center; margin-top: 1.5rem; font-size: 0.95rem; color: white; opacity: 0.9;">
+            大功告成！你現在可以從桌面直接開啟 JoinUp! 囉！<br>
+            <span style="font-size: 0.85rem; opacity: 0.7;">Done! Open JoinUp! directly from your home screen.</span>
+          </p>
+
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            稍後再說
+            稍後再說 / Maybe Later
           </button>
         </div>
       </div>
@@ -213,19 +255,21 @@ class PWAInstallPrompt {
       <div class="pwa-fullscreen-overlay">
         <div class="pwa-fullscreen-content">
           <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+            <div style="font-size: 4.5rem; margin-bottom: 1rem;">⚠️</div>
             <h2 style="margin: 0; font-size: 1.8rem; color: white;">請使用 Safari 瀏覽器</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Please use Safari Browser</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 12px; text-align: center;">
-            <p style="margin: 0; font-size: 1.2rem; line-height: 1.8;">
-              在 iPhone 上，只有 <strong>Safari</strong> 可以安裝 PWA。
+          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+            <p style="margin: 0; font-size: 1.1rem; line-height: 1.8;">
+              在 iPhone 上，只有 <strong>Safari</strong> 可以安裝 PWA。<br>
+              請複製連結並切換至 Safari 開啟！
             </p>
-            <p style="margin: 1rem 0 0 0; font-size: 1.2rem; line-height: 1.8;">
-              請複製連結並用 Safari 開啟！
+            <p style="margin: 1.2rem 0 0 0; font-size: 1rem; color: #ccc;">
+              On iPhone, only <strong>Safari</strong> supports PWA installation. Please copy the URL and open it in Safari.
             </p>
           </div>
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            我知道了
+            我知道了 / Got it
           </button>
         </div>
       </div>
@@ -238,22 +282,37 @@ class PWAInstallPrompt {
         <div class="pwa-fullscreen-content">
           <div style="text-align: center; margin-bottom: 2rem;">
             <div style="font-size: 4rem; margin-bottom: 1rem;">📱</div>
-            <h2 style="margin: 0; font-size: 2rem; color: white;">安裝 JoinUp! 到主畫面</h2>
-            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">像 App 一樣使用，更方便！</p>
+            <h2 style="margin: 0; font-size: 1.6rem; color: white;">歡迎來到 JoinUp! 暨大專屬揪團平台</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; color: #FFD54F;">免下載，簡單 3 步將 App 釘在桌面！</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 12px; text-align: center;">
-            <p style="margin: 0; font-size: 1.3rem; line-height: 1.8;">
-              點擊右上角選單 <strong style="font-size: 2rem;">⋮</strong>
-            </p>
-            <p style="margin: 1rem 0; font-size: 1.3rem; line-height: 1.8;">
-              然後選擇「<strong style="font-size: 1.5rem;">新增至主畫面</strong>」
-            </p>
-            <button class="fullscreen-install-btn" onclick="window.triggerInstall()">
-              立即安裝
+
+          <div style="background: rgba(255,255,255,0.15); padding: 1.8rem; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+            <div style="margin-bottom: 1rem;">
+              <p style="margin: 0; font-size: 1.2rem; line-height: 1.6; color: white;">
+                1️⃣ 點選右上角 「<strong>三個直點 ⋮</strong>」
+              </p>
+              <p style="margin: 0; font-size: 0.9rem; color: #eee; opacity: 0.8;">Tap the <strong>three dots ⋮</strong> at the top</p>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+              <p style="margin: 0; font-size: 1.2rem; line-height: 1.6; color: white;">
+                2️⃣ 選單內點選 「<strong>新增至主畫面 ➕</strong>」
+              </p>
+              <p style="margin: 0; font-size: 0.9rem; color: #eee; opacity: 0.8;">Select "<strong>Add to Home Screen ➕</strong>"</p>
+            </div>
+
+            <button class="fullscreen-install-btn" onclick="window.triggerInstall()" style="background: white; color: #667eea; border-radius: 12px; height: 50px; font-weight: bold;">
+              立即安裝 / Install Now
             </button>
           </div>
+          
+          <p style="text-align: center; margin-top: 1.5rem; font-size: 0.95rem; color: white; opacity: 0.9;">
+            大功告成！你現在可以從桌面直接開啟 JoinUp! 囉！<br>
+            <span style="font-size: 0.85rem; opacity: 0.7;">Done! Open JoinUp! directly from your home screen.</span>
+          </p>
+
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            稍後再說
+            稍後再說 / Maybe Later
           </button>
         </div>
       </div>
@@ -265,16 +324,20 @@ class PWAInstallPrompt {
       <div class="pwa-fullscreen-overlay">
         <div class="pwa-fullscreen-content">
           <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+            <div style="font-size: 4.5rem; margin-bottom: 1rem;">⚠️</div>
             <h2 style="margin: 0; font-size: 1.8rem; color: white;">建議使用 Chrome 瀏覽器</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Chrome is Recommended</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 12px; text-align: center;">
-            <p style="margin: 0; font-size: 1.2rem; line-height: 1.8;">
-              在 Android 上，建議使用 <strong>Chrome</strong> 安裝 PWA<br>以獲得最佳體驗。
+          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+            <p style="margin: 0; font-size: 1.1rem; line-height: 1.8;">
+              在 Android 上，建議使用 <strong>Chrome</strong> 以獲得最佳安裝與使用體驗。
+            </p>
+            <p style="margin: 1.2rem 0 0 0; font-size: 1rem; color: #ccc;">
+              For the best experience on Android, we recommend using <strong>Google Chrome</strong> to install JoinUp!.
             </p>
           </div>
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            我知道了
+            我知道了 / Got it
           </button>
         </div>
       </div>
@@ -286,20 +349,23 @@ class PWAInstallPrompt {
       <div class="pwa-fullscreen-overlay">
         <div class="pwa-fullscreen-content">
           <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">💻</div>
-            <h2 style="margin: 0; font-size: 2rem; color: white;">安裝 JoinUp! 到電腦</h2>
-            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">像桌面應用程式一樣使用！</p>
+            <div style="font-size: 4.5rem; margin-bottom: 1rem;">💻</div>
+            <h2 style="margin: 0; font-size: 1.8rem; color: white;">安裝 JoinUp! 到電腦桌面</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; opacity: 0.9;">Install JoinUp! to Desktop</p>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 12px; text-align: center;">
-            <p style="margin: 0 0 1.5rem 0; font-size: 1.2rem; line-height: 1.8;">
-              點擊網址列的安裝圖示<br>或使用以下按鈕安裝
+          <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+            <p style="margin: 0; font-size: 1.1rem; line-height: 1.8;">
+              點擊網址列右側的「安裝」圖示<br>或使用下方連結：
             </p>
-            <button class="fullscreen-install-btn" onclick="window.triggerInstall()">
-              立即安裝
+            <p style="margin: 1.2rem 0 1rem 0; font-size: 1rem; color: #ccc;">
+              Click the install icon in the address bar or use the button below:
+            </p>
+            <button class="fullscreen-install-btn" onclick="window.triggerInstall()" style="background: white; color: #667eea; border-radius: 12px; height: 50px; font-weight: bold;">
+              立即安裝 / Install Now
             </button>
           </div>
           <button class="fullscreen-close-btn" onclick="window.closeInstallPrompt()">
-            稍後再說
+            稍後再說 / Maybe Later
           </button>
         </div>
       </div>
@@ -420,18 +486,28 @@ class PWAInstallPrompt {
         transform: scale(1.05);
       }
 
+      @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+        40% {transform: translateY(-10px);}
+        60% {transform: translateY(-5px);}
+      }
+
       @media (max-width: 600px) {
         .pwa-fullscreen-content h2 {
-          font-size: 1.5rem;
+          font-size: 1.3rem !important;
         }
 
         .pwa-fullscreen-content p {
-          font-size: 1rem;
+          font-size: 0.9rem !important;
         }
 
         .fullscreen-close-btn {
           bottom: 1rem;
-          right: 1rem;
+          right: 50%;
+          transform: translateX(50%);
+          width: calc(100% - 4rem);
+          max-width: 300px;
+          text-align: center;
         }
       }
     `;
