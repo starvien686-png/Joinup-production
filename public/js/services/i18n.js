@@ -798,7 +798,7 @@ export const Translations = {
         'home.cat.carpool': '一起坐車吧',
         'home.cat.groupbuy': '一起合住吧',
         'home.cat.study': '一起學習吧',
-        'home.cat.travel': '吃喝玩樂',
+        'home.cat.travel': '一起出去吧',
         'home.cat.activity': '活動',
         'home.section.new_activity': '最新活動',
         'home.section.new_desc': '探索並建立新的活動！',
