@@ -89,8 +89,8 @@ export const renderCarpool = () => {
                     <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🎒</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '尋找共乘', 'Find a Ride')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '我需要搭車', 'I need a ride')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '我是發起人', 'I am Host')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '我是夥伴', 'I am Partner')}</p>
                         </div>
                     </button>
 
@@ -877,7 +877,7 @@ export const renderCarpool = () => {
 
 window.openCarpoolJoinForm = async (postId, teamName) => {
     const isZH = isAppZH();
-    
+
     const msgConfirm = t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
     const msgDesc = t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
     const txtFinancial = t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues');

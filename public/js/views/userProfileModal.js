@@ -69,6 +69,12 @@ export const showUserProfile = (userId) => {
                     </div>
                     ` : ''}
 
+                    <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                        <button class="btn" style="width: 100%; background: white; color: #d32f2f; border: 1px solid #ffcdd2; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; transition: background 0.2s;" onclick="window.open('https://forms.gle/9yHV6z8gfPagaG5s8', '_blank')">
+                            <span>⚠️ ${I18n.t('profile.btn.report_issue')}</span>
+                            <span style="font-size: 1.2rem;">›</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;

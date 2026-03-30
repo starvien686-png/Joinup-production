@@ -80,16 +80,16 @@ export const renderStudy = () => {
                     <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">✍️</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('study.host.title', '發起活動', 'Create Event')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('study.host.desc', '我想找人一起讀書/討論', 'I want to host a study session')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('study.role.host')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('study.role.host_desc')}</p>
                         </div>
                     </button>
 
                     <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🔍</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('study.join.title', '尋找夥伴', 'Find Buddy')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('study.join.desc', '加入別人的讀書會', 'Join an existing study group')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('study.role.join')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('study.role.join_desc')}</p>
                         </div>
                     </button>
 
