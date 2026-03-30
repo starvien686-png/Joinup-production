@@ -44,7 +44,7 @@ export const renderHome = () => {
         { id: 'carpool', key: 'home.cat.carpool', icon: '🚗', color: '#42A5F5' },
         { id: 'groupbuy', key: 'home.cat.groupbuy', icon: '🏠', color: '#FFCA28' },
         { id: 'study', key: 'home.cat.study', icon: '📚', color: '#66BB6A' },
-        { id: 'food', key: 'home.cat.food', icon: '🛍️', color: '#EC407A' }
+        { id: 'travel', key: 'home.cat.travel', icon: '🎉', color: '#EC407A' }
     ];
 
     const renderCategories = () => {
@@ -397,8 +397,8 @@ export const renderHome = () => {
                 const mapping = {
                     'sports': 'home.cat.sports', 'carpool': 'home.cat.carpool',
                     'housing': 'home.cat.groupbuy', 'groupbuy': 'home.cat.groupbuy',
-                    'study': 'home.cat.study', 'travel': 'home.cat.food', 'food': 'home.cat.food',
-                    'Food': 'home.cat.food', 'Outdoor': '户外/踏青', 'Arts': '艺文/展览',
+                    'study': 'home.cat.study', 'travel': 'home.cat.travel', 'food': 'home.cat.travel',
+                    'Food': 'home.cat.travel', 'Outdoor': '户外/踏青', 'Arts': '艺文/展览',
                     'Entertainment': '娱乐/电影', 'Shopping': '逛街/购物', 'Sports': '运动/健身',
                     'Nightlife': '夜生活'
                 };

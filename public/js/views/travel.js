@@ -1,4 +1,3 @@
-import { api } from '../utils/api.js';
 import { I18n } from '../services/i18n.js';
 
 // --- MESIN PENDAFTARAN HANGOUT ---
@@ -918,7 +917,7 @@ export const renderTravel = () => {
             alert(I18n.t('auth.err.login_required') || "Please login first!");
             return;
         }
-        window.navigateTo(`messages?room=${activityId}`);
+        window.navigateTo(`messages?room=hangout_${activityId}`);
     };
 
     updateView();
