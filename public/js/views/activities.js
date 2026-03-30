@@ -1,4 +1,5 @@
 import { I18n } from '../services/i18n.js';
+import api from '../utils/api.js';
 
 export const renderActivities = async () => {
     const app = document.getElementById('app');
@@ -6,7 +7,19 @@ export const renderActivities = async () => {
     const user = userProfileStr ? JSON.parse(userProfileStr) : null;
 
     let upcoming = [];
+    let myStatuses = {};
     try {
+        if (user && user.email) {
+            try {
+                const statusData = await api.fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(user.email)}`, { idempotency: false });
+                if (statusData.success) {
+                    myStatuses = statusData.data || {};
+                }
+            } catch (statusErr) {
+                console.warn('Could not fetch join statuses:', statusErr);
+            }
+        }
+
         const [actRes, carpoolRes, studyRes, hangoutRes, housingRes] = await Promise.all([
             fetch('/activities'),
             fetch('/carpools'),
@@ -33,41 +46,17 @@ export const renderActivities = async () => {
         ];
 
         const isPostActive = (p) => {
-            // 1. Check Status
             if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
-
-            // 2. Check Deadline / Event Time
             const refDateStr = p.deadline || p.event_time || p.departure_time;
             if (refDateStr) {
                 const eventDate = new Date(refDateStr);
                 if (eventDate < new Date()) return false;
             }
-
-            // 3. Check Participants Capacity
-            let apps = [];
-            const hangoutCats = ['travel', 'food', 'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife'];
-
-            if (p.category === 'carpool') apps = JSON.parse(localStorage.getItem('joinup_carpool_apps') || '[]');
-            else if (p.category === 'sports') apps = JSON.parse(localStorage.getItem('joinup_applications') || '[]');
-            else if (p.category === 'study') apps = JSON.parse(localStorage.getItem('joinup_study_apps') || '[]');
-            else if (hangoutCats.includes(p.category)) apps = JSON.parse(localStorage.getItem('joinup_hangout_apps') || '[]');
-            else if (p.category === 'housing' || p.category === 'groupbuy') apps = JSON.parse(localStorage.getItem('joinup_housing_apps') || '[]');
-
-            if (apps.length > 0) {
-                const accepted = apps.filter(a => String(a.postId) === String(p.id) && a.status === 'accepted');
-                if (accepted.length >= (p.people_needed || 999)) return false;
-            }
-
-            // 4. Static people_needed check from DB
             if (p.people_needed !== undefined && p.people_needed <= 0) return false;
-
             return true;
         };
 
-        // Filter only active posts
         const availablePosts = dbPosts.filter(p => isPostActive(p));
-
-        // Filter out specific categories requested
         const allowedCats = [
             'carpool', 'travel', 'study', 'housing', 'groupbuy', 'sports',
             'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife', 'food'
@@ -89,10 +78,8 @@ export const renderActivities = async () => {
         console.error("Gagal load Activities:", error);
     }
 
-    // Urutkan agar post baru langsung di depan (sort by created_at descending)
     upcoming = upcoming.sort((a, b) => new Date(b.createdAt || b.eventTime || 0) - new Date(a.createdAt || a.eventTime || 0));
 
-    // --- KAMUS PENERJEMAH ---
     const getLocTrans = (loc) => {
         const map = {
             '體育健康中心 (1F 健身房)': 'sports.loc.gym_1f', '體育健康中心 (2F 綜合球場)': 'sports.loc.gym_2f',
@@ -128,78 +115,74 @@ export const renderActivities = async () => {
 
         return upcoming.map(p => {
             const date = new Date(p.eventTime || p.createdAt || Date.now());
-            const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            const dateStr = date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             const getIconAndColor = (cat, sportType) => {
+                const colorMap = {
+                    'sports': '#FF7043', 'carpool': '#42A5F5', 'housing': '#FFCA28',
+                    'groupbuy': '#FFCA28', 'study': '#66BB6A', 'travel': '#EC407A'
+                };
                 if (cat === 'sports') {
-                    const color = '#FF7043';
+                    const color = colorMap.sports;
                     if (!sportType) return { icon: '🏅', color };
-                    if (sportType.includes('籃') || sportType.toLowerCase().includes('basket')) return { icon: '🏀', color };
-                    if (sportType.includes('羽') || sportType.toLowerCase().includes('badminton')) return { icon: '🏸', color };
-                    if (sportType.includes('排') || sportType.toLowerCase().includes('volley')) return { icon: '🏐', color };
-                    if (sportType.includes('網') || sportType.toLowerCase().includes('tennis')) return { icon: '🎾', color };
+                    if (sportType.includes('籃')) return { icon: '🏀', color };
+                    if (sportType.includes('羽')) return { icon: '🏸', color };
+                    if (sportType.includes('排')) return { icon: '🏐', color };
+                    if (sportType.includes('網')) return { icon: '🎾', color };
                     return { icon: '🏅', color };
                 }
-                if (cat === 'carpool') return { icon: '🚗', color: '#42A5F5' };
-                if (cat === 'housing' || cat === 'groupbuy') return { icon: '🏠', color: '#FFCA28' };
-                if (cat === 'study') return { icon: '📚', color: '#66BB6A' };
-
-                // Hangout Icons & Colors
-                const color = '#EC407A';
-                const hangoutCats = ['travel', 'food', 'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife'];
-                if (hangoutCats.includes(cat)) {
-                    if (cat === 'Food' || cat === 'food') return { icon: '🍽️', color };
-                    if (cat === 'Outdoor') return { icon: '🏕️', color };
-                    if (cat === 'Arts') return { icon: '🎨', color };
-                    if (cat === 'Entertainment') return { icon: '🍿', color };
-                    if (cat === 'Shopping') return { icon: '🛍️', color };
-                    if (cat === 'Sports') return { icon: '🏃', color };
-                    if (cat === 'Nightlife') return { icon: '🍻', color };
-                    return { icon: '🛍️', color };
-                }
-                return { icon: '📅', color: '#666' };
-            };
-
-            const getCatLabel = (cat) => {
-                const mapping = {
-                    'sports': 'home.cat.sports', 'carpool': 'home.cat.carpool',
-                    'housing': 'home.cat.groupbuy', 'groupbuy': 'home.cat.groupbuy',
-                    'study': 'home.cat.study', 'travel': 'home.cat.food', 'food': 'home.cat.food',
-                    'Food': 'home.cat.food', 'Outdoor': '户外/踏青', 'Arts': '艺文/展览',
-                    'Entertainment': '娱乐/电影', 'Shopping': '逛街/购物', 'Sports': '运动/健身',
-                    'Nightlife': '夜生活'
-                };
-                const key = mapping[cat];
-                if (!key) return cat;
-                return key.includes('.') ? I18n.t(key) : key;
+                if (cat === 'carpool') return { icon: '🚗', color: colorMap.carpool };
+                if (cat === 'housing' || cat === 'groupbuy') return { icon: '🏠', color: colorMap.housing };
+                if (cat === 'study') return { icon: '📚', color: colorMap.study };
+                return { icon: '📅', color: colorMap.travel || '#666' };
             };
 
             const { icon, color } = getIconAndColor(p.category, p.sportType);
-            const labelName = p.category === 'sports' && p.sportType ? getSportTrans(p.sportType) : getCatLabel(p.category);
+            const labelName = p.category === 'sports' && p.sportType ? getSportTrans(p.sportType) : I18n.t(`home.cat.${p.category === 'groupbuy' ? 'housing' : p.category}`);
             const translatedLoc = getLocTrans(p.location);
 
+            const statusKey = `${p.category || 'sports'}_${p.id}`;
+            const roleStatus = myStatuses[statusKey];
+
+            let actionBtn = '';
+            if (user && user.email && p.hostEmail && user.email === p.hostEmail) {
+                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
+            } else if (roleStatus === 'approved' || roleStatus === 'accepted') {
+                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
+            } else if (roleStatus === 'pending') {
+                actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
+            } else {
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">申請加入 / Apply to Join</button>`;
+            }
+
             return `
-                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.8rem; background: ${color}15; color: ${color}; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1.2rem; padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                        <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName}
                         </span>
                         <span style="font-size: 0.8rem; color: #999;">${dateStr}</span>
                     </div>
-                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">${p.title}</h3>
+                    <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: #111;">${p.title}</h3>
                     
-                    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                        <span>📍 ${translatedLoc || 'NCNU'}</span>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                        <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">${p.hostName}</div>
+                            <div style="font-size: 0.7rem; color: #64748b;">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                        <div>📍 ${translatedLoc || 'NCNU'}</div>
                     </div>
 
                     ${p.description ? `
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <p style="color: #475569; font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                         ${p.description}
                     </p>` : ''}
 
-                    <div style="margin-top: 0.8rem; display: flex; justify-content: flex-end;">
-                        <span style="font-size: 0.8rem; color: var(--primary-color);">${I18n.t('common.view_details')} ➜</span>
-                    </div>
+                    ${actionBtn}
                 </div>
             `;
         }).join('');
@@ -208,8 +191,8 @@ export const renderActivities = async () => {
     app.innerHTML = `
         <div class="container fade-in" style="padding-bottom: 80px;">
             <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
-                <h2 style="margin: 0; font-size: 1.5rem;">${I18n.t('home.section.new_activity')}</h2>
+                <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer; color: #334155;">⬅️</button>
+                <h2 style="margin: 0; font-size: 1.5rem; color: #1e293b; font-weight: 700;">${I18n.t('home.section.new_activity')}</h2>
             </header>
             <div class="activity-list">${renderList()}</div>
         </div>
@@ -219,13 +202,54 @@ export const renderActivities = async () => {
         const style = document.createElement('style');
         style.id = 'activities-styles';
         style.innerHTML = `
-            .card { background: white; border-radius: 16px; padding: 1.2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; transition: transform 0.2s, box-shadow 0.2s; }
-            .card:active { transform: scale(0.98); }
+            .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; transition: transform 0.2s, box-shadow 0.2s; }
+            .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         `;
         document.head.appendChild(style);
     }
 
-    // Inject universal detail script if it doesn't exist yet
+    if (!window.quickApply) {
+        window.quickApply = async (eventId, category, btn) => {
+            const currentUserStr = localStorage.getItem('userProfile');
+            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+            if (!u.email) { alert("Please login first!"); return; }
+
+            const confirmHtml = `
+                <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+                    <div style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🤝</div>
+                        <h3 style="margin: 0 0 10px 0; color: #1e293b;">${I18n.t('common.confirm_join') || 'Confirm Join?'}</h3>
+                        <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
+                            ${I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.'}
+                        </p>
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="document.getElementById('join-confirm-overlay').remove()" style="flex: 1; padding: 12px; border-radius: 12px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
+                            <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">Confirm</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', confirmHtml);
+
+            document.getElementById('join-submit-btn').onclick = async () => {
+                const submitBtn = document.getElementById('join-submit-btn');
+                submitBtn.innerText = "Processing...";
+                submitBtn.disabled = true;
+                try {
+                    const out = await api.fetch('/api/v1/join', { method: 'POST', body: { event_type: category || 'sports', event_id: eventId, user_email: u.email } });
+                    document.getElementById('join-confirm-overlay').remove();
+                    alert(I18n.t('common.join_sent') || 'Application sent! Please wait for approval.');
+                    btn.innerText = "⏳ Pending..."; btn.style.background = "#9E9E9E"; btn.style.cursor = "not-allowed"; btn.onclick = (e) => e.stopPropagation();
+                    if (window.syncNotifications) window.syncNotifications();
+                } catch (e) {
+                    alert('Error: ' + (e.message || 'Unknown error'));
+                    submitBtn.innerText = "Confirm"; submitBtn.disabled = false;
+                }
+            };
+        };
+    }
+
     if (!window.showUniversalDetail) {
         window.showUniversalDetail = async (id, category) => {
             const lookIn = [...(window._cachedHomePosts || []), ...(window._cachedActivitiesPosts || [])];
@@ -236,115 +260,50 @@ export const renderActivities = async () => {
             if (existing) existing.remove();
 
             const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
-
-            const peopleCnt = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
-            const hostNm = p.host_name || p.hostName || 'Anonymous';
-            const hostDp = p.host_dept || p.hostDept || '';
-            const desc = p.description || p.notes || '';
-            const evTimeStr = p.eventtime || p.eventTime || p.event_time || p.departure_time || p.deadline || p.created_at;
-
-            const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            const regUsers = JSON.parse(localStorage.getItem('joinup_users_v1') || '[]');
-            const currUser = JSON.parse(localStorage.getItem('userProfile') || '{}');
-            const emailToFind = p.host_email || p.hostEmail || '';
-
             const hostAvatar = p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-            const hostHobby = p.hobby || '';
-            const hostBio = p.bio || '';
-            const studyYear = p.study_year || '';
-            const hostFinalNm = p.host_name || hostNm;
-            const hostFinalDp = p.host_dept || hostDp;
+            const evTimeStr = p.eventtime || p.eventTime || p.event_time || p.departure_time || p.deadline || p.created_at;
+            const dTime = new Date(evTimeStr);
+            const timeStr = dTime.toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-            const makeMap = loc => {
-                if (!loc) return 'There is no location information';
-                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(loc)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-                return `<div style="margin-top: 8px;"><iframe width="100%" height="200" src="${mapUrl}" style="border:0; border-radius: 10px;" allowfullscreen loading="lazy"></iframe></div>`;
-            };
-
-            const makeDirectionMap = (from, to) => {
-                if (!from || !to) return '';
-                const mapUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(from)}&daddr=${encodeURIComponent(to)}&output=embed`;
-                return `<div style="margin-top: 8px;"><iframe width="100%" height="200" src="${mapUrl}" style="border:0; border-radius: 10px;" allowfullscreen loading="lazy"></iframe></div>`;
-            };
-
-            let specificDetails = '';
-            if (p.category === 'study') {
-                specificDetails = `
-                    <div style="font-size: 1.1rem; color: #1976D2; font-weight: bold; margin-bottom: 10px;">📚 ${p.subject || p.title || ''}</div>
-                    <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> ${p.location}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> ${peopleCnt}</div>
-                    ${makeMap(p.location)}
-                `;
-            } else if (p.category === 'carpool') {
-                specificDetails = `
-                    <div style="margin-bottom: 5px;"><strong>🚗 ${isZH ? '出發地' : 'From'}:</strong> ${p.departure_loc || p.location}</div>
-                    <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '目的地' : 'To'}:</strong> ${p.destination_loc || p.destination}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '提供座位' : 'Seats'}:</strong> ${p.available_seats || peopleCnt}</div>
-                    ${p.price ? `<div style="margin-bottom: 5px;"><strong>💰 ${isZH ? '車資' : 'Price'}:</strong> NT$${p.price}</div>` : ''}
-                    ${makeDirectionMap(p.departure_loc || p.location, p.destination_loc || p.destination)}
-                `;
-            } else if (p.category === 'travel') {
-                specificDetails = `
-                    <div style="font-size: 1.1rem; color: #1976D2; font-weight: bold; margin-bottom: 10px;">📍 ${p.destination || p.location}</div>
-                    <div style="margin-bottom: 5px;"><strong>🤝 ${isZH ? '集合地點' : 'Meet'}:</strong> ${p.meeting_location || p.location}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> ${peopleCnt}</div>
-                    ${makeDirectionMap(p.meeting_location || p.location, p.destination || p.location)}
-                `;
-            } else if (p.category === 'housing' || p.category === 'groupbuy') {
-                specificDetails = `
-                    <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '地址' : 'Address'}:</strong> ${p.location}</div>
-                    <div style="margin-bottom: 5px;"><strong>💰 ${isZH ? '租金' : 'Rent'}:</strong> ${p.rent_amount ? 'NT$' + p.rent_amount : (isZH ? '面議' : 'Negotiable')}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '缺幾人' : 'People Needed'}:</strong> ${peopleCnt}</div>
-                    <div style="margin-bottom: 5px;"><strong>🚻 ${isZH ? '性別限制' : 'Gender Req'}:</strong> ${p.gender_req || '無'}</div>
-                    ${makeMap(p.location)}
-                `;
-            } else {
-                specificDetails = `
-                    <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> ${p.location || 'N/A'}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> ${peopleCnt}</div>
-                    ${makeMap(p.location)}
-                `;
-            }
-
-            const dTime = new Date(evTimeStr || new Date());
-            const timeStr = `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`;
+            const makeMap = loc => loc ? `<div style="margin-top: 10px;"><iframe width="100%" height="200" src="https://maps.google.com/maps?q=${encodeURIComponent(loc)}&output=embed" style="border:0; border-radius: 12px;" allowfullscreen loading="lazy"></iframe></div>` : '';
 
             const modalHtml = `
-                <div id="univ-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
-                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                <div id="univ-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.3s;">
+                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 24px 24px 0 0; padding: 30px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
+                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: #64748b;">✕</button>
                         
-                        <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">
-                            ${p.category === 'groupbuy' ? 'housing' : p.category.toUpperCase()}
+                        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                            <span style="padding: 4px 12px; background: #f1f5f9; color: #64748b; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">${p.category}</span>
                         </div>
                         
-                        <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.4rem;">${p.title}</h2>
+                        <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 1.5rem; font-weight: 700; line-height: 1.3;">${p.title}</h2>
                         
-                        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; font-size: 0.9rem; color: #666; background: #f3f9f3; padding: 12px; border-radius: 10px;">
-                            <img src="${hostAvatar}" alt="avatar" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #81C784;">
-                            <div style="flex: 1;">
-                                <div style="color: #2E7D32; font-weight: bold; font-size: 1rem; margin-bottom: 4px;">${hostFinalNm}</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    ${hostFinalDp ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">🎓 ${hostFinalDp}</span>` : ''}
-                                    ${studyYear ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">📅 ${studyYear}</span>` : ''}
-                                    ${hostHobby ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">⭐ ${hostHobby}</span>` : ''}
-                                </div>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
+                            <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <div>
+                                <div style="color: #1e293b; font-weight: 700; font-size: 1.1rem; margin-bottom: 2px;">${p.hostName}</div>
+                                <div style="font-size: 0.85rem; color: #64748b;">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                             </div>
                         </div>
 
-                        <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-bottom: 20px;">
-                            ${specificDetails}
-                            <div style="margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
+                        <div style="display: grid; gap: 15px; margin-bottom: 25px;">
+                            <div style="padding: 15px; background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">📍 ${isZH ? '活動地點' : 'Location'}</div>
+                                <div style="font-size: 1rem; color: #1e293b; font-weight: 500;">${p.location || 'NCNU'}</div>
+                                ${makeMap(p.location)}
+                            </div>
+                            <div style="padding: 15px; background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">🕒 ${isZH ? '活動時間' : 'Time'}</div>
+                                <div style="font-size: 1rem; color: #1e293b; font-weight: 500;">${timeStr}</div>
+                            </div>
                         </div>
 
-                        <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '詳細說明' : 'Details'}</div>
-                            <div style="color: #444; line-height: 1.5; white-space: pre-wrap;">${desc || (isZH ? '無' : 'None')}</div>
-                            ${hostBio ? `<div style="margin-top: 10px; border-top: 1px solid #FFE0B2; padding-top: 10px; font-size: 0.85rem; color: #555;"><strong>Host Bio:</strong> ${hostBio}</div>` : ''}
+                        <div style="margin-bottom: 30px;">
+                            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 12px; text-transform: uppercase;">📝 ${isZH ? '詳細說明' : 'About'}</div>
+                            <div style="color: #334155; line-height: 1.6; font-size: 1rem; white-space: pre-wrap;">${p.description || (isZH ? '暫無說明' : 'No description provided.')}</div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         };
     }
