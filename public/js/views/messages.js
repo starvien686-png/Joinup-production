@@ -32,24 +32,33 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     if (realId.includes('_')) {
         const parts = realId.split('_');
-        roomType = parts[0];
-        realId = parts[1];
+        roomType = parts.toLowerCase(); // 👈 Tambahan sakti biar huruf kecil semua
+        realId = parts;
     }
 
     // 2. Ambil Judul Event & DAFTARKAN RUANGAN OTOMATIS KE MYSQL BARU!
     try {
-        let fetchUrl = '';
-        if (roomType === 'hangout') fetchUrl = '/hangouts';
-        else if (roomType === 'carpool') fetchUrl = '/carpools';
-        else if (roomType === 'study') fetchUrl = '/studies';
-        else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
-        else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
-        else fetchUrl = '/activities';
+        // CARA BARU: Nyontek nama dari daftar Inbox yang udah pasti benar
+        const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
+        const myRooms = await myRoomsRes.json();
+        const existingRoom = myRooms.find(r => r.id === String(roomId));
 
-        const res = await fetch(fetchUrl);
-        const data = await res.json();
-        const currentItem = data.find(i => String(i.id) === realId);
-        if (currentItem) chatTitle = currentItem.title || currentItem.teamName || 'Room Chat';
+        if (existingRoom && existingRoom.teamName && existingRoom.teamName !== '聊天室' && existingRoom.teamName !== 'Room Chat') {
+            chatTitle = existingRoom.teamName;
+        } else {
+            // Kalau belum ada (baru pertama kali), baru cari ke tabel aslinya
+            let fetchUrl = '/activities';
+            if (roomType === 'hangout') fetchUrl = '/hangouts';
+            else if (roomType === 'carpool') fetchUrl = '/carpools';
+            else if (roomType === 'study') fetchUrl = '/studies';
+            else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
+            else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
+
+            const res = await fetch(fetchUrl);
+            const data = await res.json();
+            const currentItem = data.find(i => String(i.id) === realId);
+            if (currentItem) chatTitle = currentItem.title || currentItem.teamName || 'Room Chat';
+        }
 
         // Ini Sihir Utamanya: Paksa semua chat terdaftar di MySQL jalur baru
         await fetch('/setup-chat-room', {
