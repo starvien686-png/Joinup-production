@@ -414,6 +414,7 @@ app.get('/activities', async (req, res) => {
             SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
             FROM activities a
             JOIN users u ON a.host_email = u.email
+            WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -636,6 +637,7 @@ app.get('/carpools', async (req, res) => {
             SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
             FROM carpools c
             JOIN users u ON c.host_email = u.email
+            WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
             ORDER BY c.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -731,6 +733,7 @@ app.get('/studies', async (req, res) => {
             SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
             FROM studies s
             JOIN users u ON s.host_email = u.email
+            WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
             ORDER BY s.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -838,6 +841,7 @@ app.get('/hangouts', async (req, res) => {
             SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
             FROM hangouts h
             JOIN users u ON h.host_email = u.email
+            WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
             ORDER BY h.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -1020,6 +1024,7 @@ app.get('/housing', async (req, res) => {
             SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
             FROM housing ho
             JOIN users u ON ho.host_email = u.email
+            WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
             ORDER BY ho.created_at DESC
         `;
         const [results] = await sequelize.query(query);
