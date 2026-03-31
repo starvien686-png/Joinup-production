@@ -654,7 +654,7 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     const isZH = currentLang.toLowerCase().includes('zh');
 
     let application = serverSnapshot;
-    
+
     // If no serverSnapshot, try to find in Local Storage (legacy) or Fetch from Server (modern)
     if (!application) {
         // 1. Try to fetch from server first (Production Rule)
@@ -718,77 +718,57 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
 
     const txtBioLabel = isZH ? '個人簡介' : 'Bio';
 
-    const txtApplyFor = isZH ? '申請加入活動：' : 'Applying for:';
-
-    const txtStudyYear = isZH ? '學年' : 'Academic Year';
-
-
+    const displayTeamName = application?.event_title || teamName || (isZH ? '活動' : 'Event');
 
     const modalHtml = `
-
-        <div id="review-app-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px);">
-
-            <div style="background: white; width: 90%; max-width: 360px; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.25); animation: scaleIn 0.2s ease-out; text-align: center; max-height: 90vh; overflow-y: auto;">
-
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-
-                    <h3 style="margin: 0; color: #333; font-size: 1.1rem;">👤 ${txtTitle}</h3>
-
-                    <button onclick="document.getElementById('review-app-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; line-height:1;">×</button>
-
+        <div id="review-app-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); transition: all 0.3s;">
+            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${category || 'Activity'}</span>
+                    <button onclick="document.getElementById('review-app-overlay').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-weight: bold; transition: 0.2s;">×</button>
                 </div>
 
-
-
-                <img src="${avatar}" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #FF9800; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(255,152,0,0.3);" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-
-                <h4 style="margin: 0 0 4px 0; font-size: 1.25rem; color: #222;">${applicantName}</h4>
-
-                <div style="font-size: 0.88rem; color: #555; margin-bottom: 4px;">🎓 ${applicantDept}</div>
-
-                ${studyYear ? `<div style="font-size: 0.82rem; color: #FF9800; font-weight: bold; margin-bottom: 12px;">📅 ${txtStudyYear}: ${isZH ? '第 ' + studyYear + ' 年' : 'Year ' + studyYear}</div>` : '<div style="margin-bottom: 12px;"></div>'}
-
-
-
-                <div style="background: #f8f9fa; padding: 12px 14px; border-radius: 10px; margin-bottom: 1.2rem; font-size: 0.88rem; color: #444; text-align: left; line-height: 1.6; border: 1px solid #eee;">
-
-                    <div style="margin-bottom: 8px;"><strong>🎯 ${txtHobbyLabel}:</strong> ${hobby}</div>
-
-                    <div><strong>📝 ${txtBioLabel}:</strong><br><span style="font-style: italic; opacity: 0.85; display: block; margin-top: 2px;">"${bio}"</span></div>
-
+                <div style="position: relative; display: inline-block; margin-bottom: 15px;">
+                    <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <div style="position: absolute; bottom: 5px; right: 5px; background: #4CAF50; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"></div>
                 </div>
 
-
-
-                <div style="font-size: 0.82rem; color: #999; margin-bottom: 1.2rem; background: #fff3e0; padding: 6px 10px; border-radius: 8px;">
-
-                    ${txtApplyFor} <strong style="color: #E65100;">${teamName}</strong>
-
+                <h4 style="margin: 0 0 4px 0; font-size: 1.4rem; color: #1a1a1a; font-weight: 800;">${applicantName}</h4>
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <span>🎓 ${applicantDept}</span>
+                    ${studyYear ? `<span style="color: #ddd;">|</span> <span style="font-weight: 600; color: #FF9800;">Year ${studyYear}</span>` : ''}
                 </div>
 
+                <div style="background: #fafafa; padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left; border: 1px solid #f0f0f0;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px;">${txtHobbyLabel}</label>
+                        <div style="font-size: 0.9rem; color: #333;">${hobby}</div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px;">${txtBioLabel}</label>
+                        <div style="font-size: 0.9rem; color: #444; line-height: 1.5; font-style: italic;">"${bio}"</div>
+                    </div>
+                </div>
 
+                <div style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; padding: 10px; background: #f0f7ff; border-radius: 12px; border: 1px dashed #2196f3;">
+                    ${txtApplyFor} <br> <strong style="color: #1976D2; font-size: 0.95rem;">${displayTeamName}</strong>
+                </div>
 
-                <div style="display: flex; gap: 0.8rem;">
-
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 0.8rem; background: #F44336; color: white; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 6px rgba(244,67,54,0.3);">
-
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border-radius: 14px; border: 2px solid #F44336; cursor: pointer; font-weight: 800; font-size: 0.95rem; transition: 0.2s;">
                         ${txtDecline}
-
                     </button>
-
-                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 0.8rem; background: #4CAF50; color: white; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 6px rgba(76,175,80,0.3);">
-
+                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border-radius: 14px; border: none; cursor: pointer; font-weight: 800; font-size: 0.95rem; box-shadow: 0 6px 15px rgba(76,175,80,0.3); transition: 0.2s;">
                         ${txtAccept}
-
                     </button>
-
                 </div>
-
             </div>
-
         </div>
-
-        <style>@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }</style>
+        <style>
+            @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            #review-app-overlay button:hover { opacity: 0.9; transform: translateY(-2px); }
+            #review-app-overlay button:active { transform: translateY(0); }
+        </style>
 
     `;
 
@@ -1443,13 +1423,14 @@ async function syncNotifications() {
             const newest = latestNotifs[0];
             if (!newest.is_read && newest.id !== lastId) {
                 localStorage.setItem('last_notif_id', newest.id);
-                
+
                 const meta = typeof newest.metadata === 'string' ? JSON.parse(newest.metadata) : newest.metadata;
                 const actionMeta = typeof newest.action_metadata === 'string' ? JSON.parse(newest.action_metadata) : newest.action_metadata;
-                
+
                 const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
-                const msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || ' seseorang'} 申請加入活動` 
-                                : `🔔 New join request from ${meta?.snapshot_display_name || 'someone'}`;
+                const eventName = meta?.event_title ? (isZH ? `「${meta.event_title}」` : ` "${meta.event_title}"`) : '';
+                const msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || '某人'} 申請加入${eventName}`
+                    : `🔔 New join request from ${meta?.snapshot_display_name || 'someone'} for${eventName}`;
 
                 // Show the toast banner immediately
                 notifications.showNativeBanner({

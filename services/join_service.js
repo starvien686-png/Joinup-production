@@ -138,7 +138,7 @@ router.post('/join', async (req, res) => {
         const timeCol = getTimeColumn(event_type);
 
         const [events] = await sequelize.query(
-            `SELECT status, host_email, ${capacityCol} as capacity, deadline, 
+            `SELECT title, status, host_email, ${capacityCol} as capacity, deadline, 
              ${(event_type === 'housing' || event_type === 'groupbuy') ? 'deadline' : timeCol} as start_time 
              FROM ${tableName} WHERE id = ? FOR UPDATE`, 
             { replacements: [event_id], transaction: t }
@@ -146,6 +146,7 @@ router.post('/join', async (req, res) => {
         if (events.length === 0) throw { status: 404, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found' };
         
         const event = events[0];
+        const event_title = event.title;
         if (event.status !== 'open' && event.status !== 'active') {
             throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
         }
@@ -203,6 +204,7 @@ router.post('/join', async (req, res) => {
             recipient_email: event.host_email,
             event_type, event_id, user_email,
             snapshot_display_name, snapshot_avatar_url, snapshot_bio,
+            event_title,
             actionType: 'OPEN_REVIEW_MODAL',
             targetId: event_id,
             version: '1'

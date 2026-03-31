@@ -102,6 +102,7 @@ async function processOutbox() {
                 payload.metadata = {
                     user_email: payload.user_email,
                     event_type: payload.event_type,
+                    event_title: payload.event_title,
                     snapshot_display_name: payload.snapshot_display_name,
                     snapshot_avatar_url: payload.snapshot_avatar_url,
                     snapshot_bio: payload.snapshot_bio
