@@ -81,7 +81,7 @@ export const renderCarpool = () => {
                     <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🚙</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.host.title', '提供共乘', 'Offer a Ride')}</h3>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.host.title', '我是發起人', 'Offer a Ride')}</h3>
                             <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.host.desc', '我有空位，尋找乘客', 'I have empty seats, looking for passengers')}</p>
                         </div>
                     </button>
@@ -89,8 +89,8 @@ export const renderCarpool = () => {
                     <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🎒</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '我是發起人', 'I am Host')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '我是夥伴', 'I am Partner')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '我是夥伴', 'I am Partner')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '尋找共乘', 'Looking for a ride')}</p>
                         </div>
                     </button>
 
