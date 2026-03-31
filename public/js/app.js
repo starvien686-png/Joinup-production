@@ -682,53 +682,46 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 };
 
-
-
 window.handleReviewAction = async (action, appId, postId, applicantEmail, teamName, category) => {
     const isZH = localStorage.getItem('language')?.includes('zh') || false;
     const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    const safeHostEmail = localStorage.getItem('userEmail') || userProfile.email; // Jaring Pengaman!
+    const safeHostEmail = localStorage.getItem('userEmail') || userProfile.email;
 
-    // 1. Sync with Server (Atomic Transaction)
+    if (!safeHostEmail) {
+        alert(isZH ? "請先登入！" : "Please login first!");
+        return;
+    }
+
     try {
         const endpoint = action === 'accept' ? '/api/v1/join/approve' : '/api/v1/join/reject';
+
         await api.fetch(endpoint, {
             method: 'POST',
             body: {
                 event_type: category || 'sports',
                 event_id: postId,
-                participant_id: appId,
+                // 👇 INI TAMBAHANNYA: Biar nggak error Missing Fields 👇
+                participant_id: appId || 'lookup',
                 target_user_email: applicantEmail,
                 host_email: safeHostEmail
             }
         });
 
-        console.log(`[Sync] Join request ${action}ed successfully on server.`);
+        // Hapus Pop-up
+        const overlay = document.getElementById('review-app-overlay');
+        if (overlay) overlay.remove();
+
+        // Notifikasi Sukses
+        alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
+
+        // Refresh layar biar data ter-update
+        window.location.reload();
+
     } catch (err) {
         console.error("Action Sync Failed:", err);
-        alert(isZH ? "伺服器同步失敗，請稍後再試。" : "Server sync failed. Please try again.");
-        return;
+        alert("Error: " + (err.message || err.errorCode || "Server failed"));
     }
-
-    // 2. Legacy Local Fallback (for UI consistency in transition)
-    const storageKeyMap = { 'carpool': 'joinup_carpool_apps', 'hangout': 'joinup_hangout_apps', 'study': 'joinup_study_apps', 'housing': 'joinup_housing_apps', 'sports': 'joinup_applications' };
-    const storageKey = storageKeyMap[category] || 'joinup_applications';
-    const apps = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const appIndex = apps.findIndex(a => String(a.id) === String(appId) || a.applicantId === applicantEmail);
-
-    if (appIndex > -1) {
-        apps[appIndex].status = action === 'accept' ? 'accepted' : 'rejected';
-        localStorage.setItem(storageKey, JSON.stringify(apps));
-    }
-
-    const overlay = document.getElementById('review-app-overlay');
-    if (overlay) overlay.remove();
-
-    alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
-
-    if (window.checkNotificationBadge) window.checkNotificationBadge();
 };
-
 
 
 window.deletePost = async (id, category) => {
