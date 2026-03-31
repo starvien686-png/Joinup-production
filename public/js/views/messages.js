@@ -32,35 +32,40 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     if (realId.includes('_')) {
         const parts = realId.split('_');
-        roomType = parts.toLowerCase(); // 👈 Tambahan sakti biar huruf kecil semua
+        roomType = parts.toLowerCase(); // Udah di-lowercase biar aman
         realId = parts;
     }
 
-    // 2. Ambil Judul Event & DAFTARKAN RUANGAN OTOMATIS KE MYSQL BARU!
+    // 2. Ambil Judul Event & DAFTARKAN RUANGAN
     try {
-        // CARA BARU: Nyontek nama dari daftar Inbox yang udah pasti benar
-        const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
-        const myRooms = await myRoomsRes.json();
-        const existingRoom = myRooms.find(r => r.id === String(roomId));
+        let fetchUrl = '/activities';
+        if (roomType === 'hangout') fetchUrl = '/hangouts';
+        else if (roomType === 'carpool') fetchUrl = '/carpools';
+        else if (roomType === 'study') fetchUrl = '/studies';
+        else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
+        else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
 
-        if (existingRoom && existingRoom.teamName && existingRoom.teamName !== '聊天室' && existingRoom.teamName !== 'Room Chat') {
-            chatTitle = existingRoom.teamName;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+        const currentItem = data.find(i => String(i.id) === realId);
+
+        if (currentItem && currentItem.title) {
+            chatTitle = currentItem.title;
+        } else if (currentItem && currentItem.teamName) {
+            chatTitle = currentItem.teamName;
         } else {
-            // Kalau belum ada (baru pertama kali), baru cari ke tabel aslinya
-            let fetchUrl = '/activities';
-            if (roomType === 'hangout') fetchUrl = '/hangouts';
-            else if (roomType === 'carpool') fetchUrl = '/carpools';
-            else if (roomType === 'study') fetchUrl = '/studies';
-            else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
-            else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
-
-            const res = await fetch(fetchUrl);
-            const data = await res.json();
-            const currentItem = data.find(i => String(i.id) === realId);
-            if (currentItem) chatTitle = currentItem.title || currentItem.teamName || 'Room Chat';
+            // Kalau ga ketemu, nyontek dari data Inbox
+            const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
+            if (myRoomsRes.ok) {
+                const myRooms = await myRoomsRes.json();
+                const existingRoom = myRooms.find(r => String(r.id) === String(roomId));
+                if (existingRoom && existingRoom.teamName && existingRoom.teamName !== '聊天室') {
+                    chatTitle = existingRoom.teamName;
+                }
+            }
         }
 
-        // Ini Sihir Utamanya: Paksa semua chat terdaftar di MySQL jalur baru
+        // Daftarkan ke DB
         await fetch('/setup-chat-room', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -73,6 +78,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         });
     } catch (e) { console.error("Auto-Setup room error", e); }
 
+    // PASTIKAN BARIS INI TIDAK TERHAPUS:
     appElement.innerHTML = `
         <div class="chat-container fade-in">
             <header class="chat-header">
