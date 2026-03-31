@@ -586,87 +586,83 @@ window.handleNotificationClick = (link) => {
 
 };
 
-// ==========================================================
-// --- POP-UP BIODATA PELAMAR UNTUK HOST (SINKRON & BAHASA) -
-// ==========================================================
 window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamName, category, serverSnapshot = null) => {
-    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
+    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
     const isZH = currentLang.toLowerCase().includes('zh');
 
     const overlayId = 'review-app-overlay';
-    if (document.getElementById(overlayId)) return; // Mencegah pop-up dobel
+    if (document.getElementById(overlayId)) return;
 
     let realUserData = null;
     try {
-        console.log("Check the applicant's email:", applicantEmail);
+        console.log("Fetching profile for:", applicantEmail);
         const res = await fetch(`/api/v1/profile-user?email=${applicantEmail}`);
         if (res.ok) {
-            const textData = await res.text();
-            try {
-                const data = JSON.parse(textData);
-                if (Array.isArray(data) && data.length > 0) {
-                    realUserData = data; // Sukses dapat data!
-                }
-            } catch (err) {
-                console.error("NOT JSON:", textData.substring(0, 50));
+            const data = await res.json();
+            // --- PERBAIKAN 1: Ambil data orang pertama [0] ---
+            if (Array.isArray(data) && data.length > 0) {
+                realUserData = data[0];
+            } else if (data && !Array.isArray(data)) {
+                realUserData = data;
             }
         }
-    } catch (e) { console.warn("Gagal narik profil:", e); }
+    } catch (e) { console.warn("Failed to pull profile:", e); }
 
-    // 2. KEMBALIKAN FITUR BILINGUAL KAMU YANG KEREN!
-    const txtTitle = isZH ? '審核申請' : 'Review Application';
-    const txtAccept = isZH ? '接受 ✓' : 'Accept ✓';
-    const txtDecline = isZH ? '拒絕 ✗' : 'Decline ✗';
     const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
     const txtBioLabel = isZH ? '個人簡介' : 'Bio';
     const txtApplyFor = isZH ? '申請加入：' : 'Applying for:';
 
-    // 3. TENTUKAN DATA (Tarik dari database, kalau kosong pakai default + bahasa)
+    // --- PERBAIKAN 2: Gunakan data dari realUserData dengan benar ---
     let applicantName = realUserData?.username || 'Applicant';
     let applicantDept = realUserData?.major || (isZH ? '學生' : 'Student');
-    let studyYear = realUserData?.study_year || '';
+    let studyYear = realUserData?.study_year ? (isZH ? `大${realUserData.study_year}` : `Year ${realUserData.study_year}`) : '';
     let bio = realUserData?.bio || (isZH ? '希望能加入這個活動！' : 'I would love to join this activity!');
     let hobby = realUserData?.hobby || (isZH ? '熱愛交流' : 'Loves connecting with people');
-    let avatar = realUserData?.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+    // --- PERBAIKAN 3: Jalur Foto Profil (Tambahkan /uploads/) ---
+    let avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // Default
+    if (realUserData?.profile_pic) {
+        // Jika sudah ada 'http', pakai langsung. Jika belum, tambah /uploads/
+        avatar = realUserData.profile_pic.startsWith('http')
+            ? realUserData.profile_pic
+            : `/uploads/${realUserData.profile_pic}`;
+    }
 
     const displayTeamName = teamName || (isZH ? '活動' : 'Event');
 
-    // 4. MUNCULKAN POP-UP DENGAN BIODATA ASLI
     const modalHtml = `
         <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px);">
-            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; text-align: center; max-height: 90vh; overflow-y: auto;">
+            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase;">${category || 'Activity'}</span>
-                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold;">×</button>
+                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">×</button>
                 </div>
 
-                <div style="position: relative; display: inline-block; margin-bottom: 15px;">
-                    <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                </div>
+                <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 15px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
 
-                <h4 style="margin: 0 0 4px 0; font-size: 1.4rem; color: #1a1a1a; font-weight: 800;">${applicantName}</h4>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 6px;">
-                    🎓 ${applicantDept} ${studyYear ? `| Year ${studyYear}` : ''}
+                <h4 style="margin: 0; font-size: 1.4rem; color: #1a1a1a;">${applicantName}</h4>
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                    🎓 ${applicantDept} ${studyYear ? `| ${studyYear}` : ''}
                 </div>
 
                 <div style="background: #fafafa; padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left;">
-                    <div style="margin-bottom: 12px;">
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold;">${txtHobbyLabel}</label>
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase;">${txtHobbyLabel}</label>
                         <div style="font-size: 0.9rem; color: #333;">${hobby}</div>
                     </div>
                     <div>
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold;">${txtBioLabel}</label>
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase;">${txtBioLabel}</label>
                         <div style="font-size: 0.9rem; color: #444; font-style: italic;">"${bio}"</div>
                     </div>
                 </div>
 
                 <div style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; padding: 10px; background: #f0f7ff; border-radius: 12px;">
-                    ${txtApplyFor}<br> <strong style="color: #1976D2; font-size: 0.95rem;">${displayTeamName}</strong>
+                    ${txtApplyFor} <strong style="color: #1976D2;">${displayTeamName}</strong>
                 </div>
 
                 <div style="display: flex; gap: 1rem;">
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border-radius: 14px; border: 2px solid #F44336; cursor: pointer; font-weight: bold;">${txtDecline}</button>
-                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border-radius: 14px; border: none; cursor: pointer; font-weight: bold;">${txtAccept}</button>
+                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border: 2px solid #F44336; border-radius: 14px; cursor: pointer; font-weight: bold;">Reject</button>
+                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border: none; border-radius: 14px; cursor: pointer; font-weight: bold;">Accept</button>
                 </div>
             </div>
         </div>
