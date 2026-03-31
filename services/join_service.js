@@ -468,4 +468,18 @@ router.get('/host/participants', async (req, res) => {
     }
 });
 
+// Endpoint untuk mengambil profil user dari database MySQL
+router.get('/profile-user', async (req, res) => {
+    const { email } = req.query;
+    try {
+        const [users] = await sequelize.query(
+            'SELECT username, email, major, study_year, bio, hobby, profile_pic FROM users WHERE email = ?',
+            { replacements: [email] }
+        );
+        res.json(users); // Mengirim data user kembali ke frontend
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 module.exports = router;

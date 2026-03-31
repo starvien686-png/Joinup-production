@@ -173,7 +173,7 @@ window.refreshUserProfile = async () => {
     const userEmail = localStorage.getItem('userEmail');
     if (!userEmail) return;
     try {
-        const response = await fetch(`get_profile.php?email=${userEmail}`);
+        const response = await fetch(`/api/v1/profile-user?email=${userEmail}`);
         if (response.ok) {
             const data = await response.json();
             if (data && data.length > 0) {
@@ -600,7 +600,7 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     let realUserData = null;
     try {
         // Nembak langsung ke profil pakai email pelamar
-        const res = await fetch(`/get_profile.php?email=${applicantEmail}`);
+        const res = await fetch(`/api/v1/profile-user?email=${applicantEmail}`);
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
@@ -733,15 +733,15 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
 
 window.deletePost = async (id, category) => {
     const isZH = localStorage.getItem('language')?.includes('zh') || false;
-    const confirmMsg = isZH 
-        ? "⚠️ 確定要刪除此活動嗎？\n一旦刪除，所有人都將無法在列表中看到它。數據將被保留在系統中，但此操作無法撤回。\n\n(注意：如果已有參與者被接受，將會扣除 1 積分)" 
+    const confirmMsg = isZH
+        ? "⚠️ 確定要刪除此活動嗎？\n一旦刪除，所有人都將無法在列表中看到它。數據將被保留在系統中，但此操作無法撤回。\n\n(注意：如果已有參與者被接受，將會扣除 1 積分)"
         : "⚠️ Are you sure you want to delete this event?\nOnce deleted, no one will be able to see it in the lists. Data will be preserved in the system, but this action cannot be undone.\n\n(Note: If participants have already been accepted, 1 credit point will be deducted)";
-    
+
     if (!confirm(confirmMsg)) return;
 
     try {
         let endpoint = '';
-        switch(category) {
+        switch (category) {
             case 'carpool': endpoint = `/update-carpool-status/${id}`; break;
             case 'study': endpoint = `/update-study-status/${id}`; break;
             case 'hangout': endpoint = `/update-hangout-status/${id}`; break;
