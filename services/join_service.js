@@ -42,7 +42,7 @@ function getTimeColumn(category) {
 async function withIdempotency(req, res, next) {
     req.requestId = crypto.randomUUID();
     req.correlationId = req.headers['x-correlation-id'] || req.requestId;
-    
+
     const idempotencyKey = req.headers['idempotency-key'] || req.headers['x-idempotency-key'];
     if (!idempotencyKey || req.method === 'GET') return next();
 
@@ -59,10 +59,10 @@ async function withIdempotency(req, res, next) {
             if (new Date() > new Date(stored.expires_at)) {
                 await sequelize.query('DELETE FROM request_idempotency WHERE idempotency_key = ?', { replacements: [idempotencyKey] });
             } else if (stored.request_hash !== currentHash) {
-                return res.status(409).json({ 
+                return res.status(409).json({
                     errorCode: 'IDEMPOTENCY_CONFLICT',
                     message: 'Idempotency key reused with different payload',
-                    requestId: req.requestId 
+                    requestId: req.requestId
                 });
             } else {
                 return res.status(200).json(JSON.parse(stored.response_snapshot));
@@ -73,7 +73,7 @@ async function withIdempotency(req, res, next) {
         req.requestHash = currentHash;
 
         const originalJson = res.json;
-        res.json = function(body) {
+        res.json = function (body) {
             if (res.statusCode >= 200 && res.statusCode < 300 && req.idempotencyKey) {
                 const expiresAt = new Date(Date.now() + 5 * 60000); // 5 mins TTL
                 sequelize.query(
@@ -95,10 +95,10 @@ function withTimeout(req, res, next) {
     const timeout = 5000;
     res.setTimeout(timeout, () => {
         if (!res.headersSent) {
-            res.status(408).json({ 
+            res.status(408).json({
                 errorCode: 'REQUEST_TIMEOUT',
                 message: 'Request execution time exceeded 5s limit.',
-                requestId: req.requestId 
+                requestId: req.requestId
             });
         }
     });
@@ -120,13 +120,13 @@ router.post('/join', async (req, res) => {
     let t;
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
-        
+
         const [users] = await sequelize.query(
-            'SELECT id, username, profile_pic, bio FROM users WHERE email = ?', 
+            'SELECT id, username, profile_pic, bio FROM users WHERE email = ?',
             { replacements: [user_email], transaction: t }
         );
         if (users.length === 0) throw { status: 404, errorCode: 'USER_NOT_FOUND', message: 'User not found' };
-        
+
         const user = users[0];
         const snapshot_display_name = user.username;
         const snapshot_avatar_url = user.profile_pic;
@@ -140,17 +140,17 @@ router.post('/join', async (req, res) => {
         const [events] = await sequelize.query(
             `SELECT title, status, host_email, ${capacityCol} as capacity, deadline, 
              ${(event_type === 'housing' || event_type === 'groupbuy') ? 'deadline' : timeCol} as start_time 
-             FROM ${tableName} WHERE id = ? FOR UPDATE`, 
+             FROM ${tableName} WHERE id = ? FOR UPDATE`,
             { replacements: [event_id], transaction: t }
         );
         if (events.length === 0) throw { status: 404, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found' };
-        
+
         const event = events[0];
         const event_title = event.title;
         if (event.status !== 'open' && event.status !== 'active') {
             throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
         }
-        
+
         const deadline = event.deadline || event.start_time;
         if (deadline && new Date(deadline) < new Date()) {
             throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
@@ -240,7 +240,7 @@ router.post('/join/cancel', async (req, res) => {
             { replacements: [event_type, event_id, user_id], transaction: t }
         );
         if (parts.length === 0) throw { status: 404, message: 'No request exists' };
-        
+
         if (parts[0].status === 'approved') {
             await t.commit();
             return res.status(200).json({ success: true, message: 'Already approved', data: { status: 'approved' } });
@@ -303,7 +303,7 @@ router.post('/join/approve', async (req, res) => {
         if (parts[0].status !== 'pending') throw { status: 400, message: 'Not pending' };
 
         await sequelize.query("UPDATE event_participants SET status = 'approved', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
-        
+
         // Auto Chat Join
         const roomId = `${event_type}_${event_id}`;
         const [targetUser] = await sequelize.query("SELECT email, username FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
@@ -386,21 +386,27 @@ router.get('/notifications', async (req, res) => {
     try {
         const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
         if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-        
+
         let queryStr = `SELECT id, type, metadata, is_read, created_at FROM system_notifications WHERE recipient_id = ?`;
-        const replacements = [users[0].id];
+        const replacements = [users.id];
+
         if (cursor) {
             queryStr += ` AND created_at < ?`;
             replacements.push(new Date(cursor));
         }
+
         queryStr += ` ORDER BY created_at DESC LIMIT ?`;
         replacements.push(parseInt(limit) + 1);
 
-        const [results] = await sequelize.query(queryStr, { replacements });
+        // Nah, kita pakai cara aman ini buat MySQL/TiDB
+        const [results] = await sequelize.query(queryStr, { replacements: replacements });
+
         const hasMore = results.length > parseInt(limit);
         const list = hasMore ? results.slice(0, parseInt(limit)) : results;
-        res.json({ success: true, data: { list, paginationInfo: { cursor: hasMore ? list[list.length-1].created_at : null, hasMore } } });
+
+        res.json({ success: true, data: { list, paginationInfo: { cursor: hasMore ? list[list.length - 1].created_at : null, hasMore } } });
     } catch (err) {
+        console.error("Error in /notifications:", err); // Biar gampang dilacak
         res.status(500).json({ success: false, message: err.message });
     }
 });
