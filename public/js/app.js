@@ -789,6 +789,7 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
 window.handleReviewAction = async (action, appId, postId, applicantEmail, teamName, category) => {
     const isZH = localStorage.getItem('language')?.includes('zh') || false;
     const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    const safeHostEmail = localStorage.getItem('userEmail') || userProfile.email; // Jaring Pengaman!
 
     // 1. Sync with Server (Atomic Transaction)
     try {
@@ -800,7 +801,7 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
                 event_id: postId,
                 participant_id: appId,
                 target_user_email: applicantEmail,
-                host_email: userProfile.email
+                host_email: safeHostEmail
             }
         });
 
@@ -1402,7 +1403,7 @@ window.handleDeepLink = (data) => {
                 const applicantEmail = meta.user_email || data.user_email || meta.applicant_email;
                 const teamName = meta.event_title || meta.teamName || 'Event';
                 const category = meta.event_type || meta.category || 'sports';
-                
+
                 window.showReviewApplicationModal(appId, postId, applicantEmail, teamName, category, meta);
             }
             break;
@@ -1423,7 +1424,8 @@ async function syncNotifications() {
 
     try {
         const u = JSON.parse(userProfileStr);
-        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(u.email || u.id)}&limit=5`, { idempotency: false });
+        const safeUserEmail = localStorage.getItem('userEmail') || u.email || u.id; // Jaring Pengaman!
+        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=5`, { idempotency: false });
 
         if (data.success && data.data.list && data.data.list.length > 0) {
             const latestNotifs = data.data.list;
