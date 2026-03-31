@@ -428,7 +428,7 @@ router.get('/host/participants', async (req, res) => {
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
         if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        let queryStr = `SELECT id, user_id, status, snapshot_display_name, snapshot_avatar_url, created_at, updated_at FROM event_participants WHERE event_type = ? AND event_id = ?`;
+        let queryStr = `SELECT id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at FROM event_participants WHERE event_type = ? AND event_id = ?`;
         const replacements = [event_type, event_id];
         if (status) { queryStr += ` AND status = ?`; replacements.push(status); }
         if (cursor_at && cursor_id) { queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); }

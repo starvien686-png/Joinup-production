@@ -619,7 +619,7 @@ export const renderSports = () => {
                     ${pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
                         <span style="font-size: 0.9rem; color: #333;"><b>${app.snapshot_display_name || app.applicantName}</b> <span style="color: #888;">(${app.applicantDept || ''})</span></span>
-                        <button class="btn" onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', '${p.teamName.replace(/'/g, "\\'")}', 'sports', ${JSON.stringify(app).replace(/"/g, '&quot;')})" style="padding: 4px 10px; font-size: 0.75rem; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">${isZH ? '查看申請' : 'Review'}</button>
+                        <button class="btn" onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', '${p.teamName.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'sports', null)" style="padding: 4px 10px; font-size: 0.75rem; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                     `).join('')}
 

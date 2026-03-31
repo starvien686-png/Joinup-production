@@ -654,6 +654,14 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     const isZH = currentLang.toLowerCase().includes('zh');
 
     let application = serverSnapshot;
+    if (typeof serverSnapshot === 'string') {
+        try {
+            application = JSON.parse(serverSnapshot.replace(/&quot;/g, '"'));
+        } catch (e) {
+            console.warn("Failed to parse serverSnapshot string", e);
+            application = null;
+        }
+    }
 
     // If no serverSnapshot, try to find in Local Storage (legacy) or Fetch from Server (modern)
     if (!application) {
@@ -1388,8 +1396,14 @@ window.handleDeepLink = (data) => {
         case 'OPEN_REVIEW_MODAL':
             if (window.showReviewApplicationModal) {
                 // If data has full metadata (from background fetch), use it
-                const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || {};
-                window.showReviewApplicationModal(data.aggregate_id, data.targetId, meta.user_email || data.user_email, 'Event', meta.event_type || 'sports', meta);
+                const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || data || {};
+                const appId = data.id || meta.id || data.aggregate_id;
+                const postId = data.targetId || meta.event_id || data.aggregate_id;
+                const applicantEmail = meta.user_email || data.user_email || meta.applicant_email;
+                const teamName = meta.event_title || meta.teamName || 'Event';
+                const category = meta.event_type || meta.category || 'sports';
+                
+                window.showReviewApplicationModal(appId, postId, applicantEmail, teamName, category, meta);
             }
             break;
         case 'NAVIGATE_TO_EVENT_DETAIL':
