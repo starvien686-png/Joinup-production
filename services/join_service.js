@@ -383,30 +383,52 @@ router.post('/join/reject', async (req, res) => {
 // 5. GET /api/v1/notifications
 router.get('/notifications', async (req, res) => {
     const { user_email, limit = 20, cursor } = req.query;
+
+    // 1. Penjaga Pintu: Pastikan email nggak kosong!
+    if (!user_email) {
+        return res.status(400).json({ success: false, message: 'URL salah! Email tidak terbaca.' });
+    }
+
     try {
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
-        if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+        // 2. Pakai nama spesifik (:email) biar Sequelize nggak bingung
+        const [users] = await sequelize.query(
+            'SELECT id FROM users WHERE email = :email',
+            { replacements: { email: user_email } }
+        );
 
-        let queryStr = `SELECT id, type, metadata, is_read, created_at FROM system_notifications WHERE recipient_id = ?`;
-        const replacements = [users.id];
-
-        if (cursor) {
-            queryStr += ` AND created_at < ?`;
-            replacements.push(new Date(cursor));
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'User tidak ditemukan di database' });
         }
 
-        queryStr += ` ORDER BY created_at DESC LIMIT ?`;
-        replacements.push(parseInt(limit) + 1);
+        let queryStr = `SELECT id, type, metadata, is_read, created_at FROM system_notifications WHERE recipient_id = :recipientId`;
+        let replacements = { recipientId: users.id };
 
-        // Nah, kita pakai cara aman ini buat MySQL/TiDB
+        if (cursor) {
+            queryStr += ` AND created_at < :cursor`;
+            replacements.cursor = new Date(cursor);
+        }
+
+        // 3. LIMIT langsung kita tembak pakai angka murni (Sangat aman)
+        const safeLimit = parseInt(limit) + 1;
+        queryStr += ` ORDER BY created_at DESC LIMIT ${safeLimit}`;
+
         const [results] = await sequelize.query(queryStr, { replacements: replacements });
 
         const hasMore = results.length > parseInt(limit);
         const list = hasMore ? results.slice(0, parseInt(limit)) : results;
 
-        res.json({ success: true, data: { list, paginationInfo: { cursor: hasMore ? list[list.length - 1].created_at : null, hasMore } } });
+        res.json({
+            success: true,
+            data: {
+                list,
+                paginationInfo: {
+                    cursor: hasMore ? list[list.length - 1].created_at : null,
+                    hasMore
+                }
+            }
+        });
     } catch (err) {
-        console.error("Error in /notifications:", err); // Biar gampang dilacak
+        console.error("Error Ganas di /notifications:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
