@@ -1086,6 +1086,7 @@ export const renderGroupBuy = () => {
                     <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
                     <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
             }
+            actionButtons += `<button onclick="window.deletePost('${p.id}', 'housing')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
 
             let appsHtml = '';
             if (pendingApps.length > 0) {

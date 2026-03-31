@@ -252,7 +252,7 @@ export const renderHome = () => {
 
             const isPostActive = (p) => {
                 // 1. Check Status
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
+                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full' || p.status === 'deleted') return false;
 
                 // 2. Check Deadline / Event Time
                 const refDateStr = p.deadline || p.event_time || p.departure_time;
@@ -415,7 +415,13 @@ export const renderHome = () => {
             const translatedLoc = getLocTrans(p.location);
 
             return `
-                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="min-width: 280px; scroll-snap-align: center; cursor: pointer; border: 1px solid #f0f0f0; flex-shrink: 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="min-width: 280px; scroll-snap-align: center; cursor: pointer; border: 1px solid #f0f0f0; flex-shrink: 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative;">
+                    ${(user.email && p.host_email && user.email === p.host_email) ? `
+                        <button onclick="event.stopPropagation(); window.deletePost('${p.id}', '${p.category}')" 
+                                style="position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; background: #F44336; color: white; border: 2px solid white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;">
+                            ✕
+                        </button>
+                    ` : ''}
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: #FFF3E0; padding: 3px 10px; border-radius: 20px; color: #E67E22; font-weight: bold;">
                             ${iconEmoji} ${labelName}

@@ -731,6 +731,46 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
 
 
 
+window.deletePost = async (id, category) => {
+    const isZH = localStorage.getItem('language')?.includes('zh') || false;
+    const confirmMsg = isZH 
+        ? "⚠️ 確定要刪除此活動嗎？\n一旦刪除，所有人都將無法在列表中看到它。數據將被保留在系統中，但此操作無法撤回。\n\n(注意：如果已有參與者被接受，將會扣除 1 積分)" 
+        : "⚠️ Are you sure you want to delete this event?\nOnce deleted, no one will be able to see it in the lists. Data will be preserved in the system, but this action cannot be undone.\n\n(Note: If participants have already been accepted, 1 credit point will be deducted)";
+    
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        let endpoint = '';
+        switch(category) {
+            case 'carpool': endpoint = `/update-carpool-status/${id}`; break;
+            case 'study': endpoint = `/update-study-status/${id}`; break;
+            case 'hangout': endpoint = `/update-hangout-status/${id}`; break;
+            case 'housing': endpoint = `/update-housing-status/${id}`; break;
+            default: endpoint = `/update-activity-status/${id}`; // sports
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'deleted' })
+        });
+
+        if (response.ok) {
+            alert(isZH ? "✅ 活動已成功刪除！" : "✅ Event deleted successfully!");
+            // Refresh current view or redirect
+            window.location.reload();
+        } else {
+            const err = await response.json();
+            alert((isZH ? "❌ 刪除失敗: " : "❌ Delete failed: ") + (err.error || err.message));
+        }
+    } catch (error) {
+        console.error("Delete Error:", error);
+        alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
+    }
+};
+
+
+
 window.checkNotificationBadge = () => {
 
     const userProfileStr = localStorage.getItem('userProfile');

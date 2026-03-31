@@ -371,6 +371,38 @@ async function handleSuccessPoints(activityId, category) {
     }
 }
 
+async function handlePointsOnDelete(activityId, category) {
+    try {
+        let tableName = 'activities';
+        let eventType = 'sports';
+        if (category === 'carpool') { tableName = 'carpools'; eventType = 'carpool'; }
+        else if (category === 'study') { tableName = 'studies'; eventType = 'study'; }
+        else if (category === 'hangout') { tableName = 'hangouts'; eventType = 'hangout'; }
+        else if (category === 'housing') { tableName = 'housing'; eventType = 'housing'; }
+
+        // 1. Get Host
+        const [post] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [activityId] });
+        if (post.length === 0) return;
+        const hostEmail = post[0].host_email;
+
+        // 2. Count Accepted Participants
+        const [participants] = await sequelize.query(
+            "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND (status = 'approved' OR status = 'accepted')",
+            { replacements: [eventType, activityId] }
+        );
+
+        const acceptedCount = participants[0].count;
+        if (acceptedCount > 0) {
+            await awardPoints(hostEmail, -1);
+            console.log(`[Points] Deducted 1 point from ${hostEmail} for deleting event ${activityId} (${category}) with ${acceptedCount} participants.`);
+        } else {
+            console.log(`[Points] No deduction for ${hostEmail} (0 participants).`);
+        }
+    } catch (error) {
+        console.error("Failed to handle points on delete:", error);
+    }
+}
+
 app.post('/award-points', async (req, res) => {
     try {
         const { email, points } = req.body;
@@ -452,6 +484,8 @@ app.put('/update-activity-status/:id', async (req, res) => {
         } else if (newStatus === 'cancelled') {
             const [post] = await sequelize.query('SELECT host_email FROM activities WHERE id = ?', { replacements: [activityId] });
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
+        } else if (newStatus === 'deleted') {
+            await handlePointsOnDelete(activityId, 'sports');
         }
 
         res.json({ message: 'Status successfully changed to ' + newStatus });
@@ -469,6 +503,8 @@ app.put('/update-carpool-status/:id', async (req, res) => {
         } else if (newStatus === 'cancelled') {
             const [post] = await sequelize.query('SELECT host_email FROM carpools WHERE id = ?', { replacements: [activityId] });
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
+        } else if (newStatus === 'deleted') {
+            await handlePointsOnDelete(activityId, 'carpool');
         }
 
         res.json({ message: 'Carpool status updated successfully!' });
@@ -486,6 +522,8 @@ app.put('/update-study-status/:id', async (req, res) => {
         } else if (newStatus === 'cancelled') {
             const [post] = await sequelize.query('SELECT host_email FROM studies WHERE id = ?', { replacements: [activityId] });
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
+        } else if (newStatus === 'deleted') {
+            await handlePointsOnDelete(activityId, 'study');
         }
 
         res.json({ message: 'Study status updated successfully!' });
@@ -503,6 +541,8 @@ app.put('/update-hangout-status/:id', async (req, res) => {
         } else if (newStatus === 'cancelled') {
             const [post] = await sequelize.query('SELECT host_email FROM hangouts WHERE id = ?', { replacements: [activityId] });
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
+        } else if (newStatus === 'deleted') {
+            await handlePointsOnDelete(activityId, 'hangout');
         }
 
         res.json({ message: 'Hangout status updated successfully!' });
@@ -520,6 +560,8 @@ app.put('/update-housing-status/:id', async (req, res) => {
         } else if (newStatus === 'cancelled') {
             const [post] = await sequelize.query('SELECT host_email FROM housing WHERE id = ?', { replacements: [activityId] });
             if (post.length > 0) await awardPoints(post[0].host_email, -1);
+        } else if (newStatus === 'deleted') {
+            await handlePointsOnDelete(activityId, 'housing');
         }
 
         res.json({ message: 'Housing status updated successfully!' });

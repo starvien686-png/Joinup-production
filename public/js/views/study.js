@@ -500,6 +500,7 @@ export const renderStudy = () => {
                             <button onclick="window.updateStudyStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
                             <button onclick="window.updateStudyStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
                         ` : ''}
+                        <button onclick="window.deletePost('${p.id}', 'study')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isAppZH() ? '🗑️ 刪除' : '🗑️ Delete'}</button>
                     </div>
                 </div>
             `;

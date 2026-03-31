@@ -664,6 +664,7 @@ export const renderSports = () => {
                             <button class="btn" style="background: #2196f3; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.confirmSuccess('${p.id}')">${txtSuccess}</button>
                             <button class="btn" style="background: #F44336; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.cancelPost('${p.id}')">${txtCancel}</button>
                         ` : ''}
+                        <button class="btn" style="background: #333; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.deletePost('${p.id}', 'sports')">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
                     </div>
                 </div>
             `;
