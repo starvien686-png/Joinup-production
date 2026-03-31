@@ -598,7 +598,8 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
 
     let realUserData = null;
     try {
-        const res = await fetch(`/api/v1/join/profile-user?email=${applicantEmail}`);
+        console.log("Check the applicant's email:", applicantEmail);
+        const res = await fetch(`/api/v1/profile-user?email=${applicantEmail}`);
         if (res.ok) {
             const textData = await res.text();
             try {
@@ -607,7 +608,7 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
                     realUserData = data; // Sukses dapat data!
                 }
             } catch (err) {
-                console.error("Bukan JSON:", textData.substring(0, 50));
+                console.error("NOT JSON:", textData.substring(0, 50));
             }
         }
     } catch (e) { console.warn("Gagal narik profil:", e); }
