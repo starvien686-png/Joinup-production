@@ -226,24 +226,38 @@ app.post('/send-otp', otpRateLimiter, async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hash = await bcrypt.hash(otp, 10);
-        
+
         // --- ATOMIC UPDATE (CONCURRENCY) ---
         otpStorage[email] = {
             hash,
             expiresAt: Date.now() + (process.env.OTP_EXPIRY_MINUTES * 60 * 1000),
             attempts: 0,
             createdAt: Date.now(),
-            requestId 
+            requestId
         };
 
-        const emailSubject = lang === 'zh-TW' ? '🔑 JoinUp 驗證碼' : '🔑 JoinUp OTP Code';
+        let emailSubject = '🔑 JoinUp OTP Code';
+        let greeting = 'Hello';
+        let mainText = 'Your OTP code is:';
+        let footerText = 'Valid for 5 minutes. Do not share this code.';
+        let brandName = 'JoinUp';
+
+        // Jika bahasa yang dikirim adalah Mandarin (zh-TW atau zh)
+        if (lang === 'zh-TW' || lang === 'zh') {
+            emailSubject = '🔑 JoinUp 驗證碼';
+            brandName = 'JoinUp 一起加入吧';
+            greeting = '您好';
+            mainText = '您的驗證碼是：';
+            footerText = '驗證碼將在 5 分鐘後過期。請勿將此代碼分享給他人。';
+        }
+
         const emailHtml = `
             <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
-                <h2 style="color: #d97706;">JoinUp</h2>
-                <p>Hello <strong>${user.username}</strong>,</p>
-                <p>Your OTP code is:</p>
+                <h2 style="color: #d97706;">${brandName}</h2>
+                <p>${greeting} <strong>${user.username}</strong>,</p>
+                <p>${mainText}</p>
                 <h1 style="color: #d97706; font-size: 40px; letter-spacing: 5px; background: #f3f4f6; padding: 15px; border-radius: 8px;">${otp}</h1>
-                <p style="color: #888; font-size: 12px;">Valid for 5 minutes. Do not share this code.</p>
+                <p style="color: #888; font-size: 12px;">${footerText}</p>
             </div>`;
 
         const mailOptions = {
@@ -1471,11 +1485,11 @@ startWorker();
 // --- BACKGROUND WORKER: AUTOMATIC EVENT RETIREMENT ---
 async function startEventRetirementWorker() {
     console.log('[Worker] Starting Autonomous Event Retirement Worker (Interval: 60s)');
-    
+
     const retireLogic = async () => {
         const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
         const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // MySQL format
-        
+
         try {
             for (const table of tables) {
                 let timeCondition = '';
@@ -1493,7 +1507,7 @@ async function startEventRetirementWorker() {
                     WHERE status = 'open' 
                     ${timeCondition}
                 `);
-                
+
                 const affectedRows = result.affectedRows || result[1] || 0;
                 if (affectedRows > 0) {
                     console.log(`[Worker] Auto-retired ${affectedRows} events in ${table}.`);
