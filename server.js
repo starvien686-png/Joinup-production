@@ -1147,12 +1147,14 @@ app.get('/housing/:id', async (req, res) => {
 app.get('/profile/:email', async (req, res) => {
     try {
         const email = req.params.email;
+        // Ambil data user berdasarkan email
         const [results] = await sequelize.query('SELECT * FROM users WHERE email = ?', {
             replacements: [email]
         });
 
         if (results.length > 0) {
-            res.json(results); // 👈 WAJIB PAKAI DI SINI!
+            // KIRIM OBJEK PERTAMA SAJA (results[0]), biar frontend gak bingung baca array
+            res.json(results[0]);
         } else {
             res.status(404).json({ error: 'User not found!' });
         }
