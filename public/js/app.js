@@ -1429,25 +1429,47 @@ async function syncNotifications() {
 
     try {
         const u = JSON.parse(userProfileStr);
-        // Use resilient API utility
-        const data = await api.fetch(`/api/v1/notifications?user_id=${u.id}&limit=5`, { idempotency: false });
+        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(u.email || u.id)}&limit=5`, { idempotency: false });
 
-        if (data.success && data.data.length > 0) {
-            console.log("[Resilience] Synced Background Notifications:", data.data);
+        if (data.success && data.data.list && data.data.list.length > 0) {
+            const latestNotifs = data.data.list;
+            const lastId = localStorage.getItem('last_notif_id');
+            const unreadCount = latestNotifs.filter(n => !n.is_read).length;
+
+            // Update badge regardless of toast logic
             if (window.checkNotificationBadge) window.checkNotificationBadge();
 
-            // Re-render current view if critical state changed
+            // Detect NEW unread notifications to show toast
+            const newest = latestNotifs[0];
+            if (!newest.is_read && newest.id !== lastId) {
+                localStorage.setItem('last_notif_id', newest.id);
+                
+                const meta = typeof newest.metadata === 'string' ? JSON.parse(newest.metadata) : newest.metadata;
+                const actionMeta = typeof newest.action_metadata === 'string' ? JSON.parse(newest.action_metadata) : newest.action_metadata;
+                
+                const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
+                const msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || ' seseorang'} 申請加入活動` 
+                                : `🔔 New join request from ${meta?.snapshot_display_name || 'someone'}`;
+
+                // Show the toast banner immediately
+                notifications.showNativeBanner({
+                    title: isZH ? "活動申請 / Join Request" : "Join Request",
+                    body: msg,
+                    data: { ...newest, metadata: meta, action_metadata: actionMeta }
+                });
+            }
+
             if (window.currentView === 'home' && window.refreshHome) {
                 window.refreshHome();
             }
         }
     } catch (e) {
-        console.warn("[Resilience] Syncing paused: Network boundary.");
+        console.warn("[Resilience] Syncing paused:", e);
     }
 }
 
 let notificationPollInterval;
-const POLL_RATE = 30000; // 30s fallback
+const POLL_RATE = 12000; // 12s polling for active sessions
 
 function startGlobalPolling() {
     if (notificationPollInterval) clearInterval(notificationPollInterval);

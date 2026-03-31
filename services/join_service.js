@@ -202,7 +202,7 @@ router.post('/join', async (req, res) => {
         const outboxPayload = JSON.stringify({
             recipient_email: event.host_email,
             event_type, event_id, user_email,
-            snapshot_display_name, snapshot_avatar_url,
+            snapshot_display_name, snapshot_avatar_url, snapshot_bio,
             actionType: 'OPEN_REVIEW_MODAL',
             targetId: event_id,
             version: '1'

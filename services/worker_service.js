@@ -97,6 +97,16 @@ async function processOutbox() {
                     payload.action_metadata = { actionType: payload.actionType, targetId: payload.targetId };
                     payload.link = `/review/${payload.targetId}`; // Example link
                 }
+                
+                // UX: Pass profile snapshots into persistent metadata
+                payload.metadata = {
+                    user_email: payload.user_email,
+                    event_type: payload.event_type,
+                    snapshot_display_name: payload.snapshot_display_name,
+                    snapshot_avatar_url: payload.snapshot_avatar_url,
+                    snapshot_bio: payload.snapshot_bio
+                };
+
                 await sendNotification(payload);
             }
 
@@ -148,7 +158,7 @@ async function runReconciliation() {
 // Start worker loops
 function startWorker() {
     logger.info("Worker Service Booted. Outbox processor active.");
-    setInterval(processOutbox, 5000); // Every 5s
+    setInterval(processOutbox, 2000); // Faster polling (2s) for "Immediate" feel
     setInterval(runReconciliation, 5 * 60 * 1000); // Every 5 mins
 }
 
