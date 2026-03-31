@@ -315,9 +315,10 @@ export const renderHome = () => {
 
         if (posts.length === 0) {
             scrollContainer.innerHTML = `
-            <div class="card" onclick="window.navigateTo('activities')" style="min-width: 280px;">
-                <h3 style="color: white; margin-bottom: 0.5rem;">${I18n.t('home.section.new_activity')}</h3>
-                <p style="opacity: 0.9; font-size: 0.9rem;">${I18n.t('home.section.new_desc')}</p>
+            <div class="card" onclick="window.navigateTo('activities')" style="min-width: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: linear-gradient(135deg, #FF9800, #F44336); padding: 2rem; border: none;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">✨</div>
+                <h3 style="color: white; margin-bottom: 0.5rem; font-size: 1.1rem; line-height: 1.4;">${I18n.t('home.empty_banner.title', "Let's make new activities with your friends")}</h3>
+                <button class="btn" style="background: white; color: #F44336; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; margin-top: 15px; width: auto; font-size: 0.9rem;">${I18n.t('home.section.new_activity', 'Create Now')}</button>
             </div>`;
             return;
         }

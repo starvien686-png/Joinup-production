@@ -1426,7 +1426,50 @@ async function syncAll() {
 const { startWorker } = require('./services/worker_service');
 startWorker();
 
+// --- BACKGROUND WORKER: AUTOMATIC EVENT RETIREMENT ---
+async function startEventRetirementWorker() {
+    console.log('[Worker] Starting Autonomous Event Retirement Worker (Interval: 60s)');
+    
+    const retireLogic = async () => {
+        const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // MySQL format
+        
+        try {
+            for (const table of tables) {
+                let timeCondition = '';
+                if (table === 'carpools') {
+                    timeCondition = `AND (deadline < '${now}' OR (deadline IS NULL AND departure_time < '${now}'))`;
+                } else if (table === 'housing') {
+                    timeCondition = `AND (deadline < '${now}')`;
+                } else {
+                    timeCondition = `AND (deadline < '${now}' OR (deadline IS NULL AND event_time < '${now}'))`;
+                }
+
+                const [result] = await sequelize.query(`
+                    UPDATE ${table} 
+                    SET status = 'expired' 
+                    WHERE status = 'open' 
+                    ${timeCondition}
+                `);
+                
+                const affectedRows = result.affectedRows || result[1] || 0;
+                if (affectedRows > 0) {
+                    console.log(`[Worker] Auto-retired ${affectedRows} events in ${table}.`);
+                }
+            }
+        } catch (error) {
+            console.error('[Worker] Retirement error:', error.message);
+        }
+    };
+
+    // Run once at start
+    await retireLogic();
+    // Then every 60 seconds
+    setInterval(retireLogic, 60000);
+}
+
 app.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
     await syncAll();
+    startEventRetirementWorker();
 });
