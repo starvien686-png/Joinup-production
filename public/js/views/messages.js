@@ -32,18 +32,17 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     if (realId.includes('_')) {
         const parts = realId.split('_');
-        roomType = parts.toLowerCase(); // Udah di-lowercase biar aman
-        realId = parts;
+        roomType = parts[0].toLowerCase(); // Udah di-lowercase biar aman
+        realId = parts[1];
     }
 
     // 2. Ambil Judul Event & DAFTARKAN RUANGAN
     try {
         let fetchUrl = '/activities';
-        if (roomType === 'hangout') fetchUrl = '/hangouts';
+        if (roomType === 'hangout' || roomType === 'travel' || roomType === 'food') fetchUrl = '/hangouts';
         else if (roomType === 'carpool') fetchUrl = '/carpools';
         else if (roomType === 'study') fetchUrl = '/studies';
         else if (roomType === 'housing' || roomType === 'groupbuy') fetchUrl = '/housing';
-        else if (roomType === 'travel' || roomType === 'food') fetchUrl = '/travels';
 
         const res = await fetch(fetchUrl);
         const data = await res.json();
