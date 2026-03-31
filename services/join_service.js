@@ -384,35 +384,33 @@ router.post('/join/reject', async (req, res) => {
 router.get('/notifications', async (req, res) => {
     const { user_email, limit = 20, cursor } = req.query;
 
-    // 1. Penjaga Pintu: Pastikan email nggak kosong!
     if (!user_email) {
-        return res.status(400).json({ success: false, message: 'URL salah! Email tidak terbaca.' });
+        return res.status(400).json({ success: false, message: 'Email kosong!' });
     }
 
     try {
-        // 2. Pakai nama spesifik (:email) biar Sequelize nggak bingung
-        const [users] = await sequelize.query(
-            'SELECT id FROM users WHERE email = :email',
-            { replacements: { email: user_email } }
-        );
-
-        if (users.length === 0) {
-            return res.status(404).json({ success: false, message: 'User tidak ditemukan di database' });
-        }
-
-        let queryStr = `SELECT id, type, metadata, is_read, created_at FROM system_notifications WHERE recipient_id = :recipientId`;
-        let replacements = { recipientId: users.id };
+        // KITA PAKAI JALAN PINTAS (JOIN) BIAR JAVASCRIPT NGGAK USAH PUSING BACA ID
+        let queryStr = `
+            SELECT n.id, n.type, n.metadata, n.is_read, n.created_at 
+            FROM system_notifications n 
+            JOIN users u ON n.recipient_id = u.id 
+            WHERE u.email = :email
+        `;
+        let replacements = { email: user_email };
 
         if (cursor) {
-            queryStr += ` AND created_at < :cursor`;
+            queryStr += ` AND n.created_at < :cursor`;
             replacements.cursor = new Date(cursor);
         }
 
-        // 3. LIMIT langsung kita tembak pakai angka murni (Sangat aman)
         const safeLimit = parseInt(limit) + 1;
-        queryStr += ` ORDER BY created_at DESC LIMIT ${safeLimit}`;
+        queryStr += ` ORDER BY n.created_at DESC LIMIT ${safeLimit}`;
 
-        const [results] = await sequelize.query(queryStr, { replacements: replacements });
+        // Tambahkan "type: SELECT" biar hasilnya otomatis bersih
+        const results = await sequelize.query(queryStr, {
+            replacements: replacements,
+            type: sequelize.QueryTypes.SELECT
+        });
 
         const hasMore = results.length > parseInt(limit);
         const list = hasMore ? results.slice(0, parseInt(limit)) : results;
@@ -428,7 +426,7 @@ router.get('/notifications', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error("Error Ganas di /notifications:", err);
+        console.error("Error Terakhir di /notifications:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
