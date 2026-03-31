@@ -586,99 +586,54 @@ window.handleNotificationClick = (link) => {
 
 };
 
-
-
 // ==========================================================
-
 // --- POP-UP BIODATA PELAMAR UNTUK HOST (SINKRON & BAHASA) -
 // ==========================================================
 window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamName, category, serverSnapshot = null) => {
     const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
     const isZH = currentLang.toLowerCase().includes('zh');
 
-    let application = serverSnapshot;
-    if (typeof serverSnapshot === 'string') {
-        try {
-            application = JSON.parse(serverSnapshot.replace(/&quot;/g, '"'));
-        } catch (e) {
-            console.warn("Failed to parse serverSnapshot string", e);
-            application = null;
-        }
-    }
+    const overlayId = 'review-app-overlay';
+    if (document.getElementById(overlayId)) return; // Mencegah pop-up dobel
 
-    // If no serverSnapshot, try to find in Local Storage (legacy) or Fetch from Server (modern)
-    if (!application) {
-        // 1. Try to fetch from server first (Production Rule)
-        try {
-            const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-            const data = await api.fetch(`/api/v1/host/participants?event_type=${category || 'sports'}&event_id=${postId}&host_email=${userProfile.email}`, { idempotency: false });
-            if (data.success && data.data) {
-                // For direct deep links, find the specific app
-                application = data.data.find(a => String(a.id) === String(appId) || a.user_id === applicantEmail);
+    // 1. SEDOT DATA ASLI DARI DATABASE PROFIL (Ini yang bikin nggak kosong!)
+    let realUserData = null;
+    try {
+        // Nembak langsung ke profil pakai email pelamar
+        const res = await fetch(`/get_profile.php?email=${applicantEmail}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) {
+                realUserData = data; // Dapat data aslinya!
             }
-        } catch (e) { console.warn("Server fetch failed, falling back to local snapshots.", e); }
+        }
+    } catch (e) {
+        console.warn("Failed to fetch user profile:", e);
     }
 
-    if (!application) {
-        const storageKeyMap = {
-            'carpool': 'joinup_carpool_apps',
-            'hangout': 'joinup_hangout_apps',
-            'study': 'joinup_study_apps',
-            'housing': 'joinup_housing_apps',
-            'sports': 'joinup_applications'
-        };
-        const storageKey = storageKeyMap[category] || 'joinup_applications';
-        const apps = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        application = apps.find(a => String(a.id) === String(appId) || a.applicantId === applicantEmail);
-    }
-
-    // AMBIL DATA PROFIL PALING FRESH DARI DATABASE / ACCOUNT SETTINGS
-    let freshUser = null;
-    if (window.MockStore && window.MockStore.getUser) {
-        freshUser = window.MockStore.getUser(applicantEmail);
-    }
-    if (!freshUser) {
-        const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-        freshUser = allUsers.find(u => u.email === applicantEmail);
-    }
-
-    // Set Data Biodata (Ambil Snapshot dari DB duluan, baru Fresh User, baru Legacy App)
-    let applicantName = application?.snapshot_display_name || freshUser?.displayName || freshUser?.name || application?.applicantName || 'Applicant';
-    let applicantDept = freshUser?.department || freshUser?.major || application?.applicantDept || (isZH ? '學生' : 'Student');
-    let studyYear = freshUser?.study_year || freshUser?.studyYear || freshUser?.year || application?.applicantStudyYear || '';
-    let bio = application?.snapshot_bio || freshUser?.bio || freshUser?.about || application?.applicantBio || '';
-    let hobby = freshUser?.hobby || freshUser?.hobbies || freshUser?.interests || application?.applicantHobby || '';
-
-    // PENYEDOT FOTO UNIVERSAL
-    let avatar = application?.snapshot_avatar_url || freshUser?.profile_pic || freshUser?.profilePic || freshUser?.avatar || application?.applicantPic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-
-    if (!bio) bio = isZH ? '希望能加入這個活動！' : 'I would love to join this activity!';
-    if (!hobby) hobby = isZH ? '熱愛交流' : 'Loves connecting with people';
-
-
+    // 2. TENTUKAN DATA BIODATA (Prioritas: Data Asli > Default)
+    let applicantName = realUserData?.username || 'Applicant';
+    let applicantDept = realUserData?.major || (isZH ? '學生' : 'Student');
+    let studyYear = realUserData?.study_year || '';
+    let bio = realUserData?.bio || (isZH ? '希望能加入這個活動！' : 'I would love to join this activity!');
+    let hobby = realUserData?.hobby || (isZH ? '熱愛交流' : 'Loves connecting with people');
+    let avatar = realUserData?.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
     // Terjemahan Bahasa Otomatis
-
     const txtTitle = isZH ? '審核申請' : 'Review Application';
-
     const txtAccept = isZH ? '接受 ✓' : 'Accept ✓';
-
     const txtDecline = isZH ? '拒絕 ✗' : 'Decline ✗';
-
     const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
-
     const txtBioLabel = isZH ? '個人簡介' : 'Bio';
-
-    const txtApplyFor = isZH ? '申請加入' : 'Applied to join';
-
-    const displayTeamName = application?.event_title || teamName || (isZH ? '活動' : 'Event');
+    const txtApplyFor = isZH ? '申請加入：' : 'Applying for:';
+    const displayTeamName = teamName || (isZH ? '活動' : 'Event');
 
     const modalHtml = `
-        <div id="review-app-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); transition: all 0.3s;">
+        <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); transition: all 0.3s;">
             <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${category || 'Activity'}</span>
-                    <button onclick="document.getElementById('review-app-overlay').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-weight: bold; transition: 0.2s;">×</button>
+                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-weight: bold; transition: 0.2s;">×</button>
                 </div>
 
                 <div style="position: relative; display: inline-block; margin-bottom: 15px;">
@@ -722,11 +677,9 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
             #review-app-overlay button:hover { opacity: 0.9; transform: translateY(-2px); }
             #review-app-overlay button:active { transform: translateY(0); }
         </style>
-
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-
 };
 
 
