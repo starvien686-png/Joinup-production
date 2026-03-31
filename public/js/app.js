@@ -726,6 +726,8 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
 
     const txtBioLabel = isZH ? '個人簡介' : 'Bio';
 
+    const txtApplyFor = isZH ? '申請加入' : 'Applied to join';
+
     const displayTeamName = application?.event_title || teamName || (isZH ? '活動' : 'Event');
 
     const modalHtml = `
