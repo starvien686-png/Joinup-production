@@ -374,214 +374,157 @@ window.sendAppNotification = (userId, type, message, link) => {
 
 
 
-window.showAnnouncements = () => {
-
+window.showAnnouncements = async () => {
     const existing = document.querySelector('.announcement-overlay');
-
     if (existing) existing.remove();
 
-
-
     const currentUserStr = localStorage.getItem('userProfile');
-
     const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    const safeUserEmail = localStorage.getItem('userEmail') || (currentUser ? currentUser.email : '');
 
-
-
-    const mockNotifs = currentUser && MockStore.getNotifications ? MockStore.getNotifications(currentUser.email) : [];
-
-    const localNotifs = currentUser ? JSON.parse(localStorage.getItem(`joinup_notifs_${currentUser.email}`) || '[]') : [];
-
-
-
-    let personalNotifications = [...localNotifs, ...mockNotifs];
-
-    personalNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-
-
-    if (currentUser) {
-
-        let updatedLocal = localNotifs.map(n => ({ ...n, isRead: true }));
-
-        localStorage.setItem(`joinup_notifs_${currentUser.email}`, JSON.stringify(updatedLocal));
-
-        mockNotifs.forEach(n => { if (!n.isRead && MockStore.markNotificationAsRead) MockStore.markNotificationAsRead(n.id); });
-
-    }
-
-
-
-    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
-
+    let personalNotifications = [];
+    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
     const isZH = currentLang.toLowerCase().includes('zh');
 
+    // 1. SEDOT DATA LANGSUNG DARI DATABASE MySQL TIAP KALI LONCENG DIKLIK!
+    if (safeUserEmail) {
+        try {
+            const res = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=20`, { idempotency: false });
 
+            if (res.success && res.data && res.data.list) {
+                personalNotifications = res.data.list.map(n => {
+                    const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : (n.metadata || {});
+                    let msg = isZH ? '系統通知' : 'System Notification';
+                    let link = '';
+                    let iconType = 'info';
+
+                    // Ubah format data dari Database jadi tampilan UI
+                    if (n.type === 'join_request') {
+                        const evtName = meta.event_title || '活動';
+                        const sender = meta.snapshot_display_name || '有人';
+                        msg = isZH ? `🔔 新申請：${sender} 申請加入 "${evtName}"` : `🔔 New request: ${sender} wants to join "${evtName}"`;
+
+                        // Link Sakti buat buka Modal Accept/Decline!
+                        const category = meta.event_type || 'sports';
+                        const postId = meta.targetId || meta.event_id || '';
+                        link = `action:review_${category}_app:${n.id}:${postId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
+                        iconType = 'action';
+
+                    } else if (n.type === 'join_approved') {
+                        msg = isZH ? `✅ 恭喜！您申請的活動已獲批准！` : `✅ Congrats! Your event join request was approved!`;
+                        link = `messages?room=${meta.event_type}_${meta.event_id}`;
+                        iconType = 'success';
+                    } else if (n.type === 'join_rejected') {
+                        msg = isZH ? `❌ 抱歉，您的活動申請已被婉拒。` : `❌ Sorry, your event join request was declined.`;
+                        iconType = 'info';
+                    }
+
+                    return {
+                        id: n.id,
+                        type: iconType,
+                        message: msg,
+                        link: link,
+                        createdAt: n.created_at,
+                        isRead: n.is_read == 1 || n.is_read === true
+                    };
+                });
+            }
+        } catch (err) {
+            console.error("Gagal narik notifikasi dari server:", err);
+        }
+    }
+
+    // Fallback kalau DB beneran kosong, cek local storage lama
+    if (personalNotifications.length === 0) {
+        const localNotifs = JSON.parse(localStorage.getItem(`joinup_notifs_${safeUserEmail}`) || '[]');
+        personalNotifications = localNotifs;
+    }
+
+    // Urutkan dari yang terbaru
+    personalNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const txtNotifCenter = isZH ? '🔔 通知中心' : '🔔 Notification Center';
-
     const txtPersonal = isZH ? '個人通知' : 'Personal Notifications';
-
     const txtSystem = isZH ? '系統公告' : 'System Announcements';
-
     const txtNoNotif = isZH ? '沒有新通知' : 'No new notifications';
 
-
-
     const announcements = [
-
-        { date: '2026/02/05', title: isZH ? '🎉 全新通知系統上線！' : '🎉 New Notification System!', content: isZH ? '我們更新了通知系統，快去試試看吧！' : 'We have updated our notification system!' }
-
+        { date: '2026/03/31', title: isZH ? '🎉 全新通知系統上線！' : '🎉 New Notification System!', content: isZH ? '資料庫升級完成，通知不再遺漏！' : 'Database upgraded, notifications are now fully synced!' }
     ];
 
-
-
     const overlay = document.createElement('div');
-
     overlay.className = 'announcement-overlay';
 
-
-
     const renderPersonal = () => {
-
         if (personalNotifications.length === 0) return `<div style="padding: 1rem; color: #999; text-align: center;">${txtNoNotif}</div>`;
-
         return personalNotifications.map(n => {
-
             const isAction = n.type === 'action';
-
-            const icon = isAction ? '⚡' : (n.type === 'info' ? 'ℹ️' : (n.type === 'success' ? '🎉' : '🔔'));
-
+            const icon = isAction ? '⚡' : (n.type === 'success' ? '🎉' : '🔔');
             const bgStyle = isAction ? 'background: #FFF3E0; border-left: 4px solid #FF9800;' : (n.type === 'success' ? 'background: #E8F5E9; border-left: 4px solid #4CAF50;' : '');
 
-
-
             return `
-
             <div class="notification-item ${n.isRead ? 'read' : 'unread'}" onclick="window.handleNotificationClick('${n.link}')" style="cursor: pointer; ${bgStyle}">
-
                 <div class="notif-icon">${icon}</div>
-
                 <div class="notif-content">
-
                     <div class="notif-msg" style="${isAction ? 'font-weight: bold; color: #E65100;' : ''}">${n.message}</div>
-
                     <div class="notif-time">${new Date(n.createdAt).toLocaleString()}</div>
-
                 </div>
-
                 ${n.link ? '<div class="notif-arrow">›</div>' : ''}
-
             </div>
-
             `;
-
         }).join('');
-
     };
-
-
 
     const renderSystem = () => {
-
         return announcements.map(item => `
-
             <div class="announcement-item">
-
                 <div class="announcement-date">${item.date}</div>
-
                 <div class="announcement-title">${item.title}</div>
-
                 <div class="announcement-text">${item.content}</div>
-
             </div>
-
         `).join('');
-
     };
 
-
-
     overlay.innerHTML = `
-
         <div class="announcement-modal">
-
             <div class="announcement-header">
-
                 <h2>${txtNotifCenter}</h2>
-
                 <button class="announcement-close" onclick="this.closest('.announcement-overlay').remove()">×</button>
-
             </div>
-
             <div class="announcement-body">
-
                 <div class="notif-section">
-
                     <h3>${txtPersonal}</h3>
-
                     <div class="notif-list">${renderPersonal()}</div>
-
                 </div>
-
                 <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
-
                 <div class="notif-section">
-
                     <h3>${txtSystem}</h3>
-
                     <div class="announcement-list">${renderSystem()}</div>
-
                 </div>
-
             </div>
-
         </div>
-
         <style>
-
             .notif-section h3 { font-size: 1rem; color: #555; margin-bottom: 0.5rem; }
-
             .notification-item { display: flex; align-items: start; padding: 0.8rem; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
-
             .notification-item:hover { background: #f9f9f9; }
-
             .notification-item.unread { background: #e3f2fd; }
-
             .notif-icon { font-size: 1.2rem; margin-right: 0.8rem; }
-
             .notif-content { flex: 1; }
-
             .notif-msg { font-size: 0.95rem; color: #333; margin-bottom: 0.2rem; }
-
             .notif-time { font-size: 0.8rem; color: #999; }
-
             .notif-arrow { font-size: 1.2rem; color: #ccc; padding-left: 0.5rem; }
-
         </style>
-
     `;
 
-
-
     overlay.addEventListener('click', (e) => {
-
         if (e.target === overlay) {
-
             overlay.remove();
-
-            checkNotificationBadge();
-
+            if (window.checkNotificationBadge) window.checkNotificationBadge();
         }
-
     });
 
-
-
     document.body.appendChild(overlay);
-
     requestAnimationFrame(() => { overlay.classList.add('show'); });
-
 };
 
 
