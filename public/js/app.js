@@ -596,22 +596,31 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     const overlayId = 'review-app-overlay';
     if (document.getElementById(overlayId)) return; // Mencegah pop-up dobel
 
-    // 1. SEDOT DATA ASLI DARI DATABASE PROFIL (Ini yang bikin nggak kosong!)
     let realUserData = null;
     try {
-        // Nembak langsung ke profil pakai email pelamar
-        const res = await fetch(`/api/v1/profile-user?email=${applicantEmail}`);
+        const res = await fetch(`/api/v1/join/profile-user?email=${applicantEmail}`);
         if (res.ok) {
-            const data = await res.json();
-            if (data && data.length > 0) {
-                realUserData = data; // Dapat data aslinya!
+            const textData = await res.text();
+            try {
+                const data = JSON.parse(textData);
+                if (Array.isArray(data) && data.length > 0) {
+                    realUserData = data; // Sukses dapat data!
+                }
+            } catch (err) {
+                console.error("Bukan JSON:", textData.substring(0, 50));
             }
         }
-    } catch (e) {
-        console.warn("Failed to fetch user profile:", e);
-    }
+    } catch (e) { console.warn("Gagal narik profil:", e); }
 
-    // 2. TENTUKAN DATA BIODATA (Prioritas: Data Asli > Default)
+    // 2. KEMBALIKAN FITUR BILINGUAL KAMU YANG KEREN!
+    const txtTitle = isZH ? '審核申請' : 'Review Application';
+    const txtAccept = isZH ? '接受 ✓' : 'Accept ✓';
+    const txtDecline = isZH ? '拒絕 ✗' : 'Decline ✗';
+    const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
+    const txtBioLabel = isZH ? '個人簡介' : 'Bio';
+    const txtApplyFor = isZH ? '申請加入：' : 'Applying for:';
+
+    // 3. TENTUKAN DATA (Tarik dari database, kalau kosong pakai default + bahasa)
     let applicantName = realUserData?.username || 'Applicant';
     let applicantDept = realUserData?.major || (isZH ? '學生' : 'Student');
     let studyYear = realUserData?.study_year || '';
@@ -619,76 +628,62 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     let hobby = realUserData?.hobby || (isZH ? '熱愛交流' : 'Loves connecting with people');
     let avatar = realUserData?.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-    // Terjemahan Bahasa Otomatis
-    const txtTitle = isZH ? '審核申請' : 'Review Application';
-    const txtAccept = isZH ? '接受 ✓' : 'Accept ✓';
-    const txtDecline = isZH ? '拒絕 ✗' : 'Decline ✗';
-    const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
-    const txtBioLabel = isZH ? '個人簡介' : 'Bio';
-    const txtApplyFor = isZH ? '申請加入：' : 'Applying for:';
     const displayTeamName = teamName || (isZH ? '活動' : 'Event');
 
+    // 4. MUNCULKAN POP-UP DENGAN BIODATA ASLI
     const modalHtml = `
-        <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); transition: all 0.3s;">
-            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);">
+        <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px);">
+            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; text-align: center; max-height: 90vh; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${category || 'Activity'}</span>
-                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; font-weight: bold; transition: 0.2s;">×</button>
+                    <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase;">${category || 'Activity'}</span>
+                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: bold;">×</button>
                 </div>
 
                 <div style="position: relative; display: inline-block; margin-bottom: 15px;">
                     <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                    <div style="position: absolute; bottom: 5px; right: 5px; background: #4CAF50; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"></div>
                 </div>
 
                 <h4 style="margin: 0 0 4px 0; font-size: 1.4rem; color: #1a1a1a; font-weight: 800;">${applicantName}</h4>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                    <span>🎓 ${applicantDept}</span>
-                    ${studyYear ? `<span style="color: #ddd;">|</span> <span style="font-weight: 600; color: #FF9800;">Year ${studyYear}</span>` : ''}
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 6px;">
+                    🎓 ${applicantDept} ${studyYear ? `| Year ${studyYear}` : ''}
                 </div>
 
-                <div style="background: #fafafa; padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left; border: 1px solid #f0f0f0;">
+                <div style="background: #fafafa; padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left;">
                     <div style="margin-bottom: 12px;">
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px;">${txtHobbyLabel}</label>
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold;">${txtHobbyLabel}</label>
                         <div style="font-size: 0.9rem; color: #333;">${hobby}</div>
                     </div>
                     <div>
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px;">${txtBioLabel}</label>
-                        <div style="font-size: 0.9rem; color: #444; line-height: 1.5; font-style: italic;">"${bio}"</div>
+                        <label style="font-size: 0.7rem; color: #999; font-weight: bold;">${txtBioLabel}</label>
+                        <div style="font-size: 0.9rem; color: #444; font-style: italic;">"${bio}"</div>
                     </div>
                 </div>
 
-                <div style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; padding: 10px; background: #f0f7ff; border-radius: 12px; border: 1px dashed #2196f3;">
-                    ${txtApplyFor} <br> <strong style="color: #1976D2; font-size: 0.95rem;">${displayTeamName}</strong>
+                <div style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; padding: 10px; background: #f0f7ff; border-radius: 12px;">
+                    ${txtApplyFor}<br> <strong style="color: #1976D2; font-size: 0.95rem;">${displayTeamName}</strong>
                 </div>
 
                 <div style="display: flex; gap: 1rem;">
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border-radius: 14px; border: 2px solid #F44336; cursor: pointer; font-weight: 800; font-size: 0.95rem; transition: 0.2s;">
-                        ${txtDecline}
-                    </button>
-                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category || ''}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border-radius: 14px; border: none; cursor: pointer; font-weight: 800; font-size: 0.95rem; box-shadow: 0 6px 15px rgba(76,175,80,0.3); transition: 0.2s;">
-                        ${txtAccept}
-                    </button>
+                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border-radius: 14px; border: 2px solid #F44336; cursor: pointer; font-weight: bold;">${txtDecline}</button>
+                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border-radius: 14px; border: none; cursor: pointer; font-weight: bold;">${txtAccept}</button>
                 </div>
             </div>
         </div>
-        <style>
-            @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-            #review-app-overlay button:hover { opacity: 0.9; transform: translateY(-2px); }
-            #review-app-overlay button:active { transform: translateY(0); }
-        </style>
     `;
-
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 };
 
 window.handleReviewAction = async (action, appId, postId, applicantEmail, teamName, category) => {
-    const isZH = localStorage.getItem('language')?.includes('zh') || false;
-    const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    const safeHostEmail = localStorage.getItem('userEmail') || userProfile.email;
+    // Cek bahasa yang sedang dipakai user
+    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
+    const isZH = currentLang.toLowerCase().includes('zh');
 
+    // Tarik email host dengan aman
+    const safeHostEmail = localStorage.getItem('userEmail');
+
+    // ALERT 1: Sesi habis / Belum Login (Bilingual)
     if (!safeHostEmail) {
-        alert(isZH ? "請先登入！" : "Please login first!");
+        alert(isZH ? "登入超時，請重新登入！" : "Login session expired, please login again!");
         return;
     }
 
@@ -698,28 +693,31 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
         await api.fetch(endpoint, {
             method: 'POST',
             body: {
-                event_type: category || 'sports',
+                event_type: category || 'study',
                 event_id: postId,
-                // 👇 INI TAMBAHANNYA: Biar nggak error Missing Fields 👇
-                participant_id: appId || 'lookup',
+                // Jaring pengaman biar ga kena Error 400 Missing Fields
+                participant_id: appId && appId !== 'undefined' ? appId : 0,
                 target_user_email: applicantEmail,
                 host_email: safeHostEmail
             }
         });
 
-        // Hapus Pop-up
-        const overlay = document.getElementById('review-app-overlay');
-        if (overlay) overlay.remove();
+        // Sukses! Tutup pop up
+        document.getElementById('review-app-overlay')?.remove();
 
-        // Notifikasi Sukses
+        // ALERT 2: Sukses Diterima / Ditolak (Bilingual)
         alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
 
-        // Refresh layar biar data ter-update
+        // Refresh webnya biar status update
         window.location.reload();
 
     } catch (err) {
-        console.error("Action Sync Failed:", err);
-        alert("Error: " + (err.message || err.errorCode || "Server failed"));
+        console.error("Gagal Review:", err);
+
+        // ALERT 3: Error / Gagal (Bilingual)
+        // Kalau error dari server kosong, kita kasih pesan default yang ramah
+        const errorMsg = err.message || (isZH ? "請確認您是否為此活動的發起人！" : "Please make sure you are the host of this event!");
+        alert((isZH ? "失敗：" : "Failed: ") + errorMsg);
     }
 };
 
