@@ -304,6 +304,18 @@ router.post('/join/approve', async (req, res) => {
 
         await sequelize.query("UPDATE event_participants SET status = 'approved', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
 
+        // NEW: AUTO-CLOSE ON FULL CAPACITY
+        const capacityCol = getCapacityColumn(event_type);
+        const [updatedApproved] = await sequelize.query(
+            "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
+            { replacements: [event_type, event_id], transaction: t }
+        );
+        
+        if (updatedApproved[0].count >= events[0][capacityCol]) {
+            await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
+            logger.info(`Event ${event_type}:${event_id} marked as FULL. (Count: ${updatedApproved[0].count}/${events[0][capacityCol]})`);
+        }
+
         // Auto Chat Join
         const roomId = `${event_type}_${event_id}`;
         const [targetUser] = await sequelize.query("SELECT email, username FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
@@ -454,7 +466,13 @@ router.get('/host/participants', async (req, res) => {
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
         if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        let queryStr = `SELECT id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at FROM event_participants WHERE event_type = ? AND event_id = ?`;
+        let queryStr = `
+            SELECT ep.id, ep.user_id, u.email as user_email, ep.status, 
+                   ep.snapshot_display_name, ep.snapshot_avatar_url, ep.snapshot_bio, 
+                   ep.created_at, ep.updated_at 
+            FROM event_participants ep
+            JOIN users u ON ep.user_id = u.id
+            WHERE ep.event_type = ? AND ep.event_id = ?`;
         const replacements = [event_type, event_id];
         if (status) { queryStr += ` AND status = ?`; replacements.push(status); }
         if (cursor_at && cursor_id) { queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); }

@@ -14,6 +14,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const joinService = require('./services/join_service');
+const workerService = require('./services/worker_service');
 
 // Force IPv4 first for environments like Render that don't support outbound IPv6
 dns.setDefaultResultOrder('ipv4first');
@@ -1490,10 +1491,10 @@ async function startEventRetirementWorker() {
     console.log('[Worker] Starting Autonomous Event Retirement Worker (Interval: 60s)');
 
     const retireLogic = async () => {
-        const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
-        const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // MySQL format
-
         try {
+            const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
+            const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
             for (const table of tables) {
                 let timeCondition = '';
                 if (table === 'carpools') {
@@ -1511,7 +1512,7 @@ async function startEventRetirementWorker() {
                     ${timeCondition}
                 `);
 
-                const affectedRows = result.affectedRows || result[1] || 0;
+                const affectedRows = result.affectedRows || (result[0] && result[0].affectedRows) || 0;
                 if (affectedRows > 0) {
                     console.log(`[Worker] Auto-retired ${affectedRows} events in ${table}.`);
                 }
@@ -1531,4 +1532,5 @@ app.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
     await syncAll();
     startEventRetirementWorker();
+    workerService.startWorker();
 });

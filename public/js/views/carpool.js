@@ -560,7 +560,7 @@ export const renderCarpool = () => {
                 appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'carpool', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'carpool', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
             }
@@ -807,71 +807,7 @@ export const renderCarpool = () => {
         }
     };
 
-    window.acceptCarpoolApp = async (appId, postId, applicantId, applicantName, teamName) => {
-        window.CarpoolAppEngine.updateApp(appId, 'accepted');
-
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-        let roomIndex = chatRooms.findIndex(r => String(r.id) === `carpool_${postId}`);
-        if (roomIndex === -1) {
-            chatRooms.push({
-                id: `carpool_${postId}`,
-                postId: postId,
-                roomType: 'carpool',
-                teamName: teamName,
-                participants: [
-                    { id: JSON.parse(localStorage.getItem('userProfile')).email, name: 'Host', role: 'host' },
-                    { id: applicantId, name: applicantName, role: 'participant' }
-                ]
-            });
-        } else {
-            if (!chatRooms[roomIndex].participants.find(p => p.id === applicantId)) {
-                chatRooms[roomIndex].participants.push({ id: applicantId, name: applicantName, role: 'participant' });
-            }
-        }
-        localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-
-        if (window.sendAppNotification) {
-            window.sendAppNotification(
-                applicantId, 'success',
-                t('cp.notif.acc', `🎉 恭喜！您在「${teamName}」的共乘申請已通過。進入聊天室！`, `🎉 Congrats! Your ride request for "${teamName}" was ACCEPTED!`),
-                `messages?room=carpool_${postId}`
-            );
-        }
-        alert(t('cp.alert.acc', "已接受！ ✓", "Accepted! ✓"));
-        updateView();
-    };
-
-    window.rejectCarpoolApp = async (appId, postId, applicantId, teamName) => {
-        if (confirm(t('cp.confirm.rej', "確定拒絕此申請？", "Reject this applicant?"))) {
-            window.CarpoolAppEngine.updateApp(appId, 'rejected');
-            if (window.sendAppNotification) {
-                window.sendAppNotification(
-                    applicantId, 'info',
-                    t('cp.notif.rej', `❌ 抱歉，您在「${teamName}」的共乘申請未通過。`, `❌ Sorry, your ride request for "${teamName}" was rejected.`),
-                    ''
-                );
-            }
-            updateView();
-        }
-    };
-
-    window.removeCarpoolApp = async (appId, postId, applicantId) => {
-        if (confirm(t('cp.confirm.rem', "確定移除此成員？", "Do you want to remove this passenger?"))) {
-            window.CarpoolAppEngine.updateApp(appId, 'rejected');
-
-            let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-            const roomIndex = chatRooms.findIndex(r => String(r.id) === `carpool_${postId}`);
-            if (roomIndex > -1) {
-                chatRooms[roomIndex].participants = chatRooms[roomIndex].participants.filter(p => p.id !== applicantId);
-                localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-            }
-
-            if (window.sendAppNotification) {
-                window.sendAppNotification(applicantId, 'info', t('cp.notif.rem', `⚠️ 您已被車主移出共乘活動。`, `⚠️ You have been removed from the ride by the Host.`), '');
-            }
-            updateView();
-        }
-    };
+    // HANDLED GLOBALLY IN app.js (window.handleReviewAction)
 
     updateView();
 };

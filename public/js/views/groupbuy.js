@@ -1094,7 +1094,7 @@ export const renderGroupBuy = () => {
                 appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_id || app.applicantId}', '${(p.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') || 'Housing'}', 'housing', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') || 'Housing'}', 'housing', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
             }
@@ -1930,50 +1930,7 @@ export const renderGroupBuy = () => {
         };
     };
 
-    // --- HOUSING ACCEPT / REJECT ---
-    window.acceptHousingApp = async (appId, postId, applicantId, applicantName, teamName) => {
-        const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-        try {
-            const out = await api.fetch('/api/v1/join/approve', {
-                method: 'POST',
-                body: {
-                    event_type: 'housing',
-                    event_id: postId,
-                    target_user_email: applicantId,
-                    host_email: user.email
-                }
-            });
-            if (out.success) {
-                alert(isZH ? '已接受！ ✓' : 'Accepted! ✓');
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            updateView();
-        }
-    };
-
-    window.rejectHousingApp = async (appId, postId, applicantId, teamName) => {
-        const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-        try {
-            const out = await api.fetch('/api/v1/join/reject', {
-                method: 'POST',
-                body: {
-                    event_type: 'housing',
-                    event_id: postId,
-                    target_user_email: applicantId,
-                    host_email: user.email
-                }
-            });
-            if (out.success) {
-                alert(isZH ? '已拒絕！' : 'Rejected!');
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            updateView();
-        }
-    };
+    // --- HOUSING ACCEPT / REJECT (HANDLED GLOBALLY IN app.js) ---
 
     window.openGroupChat = (activityId) => {
         const userProfileStr = localStorage.getItem('userProfile');
