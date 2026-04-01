@@ -372,34 +372,49 @@ export const renderRegister = () => {
                 return;
             }
 
-            const inputYear = sanitizeInput(document.getElementById('reg-year').value).trim();
-            let finalStudyYear = 0;
+            const inputYearVal = sanitizeInput(document.getElementById('reg-year').value).trim();
+            const studentId = email.substring(0, 10);
+            const entryYearStr = studentId.substring(1, 4);
+            const entryYear = parseInt(entryYearStr);
 
-            if (isAnyStudent) {
-                if (!inputYear) return alert("Please enter your study year!");
+            const now = new Date();
+            const currentMinguoYear = now.getFullYear() - 1911;
+            const currentMonth = now.getMonth() + 1;
+            const academicYear = (currentMonth < 8) ? (currentMinguoYear - 1) : currentMinguoYear;
 
-                const studentId = email.substring(0, 10);
-                const entryYearStr = studentId.substring(1, 4);
-                const entryYear = parseInt(entryYearStr);
-                finalStudyYear = 114 - entryYear + 1;
-
-                let grade = '大' + finalStudyYear;
-                if (finalStudyYear === 1) grade = '大一';
-                else if (finalStudyYear === 2) grade = '大二';
-                else if (finalStudyYear === 3) grade = '大三';
-                else if (finalStudyYear === 4) grade = '大四';
-                else if (finalStudyYear === 5) grade = '大五';
-                else if (finalStudyYear === 6) grade = '大六';
-                else if (finalStudyYear > 6) grade = '大七+';
-                else if (entryYear > 114) grade = '未來學生';
-
-                const isMatch = (inputYear === grade) || (inputYear === entryYearStr) || (inputYear === String(finalStudyYear));
-
-                if (!isMatch) {
-                    alert(typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Year mismatch!");
-                    return;
-                }
+            let calculatedSeniority = academicYear - entryYear + 1;
+            if (['master_student', 'doctoral_student'].includes(role) && entryYear === currentMinguoYear && currentMonth < 8) {
+                calculatedSeniority = 1;
             }
+
+            let prefix = '大';
+            if (role === 'master_student') prefix = '碩';
+            else if (role === 'doctoral_student') prefix = '博';
+
+            const yearNames = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+            const standardGradeLabel = prefix + (yearNames[calculatedSeniority - 1] || calculatedSeniority);
+
+            let inputSeniorityNum = 0;
+            const chineseMatch = inputYearVal.match(/[一二三四五六七]/);
+            if (chineseMatch) {
+                inputSeniorityNum = yearNames.indexOf(chineseMatch[0]) + 1;
+            } else {
+                const numMatch = inputYearVal.match(/\d+/);
+                if (numMatch) inputSeniorityNum = parseInt(numMatch[0]);
+            }
+
+            if (!inputSeniorityNum) {
+                alert(typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Invalid year format! Please use formats like 大一, 碩二, or 3.");
+                return;
+            }
+
+            if (inputSeniorityNum < calculatedSeniority) {
+                alert((typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Year mismatch!") + ` (Min expected: ${standardGradeLabel})`);
+                return;
+            }
+
+            const is_delayed_graduation = inputSeniorityNum > calculatedSeniority;
+            let finalStudyYear = inputSeniorityNum;
 
             const btn = e.target.querySelector('button[type="submit"]');
             btn.innerText = typeof I18n !== 'undefined' ? I18n.t('reg.processing') : "Processing...";
@@ -411,7 +426,8 @@ export const renderRegister = () => {
                 password: pwd,
                 major: sanitizeInput(document.getElementById('reg-major').value),
                 study_year: finalStudyYear,
-                role: role
+                role: role,
+                is_delayed_graduation: is_delayed_graduation
             };
 
             try {

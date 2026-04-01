@@ -127,7 +127,7 @@ const transporter = nodemailer.createTransport({
 
 app.post('/signup', async (req, res) => {
     try {
-        const { username, email, password, major, study_year, role } = req.body;
+        const { username, email, password, major, study_year, role, is_delayed_graduation } = req.body;
 
         const isStudentFormat = /^s\d{9}@(mail1\.)?ncnu\.edu\.tw$/.test(email);
         const isProfessorFormat = email.endsWith('@ncnu.edu.tw');
@@ -147,7 +147,8 @@ app.post('/signup', async (req, res) => {
             password,
             major,
             study_year,
-            role
+            role,
+            is_delayed_graduation: !!is_delayed_graduation
         });
 
         res.status(201).json({ message: 'User created successfully!', user: newUser });

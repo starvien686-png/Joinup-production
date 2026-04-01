@@ -41,6 +41,10 @@ const User = sequelize.define('user', {
     credit_points: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    is_delayed_graduation: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     tableName: 'users',
