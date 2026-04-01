@@ -23,7 +23,7 @@ const User = sequelize.define('user', {
     },
     role: {
         type: DataTypes.STRING,
-        defaultValue: 'student'
+        defaultValue: 'bachelor_student'
     },
     // 👇 INI DIA 3 LACI ABADI YANG BIKIN DATA KAMU HILANG KEMARIN 👇
     bio: {

@@ -90,7 +90,9 @@ export const renderRegister = () => {
                                 <div class="form-group" style="margin-bottom: 15px;">
                                     <label data-i18n="reg.role_label" style="font-weight: bold;">Identity (Role)</label>
                                     <select id="reg-role" class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; font-family: inherit;">
-                                        <option value="student" data-i18n="role.student">🎓 Student</option>
+                                        <option value="bachelor_student" data-i18n="role.bachelor_student">🎓 Bachelor Student</option>
+                                        <option value="master_student" data-i18n="role.master_student">🎓 Master Student</option>
+                                        <option value="doctoral_student" data-i18n="role.doctoral_student">🎓 Doctoral Student</option>
                                         <option value="professor" data-i18n="role.professor">👔 Professor</option>
                                         <option value="staff" data-i18n="role.staff">🏢 Staff</option>
                                     </select>
@@ -170,7 +172,8 @@ export const renderRegister = () => {
             const majorLabel = document.getElementById('label-major');
             const majorInput = document.getElementById('reg-major');
 
-            if (role === 'student') {
+            const isAnyStudent = ['bachelor_student', 'master_student', 'doctoral_student'].includes(role);
+            if (isAnyStudent) {
                 yearGroup.style.display = 'block';
                 yearInput.required = true;
                 majorLabel.innerText = typeof I18n !== 'undefined' ? (I18n.t('reg.major_label') || 'Major') : 'Major';
@@ -347,7 +350,8 @@ export const renderRegister = () => {
             // 2. Deteksi Professor/Staff: Wajib @ncnu.edu.tw TAPI TIDAK BOLEH pakai format mahasiswa
             const isProfessorFormat = email.endsWith('@ncnu.edu.tw') && !isStudentFormat;
 
-            if (role === 'student') {
+            const isAnyStudent = ['bachelor_student', 'master_student', 'doctoral_student'].includes(role);
+            if (isAnyStudent) {
                 if (!isStudentFormat) {
                     alert("Invalid format! Students must use:\ns123456789@mail1.ncnu.edu.tw OR s123456789@ncnu.edu.tw");
                     return;
@@ -371,7 +375,7 @@ export const renderRegister = () => {
             const inputYear = sanitizeInput(document.getElementById('reg-year').value).trim();
             let finalStudyYear = 0;
 
-            if (role === 'student') {
+            if (isAnyStudent) {
                 if (!inputYear) return alert("Please enter your study year!");
 
                 const studentId = email.substring(0, 10);

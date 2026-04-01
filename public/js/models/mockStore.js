@@ -64,8 +64,8 @@ export const MockStore = {
             return { success: false, message: 'Email already registered' };
         }
 
-        // Strict Email Format Enforcement for Students
-        if (userData.role === 'student' && !NCNU_EMAIL_REGEX.test(userData.email)) {
+        const isAnyStudent = ['bachelor_student', 'master_student', 'doctoral_student'].includes(userData.role);
+        if (isAnyStudent && !NCNU_EMAIL_REGEX.test(userData.email)) {
             return { success: false, message: 'Invalid email format. Must be s+studentID@mail1.ncnu.edu.tw' };
         }
 
@@ -103,8 +103,8 @@ export const MockStore = {
                 return { success: false, message: 'Invalid email or password' };
             }
 
-            // Strict Email Format Enforcement for Students
-            if (data.role === 'student' && !NCNU_EMAIL_REGEX.test(email)) {
+            const isAnyStudent = ['bachelor_student', 'master_student', 'doctoral_student'].includes(data.role);
+            if (isAnyStudent && !NCNU_EMAIL_REGEX.test(email)) {
                 return { success: false, message: 'Invalid email format. Must be s+studentID@mail1.ncnu.edu.tw' };
             }
 
@@ -261,8 +261,9 @@ export const MockStore = {
             console.log(`[Backend] Initiating Google Sheet Export for: ${userData.email}`);
 
             // Determine Target Sheet based on Role
-            const role = userData.role || 'student';
-            const teacherRoles = ['professor', 'doctor', 'lecturer', 'senior_lecturer'];
+            const role = userData.role || 'bachelor_student';
+            const teacherRoles = ['professor', 'doctoral_student', 'lecturer'];
+            const studentRoles = ['bachelor_student', 'master_student'];
             const targetSheet = teacherRoles.includes(role) ? 'Teachers_Staff_Data' : 'Students_Data';
 
             console.log(`[Backend] Routing data to Sheet Tab: [${targetSheet}]`);

@@ -131,7 +131,8 @@ app.post('/signup', async (req, res) => {
         const isStudentFormat = /^s\d{9}@(mail1\.)?ncnu\.edu\.tw$/.test(email);
         const isProfessorFormat = email.endsWith('@ncnu.edu.tw');
 
-        if (role === 'student' && !isStudentFormat) {
+        const isStudentRole = ['bachelor_student', 'master_student', 'doctoral_student'].includes(role);
+        if (isStudentRole && !isStudentFormat) {
             return res.status(400).json({ error: 'Format email mahasiswa tidak valid.' });
         }
         if ((role === 'professor' || role === 'staff')) {
