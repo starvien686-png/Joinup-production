@@ -618,13 +618,26 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     let bio = realUserData?.bio || (isZH ? '希望能加入這個活動！' : 'I would love to join this activity!');
     let hobby = realUserData?.hobby || (isZH ? '熱愛交流' : 'Loves connecting with people');
 
-    // --- PERBAIKAN 3: Jalur Foto Profil (Tambahkan /uploads/) ---
-    let avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // Default
-    if (realUserData?.profile_pic) {
-        // Jika sudah ada 'http', pakai langsung. Jika belum, tambah /uploads/
-        avatar = realUserData.profile_pic.startsWith('http')
-            ? realUserData.profile_pic
-            : `/uploads/${realUserData.profile_pic}`;
+    // --- CARA PINTAR AMBIL FOTO (Anti Error 500) ---
+    let userPic = '';
+    if (Array.isArray(realUserData) && realUserData.length > 0) {
+        userPic = realUserData[0].profile_pic;
+    } else if (realUserData && realUserData.profile_pic) {
+        userPic = realUserData.profile_pic;
+    }
+
+    let avatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+    if (userPic) {
+        if (userPic.startsWith('data:image')) {
+            // JIKA FOTO ADALAH BASE64, PAKAI LANGSUNG (JANGAN ditambah /uploads/)
+            avatar = userPic;
+        } else if (userPic.startsWith('http')) {
+            avatar = userPic;
+        } else {
+            // JIKA HANYA NAMA FILE, BARU TAMBAH /uploads/
+            avatar = userPic.includes('uploads') ? (userPic.startsWith('/') ? userPic : '/' + userPic) : `/uploads/${userPic}`;
+        }
     }
 
     const displayTeamName = teamName || (isZH ? '活動' : 'Event');
