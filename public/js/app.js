@@ -399,25 +399,23 @@ window.showAnnouncements = async () => {
                     let link = '';
                     let iconType = 'info';
 
-                    // Ubah format data dari Database jadi tampilan UI
                     if (n.type === 'join_request') {
                         const evtName = meta.event_title || '活動';
                         const sender = meta.snapshot_display_name || '有人';
                         msg = isZH ? `🔔 新申請：${sender} 申請加入 "${evtName}"` : `🔔 New request: ${sender} wants to join "${evtName}"`;
 
-                        // Link Sakti buat buka Modal Accept/Decline!
+                        // --- PERBAIKAN DI SINI ---
+                        // Kita harus pastikan postId benar-benar ada nilainya
                         const category = meta.event_type || 'sports';
-                        const postId = meta.targetId || meta.event_id || '';
-                        link = `action:review_${category}_app:${n.id}:${postId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
-                        iconType = 'action';
 
-                    } else if (n.type === 'join_approved') {
-                        msg = isZH ? `✅ 恭喜！您申請的活動已獲批准！` : `✅ Congrats! Your event join request was approved!`;
-                        link = `messages?room=${meta.event_type}_${meta.event_id}`;
-                        iconType = 'success';
-                    } else if (n.type === 'join_rejected') {
-                        msg = isZH ? `❌ 抱歉，您的活動申請已被婉拒。` : `❌ Sorry, your event join request was declined.`;
-                        iconType = 'info';
+                        // Cek semua kemungkinan tempat ID acara disimpan
+                        const postId = meta.event_id || meta.targetId || n.aggregate_id || '';
+
+                        // Jika postId masih kosong, kita coba ambil dari metadata mentah
+                        const finalPostId = (postId && postId !== 'undefined') ? postId : '';
+
+                        link = `action:review_${category}_app:${n.id}:${finalPostId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
+                        iconType = 'action';
                     }
 
                     return {
@@ -431,7 +429,7 @@ window.showAnnouncements = async () => {
                 });
             }
         } catch (err) {
-            console.error("Gagal narik notifikasi dari server:", err);
+            console.error("Failed to fetch notifications from server:", err);
         }
     }
 
