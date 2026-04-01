@@ -710,6 +710,7 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
 
     // CEGAH "MISSING FIELDS" SEBELUM TERJADI
     if (!payloadData.event_id || !payloadData.target_user_email) {
+        console.log("Data received:", payloadData);
         alert(isZH ? "舊通知數據不完整，請忽略此通知。" : "Old notification data is broken. Please ignore it.");
         document.getElementById('review-app-overlay')?.remove();
         return;
