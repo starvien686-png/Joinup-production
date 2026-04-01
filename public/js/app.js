@@ -685,36 +685,40 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
         return;
     }
 
+    const payloadData = {
+        event_type: category || 'study',
+        event_id: (!postId || postId === 'undefined') ? '' : postId,
+        participant_id: (!appId || appId === 'undefined') ? 0 : appId,
+        target_user_email: (!applicantEmail || applicantEmail === 'undefined') ? '' : applicantEmail,
+        host_email: safeHostEmail
+    };
+
+    // 🚨 PELACAK: Tampilkan di Console (F12) untuk melihat data apa yang dikirim
+    console.log("=== DATA ALREADY SENT TO SERVER ===");
+    console.log(payloadData);
+
+    // CEGAH "MISSING FIELDS" SEBELUM TERJADI
+    if (!payloadData.event_id || !payloadData.target_user_email) {
+        alert(isZH ? "舊通知數據不完整，請忽略此通知。" : "Old notification data is broken. Please ignore it.");
+        document.getElementById('review-app-overlay')?.remove();
+        return;
+    }
+
     try {
         const endpoint = action === 'accept' ? '/api/v1/join/approve' : '/api/v1/join/reject';
 
         await api.fetch(endpoint, {
             method: 'POST',
-            body: {
-                event_type: category || 'study',
-                event_id: postId,
-                // Jaring pengaman biar ga kena Error 400 Missing Fields
-                participant_id: appId && appId !== 'undefined' ? appId : 0,
-                target_user_email: applicantEmail,
-                host_email: safeHostEmail
-            }
+            body: payloadData
         });
 
-        // Sukses! Tutup pop up
         document.getElementById('review-app-overlay')?.remove();
-
-        // ALERT 2: Sukses Diterima / Ditolak (Bilingual)
         alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
-
-        // Refresh webnya biar status update
         window.location.reload();
 
     } catch (err) {
-        console.error("Gagal Review:", err);
-
-        // ALERT 3: Error / Gagal (Bilingual)
-        // Kalau error dari server kosong, kita kasih pesan default yang ramah
-        const errorMsg = err.message || (isZH ? "請確認您是否為此活動的發起人！" : "Please make sure you are the host of this event!");
+        console.error("Failed to Review:", err);
+        const errorMsg = err.message || (isZH ? "請確認您是否為此活動的發起人！" : "Make sure you are the host of this event!");
         alert((isZH ? "失敗：" : "Failed: ") + errorMsg);
     }
 };
