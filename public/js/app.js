@@ -281,6 +281,7 @@ window.validLogin = (user) => {
     try {
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userProfile', JSON.stringify(user));
+        localStorage.setItem('userEmail', user.email);
     } catch (e) {
         const lite = { ...user, profile_pic: '', photoURL: '' };
         localStorage.setItem('userProfile', JSON.stringify(lite));
@@ -675,12 +676,12 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
     const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW';
     const isZH = currentLang.toLowerCase().includes('zh');
 
-    // Tarik email host dengan aman
-    const safeHostEmail = localStorage.getItem('userEmail');
+    const userProfileStr = localStorage.getItem('userProfile');
+    const userProfile = userProfileStr ? JSON.parse(userProfileStr) : null;
+    const safeHostEmail = userProfile ? userProfile.email : null;
 
-    // ALERT 1: Sesi habis / Belum Login (Bilingual)
     if (!safeHostEmail) {
-        alert(isZH ? "登入超時，請重新登入！" : "Login session expired, please login again!");
+        alert(isZH ? "登入超時，請重新登入！" : "Login session expired!");
         return;
     }
 
