@@ -404,6 +404,9 @@ window.showAnnouncements = async () => {
                         const sender = meta.snapshot_display_name || '有人';
                         msg = isZH ? `🔔 新申請：${sender} 申請加入 "${evtName}"` : `🔔 New request: ${sender} wants to join "${evtName}"`;
 
+                        // 👇 INI BARIS YANG KEMARIN TERHAPUS (Wajib ada!) 👇
+                        const category = meta.event_type || 'sports';
+
                         // Cek semua kemungkinan tempat ID acara disimpan (Sangat Fleksibel)
                         const actionMeta = typeof n.action_metadata === 'string' ? JSON.parse(n.action_metadata) : (n.action_metadata || {});
 
@@ -411,8 +414,8 @@ window.showAnnouncements = async () => {
                             meta.post_id ||
                             meta.activity_id ||
                             meta.targetId ||
-                            meta.carpool_id || // Spesifik untuk tabel carpools
-                            meta.study_id ||   // Spesifik untuk tabel studies
+                            meta.carpool_id ||
+                            meta.study_id ||
                             meta.hangout_id ||
                             actionMeta.event_id ||
                             actionMeta.post_id ||
