@@ -275,7 +275,9 @@ router.post('/join/approve', async (req, res) => {
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const tableName = getTableName(event_type);
-        const [events] = await sequelize.query(`SELECT host_email, people_needed FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        const capacityCol = getCapacityColumn(event_type);
+
+        const [events] = await sequelize.query(`SELECT host_email, ${capacityCol} as capacity FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
         if (events.length === 0) throw { status: 404, message: 'Event not found' };
         if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
@@ -293,7 +295,7 @@ router.post('/join/approve', async (req, res) => {
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
         );
-        if (approved[0].count >= events[0].people_needed) throw { status: 409, message: 'Event full' };
+        if (approved[0].count >= events[0].capacity) throw { status: 409, message: 'Event full' };
 
         const [parts] = await sequelize.query(
             "SELECT id, user_id, status FROM event_participants WHERE id = ? FOR UPDATE",
@@ -305,7 +307,6 @@ router.post('/join/approve', async (req, res) => {
         await sequelize.query("UPDATE event_participants SET status = 'approved', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
 
         // NEW: AUTO-CLOSE ON FULL CAPACITY
-        const capacityCol = getCapacityColumn(event_type);
         const [updatedApproved] = await sequelize.query(
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
@@ -350,6 +351,7 @@ router.post('/join/approve', async (req, res) => {
 // 4. POST /api/v1/join/reject
 router.post('/join/reject', async (req, res) => {
     const { event_type, event_id, participant_id, host_email } = req.body;
+    console.log(`[JoinService] Processing REJECT for ${event_type}:${event_id}`, { participant_id, host_email });
     let t;
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
