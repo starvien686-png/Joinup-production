@@ -1343,7 +1343,14 @@ window.handleDeepLink = (data) => {
                 // If data has full metadata (from background fetch), use it
                 const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || data || {};
                 const appId = data.id || meta.id || data.aggregate_id;
-                const postId = data.targetId || meta.event_id || data.aggregate_id;
+                const postId = data.targetId ||
+                    meta.event_id ||
+                    meta.post_id ||
+                    data.event_id ||
+                    data.post_id ||
+                    data.aggregate_id ||
+                    meta.target_id ||
+                    "";
                 const applicantEmail = meta.user_email || data.user_email || meta.applicant_email;
                 const teamName = meta.event_title || meta.teamName || 'Event';
                 const category = meta.event_type || meta.category || 'sports';
