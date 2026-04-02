@@ -1334,6 +1334,7 @@ import api from './utils/api.js';
 // --- DEEP LINK HANDLER (BluePrint Item 3: Notification Action Contract) ---
 window.handleDeepLink = (data) => {
     if (!data) return;
+    console.log("=== ISI DATA NOTIFIKASI ===", data);
     const { actionType, targetId } = data;
 
     switch (actionType) {
