@@ -410,24 +410,25 @@ window.showAnnouncements = async () => {
                         // Cek semua kemungkinan tempat ID acara disimpan (Sangat Fleksibel)
                         const actionMeta = typeof n.action_metadata === 'string' ? JSON.parse(n.action_metadata) : (n.action_metadata || {});
 
-                        const postId = meta.event_id ||
-                            meta.post_id ||
-                            meta.activity_id ||
-                            meta.targetId ||
-                            meta.carpool_id ||
-                            meta.study_id ||
-                            meta.hangout_id ||
-                            actionMeta.event_id ||
-                            actionMeta.post_id ||
-                            actionMeta.targetId ||
-                            n.aggregate_id ||
-                            n.event_id ||
-                            n.post_id ||
-                            n.activity_id ||
-                            n.target_id ||
+                        const postId = meta.event_id || 
+                            meta.post_id || 
+                            meta.activity_id || 
+                            meta.targetId || 
+                            meta.carpool_id || 
+                            meta.study_id || 
+                            meta.hangout_id || 
+                            meta.id ||
+                            actionMeta.event_id || 
+                            actionMeta.post_id || 
+                            actionMeta.targetId || 
+                            n.aggregate_id || 
+                            n.event_id || 
+                            n.post_id || 
+                            n.activity_id || 
+                            n.target_id || 
                             '';
 
-                        // Jika postId masih kosong, kita coba ambil dari metadata mentah
+                        // Jika postId masih kosong, kita coba cek apakah category terselip di metadata
                         const finalPostId = (postId && postId !== 'undefined') ? postId : '';
 
                         link = `action:review_${category}_app:${n.id}:${finalPostId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
@@ -721,13 +722,20 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
     };
 
     // 🚨 PELACAK: Tampilkan di Console (F12) untuk melihat data apa yang dikirim
-    console.log("=== DATA ALREADY SENT TO SERVER ===");
-    console.log(payloadData);
+    console.log("=== DATA SENT TO SERVER ===", {
+        action,
+        appId,
+        postId,
+        applicantEmail,
+        payload: payloadData
+    });
 
-    // CEGAH "MISSING FIELDS" SEBELUM TERJADI
+    // Validasi kritis: Harus punya ID Acara dan Email Pengaju agar bisa diproses server
     if (!payloadData.event_id || !payloadData.target_user_email) {
-        console.log("Data received:", payloadData);
-        alert(isZH ? "舊通知數據不完整，請忽略此通知。" : "Old notification data is broken. Please ignore it.");
+        console.error("Missing critical data for review!", payloadData);
+        alert(isZH 
+            ? `舊通知數據不完整 (ID: ${payloadData.event_id || '?'}), 請忽略此通知。` 
+            : `Old notification data is missing details (ID: ${payloadData.event_id || '?'}). Please ignore it.`);
         document.getElementById('review-app-overlay')?.remove();
         return;
     }

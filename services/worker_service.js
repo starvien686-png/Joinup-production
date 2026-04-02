@@ -100,6 +100,7 @@ async function processOutbox() {
                 
                 // UX: Pass profile snapshots into persistent metadata
                 payload.metadata = {
+                    event_id: payload.event_id || payload.targetId,
                     user_email: payload.user_email,
                     event_type: payload.event_type,
                     event_title: payload.event_title,
