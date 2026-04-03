@@ -36,6 +36,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         realId = parts[1];
     }
 
+    let isHost = false;
+    let activityStatus = 'open';
+
     // 2. Ambil Judul Event & DAFTARKAN RUANGAN
     try {
         let fetchUrl = '/activities';
@@ -48,10 +51,12 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         const data = await res.json();
         const currentItem = data.find(i => String(i.id) === realId);
 
-        if (currentItem && currentItem.title) {
-            chatTitle = currentItem.title;
-        } else if (currentItem && currentItem.teamName) {
-            chatTitle = currentItem.teamName;
+        if (currentItem) {
+            if (currentItem.title) chatTitle = currentItem.title;
+            else if (currentItem.teamName) chatTitle = currentItem.teamName;
+            
+            isHost = (currentItem.host_email === user.email);
+            activityStatus = currentItem.status || 'open';
         } else {
             // Kalau ga ketemu, nyontek dari data Inbox
             const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
@@ -90,7 +95,11 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     </div>
                 </div>
                 
-                <div style="position: relative;">
+                <div style="display: flex; align-items: center; gap: 8px; position: relative;">
+                    ${isHost && activityStatus !== 'success' ? `
+                    <button id="btn-complete-activity" style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        ✅ ${I18n.t('chat.action.complete') || 'Completed'}
+                    </button>` : ''}
                     <button id="btn-chat-options" class="btn-icon">⋮</button>
                     <div id="chat-options-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 200; min-width: 170px; overflow: hidden;">
                         ${(() => {
@@ -360,6 +369,42 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     document.getElementById('btn-send-msg').addEventListener('click', () => sendMessage('text'));
     inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage('text'); });
+
+    // Handle Completion
+    if (isHost && document.getElementById('btn-complete-activity')) {
+        document.getElementById('btn-complete-activity').onclick = async () => {
+            if (!confirm(I18n.t('chat.confirm.complete') || 'Confirm activity completion?')) return;
+
+            try {
+                let statusUrl = `/update-activity-status/${realId}`;
+                if (roomType === 'carpool') statusUrl = `/update-carpool-status/${realId}`;
+                else if (roomType === 'study') statusUrl = `/update-study-status/${realId}`;
+                else if (roomType === 'hangout' || roomType === 'travel' || roomType === 'food') statusUrl = `/update-hangout-status/${realId}`;
+                else if (roomType === 'housing' || roomType === 'groupbuy') statusUrl = `/update-housing-status/${realId}`;
+
+                const res = await fetch(statusUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'success' })
+                });
+
+                if (res.ok) {
+                    alert(I18n.t('common.success') || 'Activity marked as completed!');
+                    // Hide button and update locally
+                    document.getElementById('btn-complete-activity').style.display = 'none';
+                    activityStatus = 'success';
+                    
+                    // Optionally send a system message
+                    sendMessage('announcement', `🎉 ${I18n.t('system.msg.match_success') || 'Activity completed!'}`);
+                } else {
+                    alert("Failed to update status.");
+                }
+            } catch (err) {
+                console.error("Completion error:", err);
+                alert("Error: " + err.message);
+            }
+        };
+    }
 
     // (Kode Maps & Fitur lain dipotong agar ringkas, tetap biarkan aslinya di sini)
     // AKU MASUKKAN SEMUA SUPAYA KAMU TINGGAL COPY-PASTE
