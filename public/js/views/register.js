@@ -3,6 +3,7 @@ import { MockStore } from '../models/mockStore.js';
 import { I18n } from '../services/i18n.js';
 import { formatTime } from '../utils/dateFormatter.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
+import { ThemeToggle } from '../components/ThemeToggle.js';
 
 export const renderRegister = () => {
     localStorage.removeItem('isLoggedIn');
@@ -49,7 +50,10 @@ export const renderRegister = () => {
 
         app.innerHTML = `
             <div id="auth-container">
-                <div id="lang-selector-container"></div>
+                <div id="lang-selector-container">
+                    <div id="header-lang-selector"></div>
+                    <div id="header-theme-toggle"></div>
+                </div>
                 <div id="auth-clock">
                     <div class="time">--:--</div>
                     <div class="date">----/--/--</div>
@@ -136,7 +140,10 @@ export const renderRegister = () => {
                         </div>
                     </div>
                 </div>
-                <p style="margin-top: 2rem; color: #666; font-size: 0.8rem; text-align: center;" data-i18n="auth.footer">&copy; 2026 JoinUp!</p>
+                <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.8rem; text-align: center;">
+                    JoinUp! <span style="font-weight: 600; color: var(--primary-dark);">v2026.03.31</span><br>
+                    <span data-i18n="auth.footer">&copy; 2026 JoinUp!</span>
+                </p>
             </div>
 
             <div id="modal-forgot-pwd" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;">
@@ -275,13 +282,15 @@ export const renderRegister = () => {
             }
         };
 
-        new LanguageSelector('lang-selector-container', {
+        new LanguageSelector('header-lang-selector', {
             onUpdate: (lang) => {
                 updateTexts();
                 const timeEl = document.querySelector('#auth-clock .time');
                 if (timeEl) timeEl.innerText = formatTime(new Date());
             }
         });
+
+        new ThemeToggle('header-theme-toggle');
 
         // --- LOGIKA LOGIN ---
         document.getElementById('form-login').onsubmit = async (e) => {

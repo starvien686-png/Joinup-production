@@ -1,6 +1,7 @@
 import { MockStore } from '../models/mockStore.js?v=17';
 import { I18n } from '../services/i18n.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
+import { ThemeToggle } from '../components/ThemeToggle.js';
 import api from '../utils/api.js';
 
 export const renderHome = () => {
@@ -78,12 +79,15 @@ export const renderHome = () => {
                         <p id="location-text" style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #999;" data-i18n="loc.ncnu">${I18n.t('loc.ncnu')}</p>
                     </div>
                     
-                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 160px;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 220px;">
                         <!-- Language Selector Container -->
                         <div id="header-lang-selector"></div>
                         
+                        <!-- Theme Toggle Container -->
+                        <div id="header-theme-toggle"></div>
+                        
                         <div style="display: flex; gap: 0.8rem;">
-                            <button onclick="window.showAnnouncements()" style="position: relative; background: white; border: 1px solid #ddd; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="最新公告">
+                            <button onclick="window.showAnnouncements()" style="position: relative; background: var(--bg-card); border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: var(--shadow-sm); transition: var(--transition-fast);" title="最新公告">
                                 🔔
                                 <span class="notification-badge-dot"></span>
                             </button>
@@ -117,9 +121,19 @@ export const renderHome = () => {
                 </section>
                 
                 <!-- Community & Safety Notice -->
-                <div style="margin-top: 2rem; padding: 1rem; background: #F8F9FA; border-radius: 8px; text-align: center; font-size: 12px; color: #6c757d; line-height: 1.5;">
+                <div style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; text-align: center; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
                     ${I18n.t('common.safety_notice')}
                 </div>
+
+                <!-- Footer Copyright & Version -->
+                <footer style="margin-top: 2rem; padding: 1rem 0; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+                    <div>
+                        JoinUp! <span style="font-weight: 600; color: var(--primary-dark);">v2026.03.31</span>
+                    </div>
+                    <div>
+                        © 2026 JoinUp! NCNU Campus Platform
+                    </div>
+                </footer>
             </div>
 
             <!-- Bottom Navigation -->
@@ -146,18 +160,23 @@ export const renderHome = () => {
             style.innerHTML = `
                 .category-grid {
                     display: grid;
-                    grid-template-columns: repeat(2, 1fr);
+                    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
                     gap: 1rem;
                 }
                 .category-card {
-                    background: white;
+                    background: var(--bg-card);
                     padding: 1.5rem;
                     border-radius: 16px;
                     text-align: center;
-                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+                    box-shadow: var(--shadow-sm);
                     cursor: pointer;
-                    transition: transform 0.2s, box-shadow 0.2s;
-                    border: 1px solid #f1f5f9;
+                    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-main);
+                }
+                .category-card:hover { 
+                    transform: translateY(-4px);
+                    box-shadow: var(--shadow-md);
                 }
                 .category-card:active { transform: scale(0.95); }
                 .cat-icon {
@@ -174,16 +193,24 @@ export const renderHome = () => {
                 }
                 .bottom-nav {
                     position: fixed; bottom: 0; left: 0; width: 100%;
-                    background: #FFFFFF; border-top: 1px solid #f1f5f9;
+                    background: var(--bg-card); border-top: 1px solid var(--border-color);
                     padding: 1.2rem 1rem; display: flex; justify-content: space-around;
                     box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100;
+                    color: var(--text-main);
                 }
                 .nav-item {
                     display: flex; flex-direction: column; align-items: center;
-                    color: #94a3b8; font-size: 0.8rem; text-decoration: none;
+                    color: var(--text-secondary); font-size: 0.8rem; text-decoration: none;
                 }
                 .nav-icon { font-size: 1.5rem; margin-bottom: 0.2rem; }
-                .nav-item.active { color: #FF8C00; }
+                .nav-item.active { color: var(--primary-dark); }
+
+                /* Tablet/Desktop Grid Adjustment */
+                @media (min-width: 768px) {
+                    .category-grid {
+                        grid-template-columns: repeat(5, 1fr);
+                    }
+                }
 
             `;
             document.head.appendChild(style);
@@ -196,6 +223,9 @@ export const renderHome = () => {
                 renderHome();
             }
         });
+
+        // Initialize Theme Toggle in Header
+        new ThemeToggle('header-theme-toggle');
     };
 
     renderContent();

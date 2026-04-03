@@ -29,6 +29,19 @@
     --transition-normal: 0.3s ease;
 }
 
+/* Dark Theme Variables */
+:root[data-theme="dark"] {
+    --text-main: #f0f4f8;
+    --text-secondary: #cbd5e1;
+    --text-light: #f8fafc;
+    --bg-body: #0f172a;
+    --bg-card: #1e293b;
+    --border-color: #334155;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+}
+
 /* Reset & Base */
 *,
 *::before,
@@ -77,10 +90,16 @@ h2 {
 
 /* Utilities */
 .container {
-    max-width: 600px;
-    /* Mobile First logic */
+    max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
+    transition: max-width var(--transition-normal);
+}
+
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+    }
 }
 
 .btn {
@@ -115,23 +134,25 @@ h2 {
 }
 
 .card {
-    background: #FFFFFF;
+    background: var(--bg-card);
     border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 1rem;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
 }
 
 .role-card {
-    background: #FFFFFF;
-    border: 1px solid #f1f5f9;
-    border-left: 4px solid #FF8C00;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
     border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.2s, box-shadow 0.2s;
     margin-bottom: 0;
+    color: var(--text-main);
 }
 
 .role-card:hover {
