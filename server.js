@@ -16,6 +16,37 @@ const fs = require('fs');
 const joinService = require('./services/join_service');
 const workerService = require('./services/worker_service');
 
+// --- TIMEZONE UTILITY (Asia/Taipei = UTC+8) ---
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const APP_TIMEZONE = 'Asia/Taipei';
+
+/**
+ * Converts any datetime string to Asia/Taipei timezone format for MySQL DATETIME columns.
+ * Handles inputs like: '2026-04-07T14:00', '2026-04-07 14:00:00', ISO strings, etc.
+ * Returns: 'YYYY-MM-DD HH:mm:ss' in Asia/Taipei time, or null if input is falsy.
+ */
+function toTaipei(datetimeStr) {
+    if (!datetimeStr) return null;
+    // Parse as-is (the input from frontend datetime-local is in the user's local time = Taipei)
+    // We treat the raw string as Taipei time and format it for MySQL
+    const parsed = dayjs.tz(datetimeStr, APP_TIMEZONE);
+    if (!parsed.isValid()) return datetimeStr; // fallback: return original if unparseable
+    return parsed.format('YYYY-MM-DD HH:mm:ss');
+}
+
+/**
+ * Get current time in Asia/Taipei as a JS Date-compatible value.
+ * Use this instead of Date.now() for time comparisons on the server.
+ */
+function nowTaipei() {
+    return dayjs().tz(APP_TIMEZONE);
+}
+
 // Force IPv4 first for environments like Render that don't support outbound IPv6
 dns.setDefaultResultOrder('ipv4first');
 
@@ -424,8 +455,9 @@ async function handleCancellation(activityId, category) {
         if (acceptedCount > 0) {
             shouldDeduct = true;
         } else if (eventTime) {
-            const msToStart = new Date(eventTime).getTime() - Date.now();
-            const hoursToStart = msToStart / (1000 * 60 * 60);
+            const eventDayjs = dayjs.tz(eventTime, APP_TIMEZONE);
+            const now = nowTaipei();
+            const hoursToStart = eventDayjs.diff(now, 'hour', true);
             if (hoursToStart >= 0 && hoursToStart < 2) {
                 shouldDeduct = true;
             }
@@ -500,7 +532,7 @@ app.post('/create-activity', async (req, res) => {
         `;
 
         await sequelize.query(query, {
-            replacements: [host_email, category, title, sport_type, people_needed, event_time, deadline, location, description]
+            replacements: [host_email, category, title, sport_type, people_needed, toTaipei(event_time), toTaipei(deadline), location, description]
         });
 
         await awardPoints(host_email, 1); // +1 Point for creating event!
@@ -767,7 +799,7 @@ app.post('/create-carpool', async (req, res) => {
         await sequelize.query(query, {
             replacements: [
                 host_email, host_name, host_dept, title,
-                departure_loc, destination_loc, departure_time, deadline,
+                departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline),
                 available_seats, price, vehicle_type, description
             ]
         });
@@ -864,7 +896,7 @@ app.post('/create-study', async (req, res) => {
             replacements: [
                 host_email, host_name, host_dept,
                 title, event_type, subject, location,
-                people_needed, event_time, deadline, description
+                people_needed, toTaipei(event_time), toTaipei(deadline), description
             ]
         });
 
@@ -971,7 +1003,7 @@ app.post('/create-hangout', async (req, res) => {
         await sequelize.query(query, {
             replacements: [
                 host_email, title, category, host_name, host_dept,
-                people_needed, event_time, deadline,
+                people_needed, toTaipei(event_time), toTaipei(deadline),
                 meeting_location, destination, description
             ]
         });
@@ -1106,7 +1138,7 @@ app.post('/create-housing', async (req, res) => {
         `;
 
         const [results] = await sequelize.query(query, {
-            replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, schedule_tags || '', deadline, rental_period, facilities || '', habits || '', description || '']
+            replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, schedule_tags || '', toTaipei(deadline), rental_period, facilities || '', habits || '', description || '']
         });
 
         await awardPoints(host_email, 1); // +1 Point for creating housing!
@@ -1284,6 +1316,11 @@ async function syncAll() {
     try {
         await sequelize.authenticate();
         console.log('Database connected successfully.');
+
+        // Verify MySQL session timezone is Asia/Taipei (+08:00)
+        const [tzResult] = await sequelize.query("SELECT @@session.time_zone AS tz, NOW() AS server_now");
+        console.log(`[Timezone] MySQL session: ${tzResult[0].tz}, NOW() = ${tzResult[0].server_now}`);
+        console.log(`[Timezone] Node.js dayjs: ${nowTaipei().format('YYYY-MM-DD HH:mm:ss')} (Asia/Taipei)`);
 
         // 1. Sync User Model (Create 'users' table if not exists)
         await User.sync();

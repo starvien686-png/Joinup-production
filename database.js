@@ -9,10 +9,18 @@ const sequelize = new Sequelize(
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 3306,
         dialect: 'mysql',
+        timezone: '+08:00',
         logging: false,
         dialectOptions: {
             ssl: {
                 rejectUnauthorized: false
+            },
+            dateStrings: true,
+            typeCast: function (field, next) {
+                if (field.type === 'DATETIME' || field.type === 'TIMESTAMP' || field.type === 'DATE') {
+                    return field.string();
+                }
+                return next();
             }
         }
     }
