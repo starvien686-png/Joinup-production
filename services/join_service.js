@@ -31,8 +31,16 @@ function getTableName(category) {
 
 // 1.1 Helper: Column mappings for different event types
 function getCapacityColumn(category) {
+    if (category === 'housing') return null;
     return category === 'carpool' ? 'available_seats' : 'people_needed';
 }
+
+const getEmailVariations = (email) => {
+    if (!email) return [];
+    if (email.endsWith('@mail1.ncnu.edu.tw')) return [email, email.replace('@mail1.ncnu.edu.tw', '@ncnu.edu.tw')];
+    if (email.endsWith('@ncnu.edu.tw')) return [email, email.replace('@ncnu.edu.tw', '@mail1.ncnu.edu.tw')];
+    return [email];
+};
 
 function getTimeColumn(category) {
     return category === 'carpool' ? 'departure_time' : 'event_time';
@@ -281,15 +289,14 @@ router.post('/join/approve', async (req, res) => {
         if (events.length === 0) throw { status: 404, message: 'Event not found' };
         if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        let finalPartId = participant_id;
-        if (!finalPartId && req.body.target_user_email) {
-            const [lookup] = await sequelize.query(
-                "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = (SELECT id FROM users WHERE email = ?) FOR UPDATE",
-                { replacements: [event_type, event_id, req.body.target_user_email], transaction: t }
-            );
-            if (lookup.length > 0) finalPartId = lookup[0].id;
-        }
-        if (!finalPartId) throw { status: 404, message: 'Participant not found' };
+        const targetEmailVars = getEmailVariations(req.body.target_user_email);
+        const [lookup] = await sequelize.query(
+            "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id IN (SELECT id FROM users WHERE email IN (?)) FOR UPDATE",
+            { replacements: [event_type, event_id, targetEmailVars], transaction: t }
+        );
+        if (lookup.length === 0) throw { status: 404, message: 'Participant not found' };
+        
+        let finalPartId = lookup[0].id;
 
         const [approved] = await sequelize.query(
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
@@ -359,15 +366,14 @@ router.post('/join/reject', async (req, res) => {
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
         if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
-        let finalPartId = participant_id;
-        if (!finalPartId && req.body.target_user_email) {
-            const [lookup] = await sequelize.query(
-                "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = (SELECT id FROM users WHERE email = ?) FOR UPDATE",
-                { replacements: [event_type, event_id, req.body.target_user_email], transaction: t }
-            );
-            if (lookup.length > 0) finalPartId = lookup[0].id;
-        }
-        if (!finalPartId) throw { status: 404, message: 'Not found' };
+        const targetEmailVars = getEmailVariations(req.body.target_user_email);
+        const [lookup] = await sequelize.query(
+            "SELECT id FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id IN (SELECT id FROM users WHERE email IN (?)) FOR UPDATE",
+            { replacements: [event_type, event_id, targetEmailVars], transaction: t }
+        );
+        if (lookup.length === 0) throw { status: 404, message: 'Not found' };
+        
+        let finalPartId = lookup[0].id;
 
         const [parts] = await sequelize.query("SELECT user_id FROM event_participants WHERE id = ? FOR UPDATE", { replacements: [finalPartId], transaction: t });
         if (parts.length === 0) throw { status: 404, message: 'Not found' };
