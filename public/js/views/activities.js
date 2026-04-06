@@ -280,9 +280,12 @@ export const renderActivities = async () => {
                         
                         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
                             <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                            <div>
+                            <div style="flex: 1;">
                                 <div style="color: #1e293b; font-weight: 700; font-size: 1.1rem; margin-bottom: 2px;">${p.hostName}</div>
                                 <div style="font-size: 0.85rem; color: #64748b;">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
+                            </div>
+                            <div style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                                ✨ ${p.credit_points !== undefined ? p.credit_points : 0} pts
                             </div>
                         </div>
 

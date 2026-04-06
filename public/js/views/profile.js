@@ -29,7 +29,7 @@ export const renderProfile = () => {
                 </div>
                 <p style="color: #666; margin: 0;">${user.displayName || 'N/A'}</p>
                 <div style="margin-top: 1rem; display: inline-block; padding: 0.5rem 1rem; background: #E8F5E9; color: #2E7D32; border-radius: 20px; font-size: 0.9rem;">
-                    ✨ ${I18n.t('profile.credit_points')}：${user.credit_points !== undefined ? user.credit_points : 0}
+                    ✨ ${I18n.t('profile.credit_points')}：<span id="profile-credit-points">${user.credit_points !== undefined ? user.credit_points : 0}</span>
                 </div>
                 <div style="margin-top: 1rem; display: inline-block; padding: 0.5rem 1rem; background: #FFEBEE; color: #C62828; border-radius: 20px; font-size: 0.9rem; margin-left: 0.5rem;">
                     🚫 ${I18n.t('profile.violation_count')}：${user.violationCount || 0}
@@ -85,4 +85,18 @@ export const renderProfile = () => {
             </a>
         </nav>
     `;
+
+    if (user && user.email && user.email !== I18n.t('profile.not_logged_in')) {
+        fetch(`/profile/${user.email}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && !data.error) {
+                    const cpElement = document.getElementById('profile-credit-points');
+                    if (cpElement) cpElement.innerText = data.credit_points !== undefined ? data.credit_points : 0;
+                    user.credit_points = data.credit_points;
+                    localStorage.setItem('userProfile', JSON.stringify(user));
+                }
+            })
+            .catch(err => console.error('Error fetching latest profile:', err));
+    }
 };

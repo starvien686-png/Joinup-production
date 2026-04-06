@@ -60,6 +60,16 @@ const maskEmail = (email) => {
     return `${name[0]}***@${domain[0]}***.${domain.split('.').pop()}`;
 };
 
+const getEmailVariations = (email) => {
+    if (!email) return [];
+    if (email.endsWith('@mail1.ncnu.edu.tw')) {
+        return [email, email.replace('@mail1.ncnu.edu.tw', '@ncnu.edu.tw')];
+    } else if (email.endsWith('@ncnu.edu.tw') && /^s\d+/i.test(email.split('@')[0])) {
+        return [email, email.replace('@ncnu.edu.tw', '@mail1.ncnu.edu.tw')];
+    }
+    return [email];
+};
+
 // --- EMAIL QUEUE & RETRY LOGIC ---
 class EmailQueue {
     constructor() {
@@ -348,8 +358,9 @@ async function awardPoints(email, points) {
         return;
     }
     try {
-        const [result] = await sequelize.query('UPDATE users SET credit_points = credit_points + ? WHERE email = ?', {
-            replacements: [points, email]
+        const emails = getEmailVariations(email);
+        const [result] = await sequelize.query('UPDATE users SET credit_points = credit_points + ? WHERE email IN (?)', {
+            replacements: [points, emails]
         });
         console.log(`[Points] Awarded ${points} points to ${email}. Affected rows: ${result.affectedRows}`);
     } catch (error) {
@@ -373,22 +384,14 @@ async function handleSuccessPoints(activityId, category) {
             const hostEmail = post[0].host_email;
             await awardPoints(hostEmail, 1); // +1 success for host
 
-            // 2. Get Participants from Chat
-            const roomId = roomIdPrefix + activityId;
-            const [participants] = await sequelize.query('SELECT user_email FROM chat_participants WHERE room_id = ? AND user_email != ?', {
-                replacements: [roomId, hostEmail]
-            });
-
-            for (let p of participants) {
-                await awardPoints(p.user_email, 1); // +1 success for each participant
-            }
+            // 2. Participants get points upon feedback submission, so we DO NOT award them here.
         }
     } catch (error) {
         console.error("Failed to handle success points:", error);
     }
 }
 
-async function handlePointsOnDelete(activityId, category) {
+async function handleCancellation(activityId, category) {
     try {
         let tableName = 'activities';
         let eventType = 'sports';
@@ -397,26 +400,63 @@ async function handlePointsOnDelete(activityId, category) {
         else if (category === 'hangout') { tableName = 'hangouts'; eventType = 'hangout'; }
         else if (category === 'housing') { tableName = 'housing'; eventType = 'housing'; }
 
-        // 1. Get Host
-        const [post] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [activityId] });
+        let timeColumn = 'event_time';
+        if (category === 'carpool') timeColumn = 'departure_time';
+        else if (category === 'housing') timeColumn = 'deadline';
+        
+        const query = `SELECT host_email, title, ${timeColumn} as event_time FROM ${tableName} WHERE id = ?`;
+        const [post] = await sequelize.query(query, { replacements: [activityId] });
+        
         if (post.length === 0) return;
         const hostEmail = post[0].host_email;
+        const eventTitle = post[0].title;
+        const eventTime = post[0].event_time;
 
         // 2. Count Accepted Participants
-        const [participants] = await sequelize.query(
-            "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND (status = 'approved' OR status = 'accepted')",
+        const [parts] = await sequelize.query(
+            "SELECT user_id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND status IN ('approved', 'accepted')",
             { replacements: [eventType, activityId] }
         );
+        const acceptedCount = parts.length;
 
-        const acceptedCount = participants[0].count;
+        // 3. Deduction Rule Engine
+        let shouldDeduct = false;
         if (acceptedCount > 0) {
-            await awardPoints(hostEmail, -1);
-            console.log(`[Points] Deducted 1 point from ${hostEmail} for deleting event ${activityId} (${category}) with ${acceptedCount} participants.`);
+            shouldDeduct = true;
+        } else if (eventTime) {
+            const msToStart = new Date(eventTime).getTime() - Date.now();
+            const hoursToStart = msToStart / (1000 * 60 * 60);
+            if (hoursToStart >= 0 && hoursToStart < 2) {
+                shouldDeduct = true;
+            }
+        }
+
+        if (shouldDeduct) {
+            await awardPoints(hostEmail, -2);
+            console.log(`[Points] Deducted 2 points from ${hostEmail} for cancelling/deleting event ${activityId}`);
         } else {
-            console.log(`[Points] No deduction for ${hostEmail} (0 participants).`);
+            console.log(`[Points] No deduction for ${hostEmail} (Cancel allowed without penalty).`);
+        }
+
+        // 4. Send cancellation notifications to accepted participants
+        if (acceptedCount > 0) {
+            for (let p of parts) {
+                const targetId = `${eventType}_${activityId}`;
+                await sequelize.query(
+                    `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                     VALUES (UUID(), ?, 'system_alert', ?, ?, '{}', NOW())`,
+                    { replacements: [
+                        p.user_id, 
+                        targetId, 
+                        JSON.stringify({ 
+                            message: `The event "${eventTitle || 'Unknown'}" has been canceled by the Host. You can explore other events on JoinUp!` 
+                        })
+                    ]}
+                );
+            }
         }
     } catch (error) {
-        console.error("Failed to handle points on delete:", error);
+        console.error("Failed to handle cancellation:", error);
     }
 }
 
@@ -426,6 +466,22 @@ app.post('/award-points', async (req, res) => {
         await awardPoints(email, points);
         res.json({ success: true });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Admin manual penalty route
+app.post('/api/v1/admin/penalize', async (req, res) => {
+    try {
+        const { email, penalty, reason } = req.body;
+        if (!email || !penalty) return res.status(400).json({ error: 'Missing email or penalty details' });
+        
+        // Deduct points
+        await awardPoints(email, -Math.abs(penalty));
+        console.log(`[Admin] Deducted ${penalty} points from ${email}. Reason: ${reason || 'N/A'}`);
+        res.json({ success: true, message: `Successfully penalized user by ${penalty} points.` });
+    } catch (error) {
+        console.error("Admin penalize error:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -460,7 +516,7 @@ app.post('/create-activity', async (req, res) => {
 app.get('/activities', async (req, res) => {
     try {
         const query = `
-            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
+            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
             FROM activities a
             JOIN users u ON a.host_email = u.email
             WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
@@ -475,14 +531,14 @@ app.get('/activities', async (req, res) => {
 
 app.get('/my-activities/:email', async (req, res) => {
     try {
-        const email = req.params.email;
+        const emails = getEmailVariations(req.params.email);
         const query = `
             SELECT * FROM activities 
-            WHERE host_email = ? 
+            WHERE host_email IN (?) 
             ORDER BY created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [email]
+            replacements: [emails]
         });
         res.json(results);
     } catch (error) {
@@ -498,11 +554,8 @@ app.put('/update-activity-status/:id', async (req, res) => {
 
         if (newStatus === 'success') {
             await handleSuccessPoints(activityId, 'sports');
-        } else if (newStatus === 'cancelled') {
-            const [post] = await sequelize.query('SELECT host_email FROM activities WHERE id = ?', { replacements: [activityId] });
-            if (post.length > 0) await awardPoints(post[0].host_email, -1);
-        } else if (newStatus === 'deleted') {
-            await handlePointsOnDelete(activityId, 'sports');
+        } else if (newStatus === 'cancelled' || newStatus === 'deleted') {
+            await handleCancellation(activityId, 'sports');
         }
 
         res.json({ message: 'Status successfully changed to ' + newStatus });
@@ -517,11 +570,8 @@ app.put('/update-carpool-status/:id', async (req, res) => {
 
         if (newStatus === 'success') {
             await handleSuccessPoints(activityId, 'carpool');
-        } else if (newStatus === 'cancelled') {
-            const [post] = await sequelize.query('SELECT host_email FROM carpools WHERE id = ?', { replacements: [activityId] });
-            if (post.length > 0) await awardPoints(post[0].host_email, -1);
-        } else if (newStatus === 'deleted') {
-            await handlePointsOnDelete(activityId, 'carpool');
+        } else if (newStatus === 'cancelled' || newStatus === 'deleted') {
+            await handleCancellation(activityId, 'carpool');
         }
 
         res.json({ message: 'Carpool status updated successfully!' });
@@ -536,11 +586,8 @@ app.put('/update-study-status/:id', async (req, res) => {
 
         if (newStatus === 'success') {
             await handleSuccessPoints(activityId, 'study');
-        } else if (newStatus === 'cancelled') {
-            const [post] = await sequelize.query('SELECT host_email FROM studies WHERE id = ?', { replacements: [activityId] });
-            if (post.length > 0) await awardPoints(post[0].host_email, -1);
-        } else if (newStatus === 'deleted') {
-            await handlePointsOnDelete(activityId, 'study');
+        } else if (newStatus === 'cancelled' || newStatus === 'deleted') {
+            await handleCancellation(activityId, 'study');
         }
 
         res.json({ message: 'Study status updated successfully!' });
@@ -555,11 +602,8 @@ app.put('/update-hangout-status/:id', async (req, res) => {
 
         if (newStatus === 'success') {
             await handleSuccessPoints(activityId, 'hangout');
-        } else if (newStatus === 'cancelled') {
-            const [post] = await sequelize.query('SELECT host_email FROM hangouts WHERE id = ?', { replacements: [activityId] });
-            if (post.length > 0) await awardPoints(post[0].host_email, -1);
-        } else if (newStatus === 'deleted') {
-            await handlePointsOnDelete(activityId, 'hangout');
+        } else if (newStatus === 'cancelled' || newStatus === 'deleted') {
+            await handleCancellation(activityId, 'hangout');
         }
 
         res.json({ message: 'Hangout status updated successfully!' });
@@ -574,11 +618,8 @@ app.put('/update-housing-status/:id', async (req, res) => {
 
         if (newStatus === 'success') {
             await handleSuccessPoints(activityId, 'housing');
-        } else if (newStatus === 'cancelled') {
-            const [post] = await sequelize.query('SELECT host_email FROM housing WHERE id = ?', { replacements: [activityId] });
-            if (post.length > 0) await awardPoints(post[0].host_email, -1);
-        } else if (newStatus === 'deleted') {
-            await handlePointsOnDelete(activityId, 'housing');
+        } else if (newStatus === 'cancelled' || newStatus === 'deleted') {
+            await handleCancellation(activityId, 'housing');
         }
 
         res.json({ message: 'Housing status updated successfully!' });
@@ -638,7 +679,8 @@ app.get('/activity/:id', async (req, res) => {
                    u.study_year,
                    u.profile_pic, 
                    u.bio, 
-                   u.hobby
+                   u.hobby,
+                   u.credit_points
             FROM activities a
             JOIN users u ON a.host_email = u.email
             WHERE a.id = ?
@@ -693,7 +735,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 app.get('/carpools', async (req, res) => {
     try {
         const query = `
-            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
+            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
             FROM carpools c
             JOIN users u ON c.host_email = u.email
             WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
@@ -789,7 +831,7 @@ app.get('/carpool/:id', async (req, res) => {
 app.get('/studies', async (req, res) => {
     try {
         const query = `
-            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
+            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
             FROM studies s
             JOIN users u ON s.host_email = u.email
             WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
@@ -863,9 +905,9 @@ app.put('/update-study-status/:id', async (req, res) => {
 // 4. Mengambil data Study milik sendiri (Untuk Halaman Manage My Activities)
 app.get('/my-studies/:email', async (req, res) => {
     try {
-        const email = req.params.email;
-        const query = `SELECT * FROM studies WHERE host_email = ? ORDER BY created_at DESC`;
-        const [results] = await sequelize.query(query, { replacements: [email] });
+        const emails = getEmailVariations(req.params.email);
+        const query = `SELECT * FROM studies WHERE host_email IN (?) ORDER BY created_at DESC`;
+        const [results] = await sequelize.query(query, { replacements: [emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my studies: ' + error.message });
@@ -897,7 +939,7 @@ app.get('/study/:id', async (req, res) => {
 app.get('/hangouts', async (req, res) => {
     try {
         const query = `
-            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
+            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
             FROM hangouts h
             JOIN users u ON h.host_email = u.email
             WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
@@ -971,9 +1013,9 @@ app.put('/update-hangout-status/:id', async (req, res) => {
 // 4. Mengambil data Hang Out milik sendiri (Untuk Halaman Manage My Activities)
 app.get('/my-hangouts/:email', async (req, res) => {
     try {
-        const email = req.params.email;
-        const query = `SELECT * FROM hangouts WHERE host_email = ? ORDER BY created_at DESC`;
-        const [results] = await sequelize.query(query, { replacements: [email] });
+        const emails = getEmailVariations(req.params.email);
+        const query = `SELECT * FROM hangouts WHERE host_email IN (?) ORDER BY created_at DESC`;
+        const [results] = await sequelize.query(query, { replacements: [emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my hangouts: ' + error.message });
@@ -1013,15 +1055,15 @@ app.post('/setup-chat-room', async (req, res) => {
 // 2. Ambil Daftar Chat Room milik seorang User
 app.get('/my-chat-rooms/:email', async (req, res) => {
     try {
-        const email = req.params.email;
+        const emails = getEmailVariations(req.params.email);
         const query = `
             SELECT r.room_id as id, r.post_id, r.room_type as roomType, r.team_name as teamName 
             FROM chat_rooms r
             JOIN chat_participants p ON r.room_id = p.room_id
-            WHERE p.user_email = ?
+            WHERE p.user_email IN (?)
             ORDER BY r.created_at DESC
         `;
-        const [rooms] = await sequelize.query(query, { replacements: [email] });
+        const [rooms] = await sequelize.query(query, { replacements: [emails] });
         res.json(rooms);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1080,7 +1122,7 @@ app.post('/create-housing', async (req, res) => {
 app.get('/housing', async (req, res) => {
     try {
         const query = `
-            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio
+            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
             FROM housing ho
             JOIN users u ON ho.host_email = u.email
             WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
@@ -1096,9 +1138,9 @@ app.get('/housing', async (req, res) => {
 // 3. API GET MY HOUSING (Untuk Manage)
 app.get('/my-housing/:email', async (req, res) => {
     try {
-        const email = req.params.email;
-        const query = "SELECT * FROM housing WHERE host_email = ? ORDER BY created_at DESC";
-        const [results] = await sequelize.query(query, { replacements: [email] });
+        const emails = getEmailVariations(req.params.email);
+        const query = "SELECT * FROM housing WHERE host_email IN (?) ORDER BY created_at DESC";
+        const [results] = await sequelize.query(query, { replacements: [emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1149,10 +1191,10 @@ app.get('/housing/:id', async (req, res) => {
 // API UNTUK MENGAMBIL PROFIL USER BERDASARKAN EMAIL
 app.get('/profile/:email', async (req, res) => {
     try {
-        const email = req.params.email;
+        const emails = getEmailVariations(req.params.email);
         // Ambil data user berdasarkan email
-        const [results] = await sequelize.query('SELECT * FROM users WHERE email = ?', {
-            replacements: [email]
+        const [results] = await sequelize.query('SELECT * FROM users WHERE email IN (?)', {
+            replacements: [emails]
         });
 
         if (results.length > 0) {
@@ -1186,6 +1228,9 @@ app.post('/submit-feedback', async (req, res) => {
         await sequelize.query(query, {
             replacements: [user_email, user_name, user_dept, study_year, event_id, event_title, category, q1_rating, q2_rating, q3_success, q4_message || '']
         });
+
+        // Award 1 point to participant upon successful feedback
+        await awardPoints(user_email, 1);
 
         res.json({ success: true });
     } catch (err) {
@@ -1223,9 +1268,9 @@ app.get('/admin/feedback-stats', async (req, res) => {
 // API UNTUK NGECEK EVENT APA SAJA YANG SUDAH DI-RATE OLEH USER
 app.get('/my-feedbacks/:email', async (req, res) => {
     try {
-        const email = req.params.email;
-        const [results] = await sequelize.query('SELECT event_id FROM activity_feedback WHERE user_email = ?', {
-            replacements: [email]
+        const emails = getEmailVariations(req.params.email);
+        const [results] = await sequelize.query('SELECT event_id FROM activity_feedback WHERE user_email IN (?)', {
+            replacements: [emails]
         });
         res.json(results.map(r => String(r.event_id))); // Kirim kumpulan ID event yang udah di-rate
     } catch (err) {
@@ -1487,35 +1532,60 @@ async function syncAll() {
 const { startWorker } = require('./services/worker_service');
 startWorker();
 
-// --- BACKGROUND WORKER: AUTOMATIC EVENT RETIREMENT ---
+// --- BACKGROUND WORKER: AUTOMATIC EVENT RETIREMENT & COMPLETION ---
 async function startEventRetirementWorker() {
-    console.log('[Worker] Starting Autonomous Event Retirement Worker (Interval: 60s)');
+    console.log('[Worker] Starting Autonomous Event Retirement/Completion (Interval: 60s)');
 
     const retireLogic = async () => {
         try {
-            const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
-            const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            const categories = [
+                { table: 'activities', type: 'sports', timeCol: 'event_time' },
+                { table: 'carpools', type: 'carpool', timeCol: 'departure_time' },
+                { table: 'studies', type: 'study', timeCol: 'event_time' },
+                { table: 'hangouts', type: 'hangout', timeCol: 'event_time' },
+                { table: 'housing', type: 'housing', timeCol: 'deadline' }
+            ];
 
-            for (const table of tables) {
-                let timeCondition = '';
-                if (table === 'carpools') {
-                    timeCondition = `AND (deadline < '${now}' OR (deadline IS NULL AND departure_time < '${now}'))`;
-                } else if (table === 'housing') {
-                    timeCondition = `AND (deadline < '${now}')`;
-                } else {
-                    timeCondition = `AND (deadline < '${now}' OR (deadline IS NULL AND event_time < '${now}'))`;
-                }
-
-                const [result] = await sequelize.query(`
-                    UPDATE ${table} 
-                    SET status = 'expired' 
-                    WHERE status = 'open' 
-                    ${timeCondition}
+            for (const cat of categories) {
+                // Fetch candidate events that are open/paused and either:
+                // 1) 3 hours past their scheduled time
+                // 2) Past their deadline
+                const [candidates] = await sequelize.query(`
+                    SELECT id, host_email FROM ${cat.table} 
+                    WHERE status IN ('open', 'paused') 
+                    AND (
+                        (IFNULL(${cat.timeCol}, '2099-01-01') < DATE_SUB(NOW(), INTERVAL 3 HOUR))
+                        OR (deadline IS NOT NULL AND deadline < NOW())
+                    )
                 `);
 
-                const affectedRows = result.affectedRows || (result[0] && result[0].affectedRows) || 0;
-                if (affectedRows > 0) {
-                    console.log(`[Worker] Auto-retired ${affectedRows} events in ${table}.`);
+                for (const event of candidates) {
+                    const [parts] = await sequelize.query(`
+                        SELECT COUNT(*) as count FROM event_participants 
+                        WHERE event_type = ? AND event_id = ? AND status IN ('approved', 'accepted')
+                    `, { replacements: [cat.type, event.id] });
+                    const count = parseInt(parts[0].count, 10);
+
+                    if (count > 0) {
+                        // Mark as success ONLY if we've passed the 3-hour buffer post-event time
+                        const [checkTime] = await sequelize.query(`
+                            SELECT 1 FROM ${cat.table} 
+                            WHERE id = ? AND IFNULL(${cat.timeCol}, '2099-01-01') < DATE_SUB(NOW(), INTERVAL 3 HOUR)
+                        `, { replacements: [event.id] });
+
+                        if (checkTime.length > 0) {
+                            await sequelize.query(`UPDATE ${cat.table} SET status = 'success' WHERE id = ?`, { replacements: [event.id] });
+                            if (typeof awardPoints === 'function') {
+                                await awardPoints(event.host_email, 1);
+                            }
+                            console.log(`[Worker] Auto-completed ${cat.type} ${event.id}; 1 host point awarded.`);
+                        }
+                        // If it's just past the deadline but not PAST the event_time+3hr, we leave it open so the event can still happen.
+                    } else {
+                        // No participants and reached a time limit (deadline or event_time) -> Expire it.
+                        await sequelize.query(`UPDATE ${cat.table} SET status = 'expired' WHERE id = ?`, { replacements: [event.id] });
+                        console.log(`[Worker] Auto-expired ${cat.type} ${event.id} (no participants).`);
+                    }
                 }
             }
         } catch (error) {

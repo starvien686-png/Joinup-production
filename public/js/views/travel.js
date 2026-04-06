@@ -792,7 +792,15 @@ export const renderTravel = () => {
     };
 
     window.updateHangoutStatus = async (postId, newStatus) => {
-        if (!confirm(isAppZH() ? "確定要執行此操作嗎？" : "Are you sure?")) return;
+        if (newStatus === 'cancelled') {
+            const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+            const msg = savedLang.includes('zh') 
+                ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
+                : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
+            if (!confirm(msg)) return;
+        } else {
+            if (!confirm(isAppZH() ? "確定要執行此操作嗎？" : "Are you sure?")) return;
+        }
         try {
             const response = await fetch(`/update-hangout-status/${postId}`, {
                 method: 'PUT',

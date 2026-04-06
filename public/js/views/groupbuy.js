@@ -1360,8 +1360,13 @@ export const renderGroupBuy = () => {
     };
 
     window.cancelPost = (postId) => {
+        const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+        const msg = savedLang.includes('zh') 
+            ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
+            : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
+            
         window.showSimpleConfirm(
-            `${I18n.t('housing.confirm.cancel_post')}<br><span style="font-size:0.85rem; color:#f44336;">${I18n.t('housing.confirm.cancel_desc')}</span>`,
+            `${msg}`,
             async () => {
                 const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
                 if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();

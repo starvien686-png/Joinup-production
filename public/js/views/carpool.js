@@ -787,8 +787,16 @@ export const renderCarpool = () => {
     };
 
     window.updateCarpoolStatus = async (postId, newStatus) => {
-        const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
-        if (!confirm(msgConfirm)) return;
+        if (newStatus === 'cancelled') {
+            const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+            const msg = savedLang.includes('zh') 
+                ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
+                : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
+            if (!confirm(msg)) return;
+        } else {
+            const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
+            if (!confirm(msgConfirm)) return;
+        }
 
         try {
             const response = await fetch(`/update-carpool-status/${postId}`, {
