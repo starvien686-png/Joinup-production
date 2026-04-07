@@ -89,6 +89,26 @@ export const renderSettings = () => {
                 <p style="color: #666; margin: 0;">${email.split('@')[0]}</p>
             </div>
 
+            <!-- Subscription Preferences -->
+            <div class="card" style="border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🔔</span>
+                    <span data-i18n="settings.notif_title">Event Subscriptions</span>
+                </h3>
+                <p style="color: #666; font-size: 0.85rem; margin-bottom: 1.2rem;" data-i18n="settings.sub_desc">
+                    Subscribe to categories you are interested in. We will notify you instantly when a new event is posted!
+                </p>
+                
+                <div id="subscription-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    ${['carpool', 'hangout', 'sports', 'study', 'housing'].map(cat => `
+                        <div class="sub-item" style="background: #f8f9fa; padding: 10px 15px; border-radius: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onclick="window.toggleSub('${cat}')">
+                            <input type="checkbox" id="sub-${cat}" style="width: 18px; height: 18px; cursor: pointer;">
+                            <label for="sub-${cat}" style="font-size: 0.95rem; font-weight: 500; cursor: pointer; margin: 0;" data-i18n="settings.sub_${cat}">${cat}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
             <!-- Form -->
             <div class="card" style="border-radius: 16px; padding: 1.5rem;">
                 <form id="settings-form">
@@ -154,7 +174,56 @@ export const renderSettings = () => {
         window.navigateTo('profile');
     };
 
-    // 3. LOGIKA LOGOUT
+    // 3. LOGIKA SUBSCRIPTION
+    const loadSubscriptions = async () => {
+        if (!email) return;
+        try {
+            const response = await fetch(`/api/v1/subscriptions?email=${encodeURIComponent(email)}`);
+            if (response.ok) {
+                const subs = await response.json();
+                subs.forEach(cat => {
+                    const cb = document.getElementById(`sub-${cat}`);
+                    if (cb) {
+                        cb.checked = true;
+                        cb.closest('.sub-item').style.borderColor = '#FF8C00';
+                        cb.closest('.sub-item').style.background = '#FFF3E0';
+                    }
+                });
+            }
+        } catch (err) {
+            console.error("Failed to load subscriptions:", err);
+        }
+    };
+
+    window.toggleSub = async (category) => {
+        const cb = document.getElementById(`sub-${category}`);
+        const isChecked = !cb.checked; // Toggle value
+        cb.checked = isChecked;
+        
+        const item = cb.closest('.sub-item');
+        if (isChecked) {
+            item.style.borderColor = '#FF8C00';
+            item.style.background = '#FFF3E0';
+        } else {
+            item.style.borderColor = 'transparent';
+            item.style.background = '#f8f9fa';
+        }
+
+        try {
+            await fetch('/api/v1/subscriptions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, category, action: isChecked ? 'subscribe' : 'unsubscribe' })
+            });
+        } catch (err) {
+            console.error("Toggle subscription error:", err);
+        }
+    };
+
+    // Load initial subs
+    setTimeout(loadSubscriptions, 100);
+
+    // 4. LOGIKA LOGOUT
     document.getElementById('btn-logout').onclick = () => {
         if (confirm('Are you sure you want to logout?')) {
             localStorage.removeItem('userProfile');

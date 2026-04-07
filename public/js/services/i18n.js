@@ -544,6 +544,13 @@ export const Translations = {
         'settings.save_btn': '💾 Save Changes',
         'settings.back_btn': '🔙 Back',
         'settings.success': 'Profile saved successfully! 🎉',
+        'settings.notif_title': 'Event Subscriptions',
+        'settings.sub_desc': 'Receive notifications for new events in these categories.',
+        'settings.sub_carpool': 'Carpool',
+        'settings.sub_hangout': 'Hang Out',
+        'settings.sub_sports': 'Sports',
+        'settings.sub_study': 'Study Group',
+        'settings.sub_housing': 'Housing',
 
         // Messages
         'messages.title': 'Messages',
@@ -1294,6 +1301,13 @@ export const Translations = {
         'settings.save_btn': '💾 儲存變更',
         'settings.back_btn': '🔙 返回',
         'settings.success': '個人資料已成功儲存！ 🎉',
+        'settings.notif_title': '活動訂閱通知',
+        'settings.sub_desc': '訂閱感興趣的類別，當有新活動時我們會立即通知您。',
+        'settings.sub_carpool': '即時共乘',
+        'settings.sub_hangout': '生活社交',
+        'settings.sub_sports': '運動揪團',
+        'settings.sub_study': '課業學習',
+        'settings.sub_housing': '租屋找房',
 
         // Messages
         'messages.title': '訊息中心',

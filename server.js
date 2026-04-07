@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const dns = require('dns');
 const express = require('express');
@@ -492,6 +493,43 @@ async function handleCancellation(activityId, category) {
     }
 }
 
+// 🔔 HELPER: Notify Subscribers for New Event
+async function notifySubscribers(category, eventTitle, eventId, eventType, hostEmail) {
+    try {
+        const query = `
+            SELECT DISTINCT u.id, u.email 
+            FROM users u
+            JOIN user_subscriptions s ON s.user_email = u.email
+            WHERE s.category_name = ?
+        `;
+        const [subscribers] = await sequelize.query(query, { replacements: [category] });
+
+        if (subscribers.length === 0) return;
+
+        const targetId = `${eventType}_${eventId}`;
+        const metadata = JSON.stringify({
+            message: `🚀 New ${category} event: "${eventTitle}". Check it out!`,
+            category: category,
+            title: eventTitle,
+            link: `#${category}/${eventId}`
+        });
+
+        for (const sub of subscribers) {
+            // Avoid notifying the host
+            if (getEmailVariations(hostEmail).includes(sub.email.toLowerCase().trim())) continue;
+            
+            await sequelize.query(
+                `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                 VALUES (UUID(), ?, 'new_event', ?, ?, '{}', NOW())
+                 ON DUPLICATE KEY UPDATE created_at = NOW()`,
+                { replacements: [sub.id, targetId, metadata] }
+            );
+        }
+    } catch (error) {
+        console.error(`[Notification] Failed to notify subscribers for ${category}:`, error);
+    }
+}
+
 app.post('/award-points', async (req, res) => {
     try {
         const { email, points } = req.body;
@@ -531,11 +569,15 @@ app.post('/create-activity', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await sequelize.query(query, {
+        const [result] = await sequelize.query(query, {
             replacements: [host_email, category, title, sport_type, people_needed, toTaipei(event_time), toTaipei(deadline), location, description]
         });
 
+        const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating event!
+        
+        // 🔔 Notify Instant!
+        notifySubscribers('sports', title, insertId, 'sports', host_email);
 
         res.status(201).json({ message: 'Yeay! Post created successfully! 🏀' });
 
@@ -796,7 +838,7 @@ app.post('/create-carpool', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await sequelize.query(query, {
+        const [result] = await sequelize.query(query, {
             replacements: [
                 host_email, host_name, host_dept, title,
                 departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline),
@@ -804,7 +846,11 @@ app.post('/create-carpool', async (req, res) => {
             ]
         });
 
+        const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating carpool!
+        
+        // 🔔 Notify Instant!
+        notifySubscribers('carpool', title, insertId, 'carpool', host_email);
 
         res.status(201).json({ message: "Carpool created successfully!" });
     } catch (error) {
@@ -892,7 +938,7 @@ app.post('/create-study', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await sequelize.query(query, {
+        const [result] = await sequelize.query(query, {
             replacements: [
                 host_email, host_name, host_dept,
                 title, event_type, subject, location,
@@ -900,7 +946,11 @@ app.post('/create-study', async (req, res) => {
             ]
         });
 
+        const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating study!
+        
+        // 🔔 Notify Instant!
+        notifySubscribers('study', title, insertId, 'study', host_email);
 
         res.status(201).json({ message: "Study event created successfully!" });
     } catch (error) {
@@ -1000,7 +1050,7 @@ app.post('/create-hangout', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await sequelize.query(query, {
+        const [result] = await sequelize.query(query, {
             replacements: [
                 host_email, title, category, host_name, host_dept,
                 people_needed, toTaipei(event_time), toTaipei(deadline),
@@ -1008,7 +1058,11 @@ app.post('/create-hangout', async (req, res) => {
             ]
         });
 
+        const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating hangout!
+        
+        // 🔔 Notify Instant!
+        notifySubscribers('hangout', title, insertId, 'hangout', host_email);
 
         res.status(201).json({ message: "Hangout event created successfully!" });
     } catch (error) {
@@ -1137,13 +1191,17 @@ app.post('/create-housing', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
         `;
 
-        const [results] = await sequelize.query(query, {
+        const [result] = await sequelize.query(query, {
             replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, schedule_tags || '', toTaipei(deadline), rental_period, facilities || '', habits || '', description || '']
         });
 
+        const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating housing!
+        
+        // 🔔 Notify Instant!
+        notifySubscribers('housing', title, insertId, 'housing', host_email);
 
-        res.status(201).json({ success: true, id: results });
+        res.status(201).json({ success: true, id: insertId });
     } catch (error) {
         console.error("Failed to create housing:", error);
         res.status(500).json({ error: 'Failed to create housing: ' + error.message });
@@ -1307,6 +1365,39 @@ app.get('/my-feedbacks/:email', async (req, res) => {
         res.json(results.map(r => String(r.event_id))); // Kirim kumpulan ID event yang udah di-rate
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// --- SUBSCRIPTION API ---
+app.get('/api/v1/subscriptions', async (req, res) => {
+    try {
+        const { email } = req.query;
+        const emails = getEmailVariations(email);
+        const [results] = await sequelize.query('SELECT category_name FROM user_subscriptions WHERE user_email IN (?)', {
+            replacements: [emails]
+        });
+        res.json(results.map(r => r.category_name));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/v1/subscriptions', async (req, res) => {
+    try {
+        const { email, category, action } = req.body;
+        if (action === 'subscribe') {
+            await sequelize.query('INSERT IGNORE INTO user_subscriptions (user_email, category_name) VALUES (?, ?)', {
+                replacements: [email, category]
+            });
+        } else {
+            const emails = getEmailVariations(email);
+            await sequelize.query('DELETE FROM user_subscriptions WHERE user_email IN (?) AND category_name = ?', {
+                replacements: [emails, category]
+            });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -1514,6 +1605,13 @@ async function syncAll() {
                 response_snapshot TEXT,
                 expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS user_subscriptions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_email VARCHAR(255),
+                category_name ENUM('carpool', 'hangout', 'sports', 'study', 'housing'),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_email, category_name)
             )`
         ];
 
@@ -1635,6 +1733,72 @@ async function startEventRetirementWorker() {
     // Then every 60 seconds
     setInterval(retireLogic, 60000);
 }
+
+// 🕒 DAILY DIGEST CRON JOB
+// Logic provided by user:
+// 12:00 -> 19:01 (Prev Day) to 12:00 (Today)
+// 19:00 -> 12:01 (Today) to 19:00 (Today)
+cron.schedule('0 12,19 * * *', async () => {
+    try {
+        const now = nowTaipei();
+        const currentHour = now.hour();
+        
+        let startTime, endTime, translationKey;
+        
+        if (currentHour === 12) {
+            startTime = now.subtract(1, 'day').hour(19).minute(1).second(0).format('YYYY-MM-DD HH:mm:ss');
+            endTime = now.hour(12).minute(0).second(59).format('YYYY-MM-DD HH:mm:ss');
+            translationKey = 'notif.digest.morning';
+        } else {
+            startTime = now.hour(12).minute(1).second(0).format('YYYY-MM-DD HH:mm:ss');
+            endTime = now.hour(19).minute(0).second(59).format('YYYY-MM-DD HH:mm:ss');
+            translationKey = 'notif.digest.afternoon';
+        }
+
+        console.log(`[Cron] Running Digest for ${translationKey} Range: ${startTime} to ${endTime}`);
+
+        const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
+        let totalCount = 0;
+        
+        for (const table of tables) {
+            const [result] = await sequelize.query(`SELECT COUNT(*) as count FROM ${table} WHERE created_at BETWEEN ? AND ?`, {
+                replacements: [startTime, endTime]
+            });
+            totalCount += result[0].count;
+        }
+
+        if (totalCount > 0) {
+            const [users] = await sequelize.query("SELECT id FROM users");
+            const metadata = JSON.stringify({
+                message: translationKey === 'notif.digest.morning' 
+                    ? `There are ${totalCount} new events this morning! / 今天早上有 ${totalCount} 個新活動！`
+                    : `There are ${totalCount} new events this afternoon! / 今天下午有 ${totalCount} 個新活動！`,
+                translationKey: translationKey,
+                translationParams: { count: totalCount },
+                link: '#home'
+            });
+
+            for (const user of users) {
+                // aggregate_id unique per day/slot to avoid dupe inserts
+                const digestId = `digest_${translationKey}_${now.format('YYYYMMDD')}`;
+                await sequelize.query(
+                    `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                     VALUES (UUID(), ?, 'daily_digest', ?, ?, '{}', NOW())
+                     ON DUPLICATE KEY UPDATE created_at = NOW()`,
+                    { replacements: [user.id, digestId, metadata] }
+                );
+            }
+            console.log(`[Cron] Sent ${translationKey} to ${users.length} users. Total events: ${totalCount}`);
+        } else {
+            console.log(`[Cron] No new events found for range. Skipping notification.`);
+        }
+    } catch (error) {
+        console.error("[Cron] Daily Digest Error:", error);
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Taipei"
+});
 
 app.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
