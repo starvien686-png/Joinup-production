@@ -434,6 +434,25 @@ window.showAnnouncements = async () => {
 
                         link = `action:review_${category}_app:${n.id}:${finalPostId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
                         iconType = 'action';
+                    } else if (n.type === 'ACCEPTED') {
+                        msg = I18n.t('notifications.type.accepted', { eventTitle: meta.event_title || 'Event' });
+                        iconType = 'success';
+                        link = `activity/${meta.event_id || ''}`;
+                    } else if (n.type === 'REJECTED') {
+                        msg = I18n.t('notifications.type.rejected', { eventTitle: meta.event_title || 'Event' });
+                        iconType = 'info';
+                    } else if (n.type === 'NEW_EVENT') {
+                        const category = meta.category || 'sports';
+                        const displayCat = I18n.t(`home.cat.${category}`);
+                        msg = I18n.t('notifications.type.new_event', { 
+                            category: displayCat, 
+                            eventTitle: meta.title || meta.event_title || 'Event' 
+                        });
+                        iconType = 'success';
+                        link = category;
+                    } else if (n.type === 'CANCELLED') {
+                        msg = I18n.t('notifications.type.cancelled', { eventTitle: meta.event_title || 'Event' });
+                        iconType = 'info';
                     }
 
                     return {

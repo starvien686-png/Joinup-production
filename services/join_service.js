@@ -285,7 +285,7 @@ router.post('/join/approve', async (req, res) => {
         const tableName = getTableName(event_type);
         const capacityCol = getCapacityColumn(event_type);
 
-        const [events] = await sequelize.query(`SELECT host_email, ${capacityCol} as capacity FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        const [events] = await sequelize.query(`SELECT host_email, title, ${capacityCol} as capacity FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
         if (events.length === 0) throw { status: 404, message: 'Event not found' };
         if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
@@ -337,6 +337,7 @@ router.post('/join/approve', async (req, res) => {
         const outboxPayload = JSON.stringify({
             recipient_email: targetUser[0]?.email,
             event_type, event_id, status: 'approved',
+            event_title: events[0].title,
             actionType: 'NAVIGATE_TO_EVENT_DETAIL',
             targetId: event_id,
             version: '1'
@@ -363,7 +364,7 @@ router.post('/join/reject', async (req, res) => {
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const tableName = getTableName(event_type);
-        const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        const [events] = await sequelize.query(`SELECT host_email, title FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
         if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
         const targetEmailVars = getEmailVariations(req.body.target_user_email);
@@ -384,6 +385,7 @@ router.post('/join/reject', async (req, res) => {
         const outboxPayload = JSON.stringify({
             recipient_email: targetUser[0]?.email,
             event_type, event_id, status: 'rejected',
+            event_title: events[0].title,
             version: '1'
         });
         await sequelize.query(

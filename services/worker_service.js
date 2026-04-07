@@ -90,7 +90,10 @@ async function processOutbox() {
             
             // Notification routing
             if (job.type.startsWith('join_')) {
-                payload.type = job.type;
+                // Map to standardized types for frontend translation
+                if (job.type === 'join_approved') payload.type = 'ACCEPTED';
+                else if (job.type === 'join_rejected') payload.type = 'REJECTED';
+                else payload.type = job.type;
                 payload.aggregate_id = job.aggregate_id;
                 // Map actionable metadata
                 if (payload.actionType) {

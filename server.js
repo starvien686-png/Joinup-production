@@ -477,12 +477,13 @@ async function handleCancellation(activityId, category) {
                 const targetId = `${eventType}_${activityId}`;
                 await sequelize.query(
                     `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                     VALUES (UUID(), ?, 'system_alert', ?, ?, '{}', NOW())`,
+                     VALUES (UUID(), ?, 'CANCELLED', ?, ?, '{}', NOW())`,
                     { replacements: [
                         p.user_id, 
                         targetId, 
                         JSON.stringify({ 
-                            message: `The event "${eventTitle || 'Unknown'}" has been canceled by the Host. You can explore other events on JoinUp!` 
+                            event_title: eventTitle || 'Unknown',
+                            category: eventType
                         })
                     ]}
                 );
@@ -520,7 +521,7 @@ async function notifySubscribers(category, eventTitle, eventId, eventType, hostE
             
             await sequelize.query(
                 `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                 VALUES (UUID(), ?, 'new_event', ?, ?, '{}', NOW())
+                 VALUES (UUID(), ?, 'NEW_EVENT', ?, ?, '{}', NOW())
                  ON DUPLICATE KEY UPDATE created_at = NOW()`,
                 { replacements: [sub.id, targetId, metadata] }
             );
