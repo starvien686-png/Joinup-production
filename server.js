@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const joinService = require('./services/join_service');
 const workerService = require('./services/worker_service');
+const pushService = require('./services/push_service');
 
 // --- TIMEZONE UTILITY (Asia/Taipei = UTC+8) ---
 const dayjs = require('dayjs');
@@ -491,6 +492,13 @@ async function handleCancellation(activityId, category) {
                 );
             }
         }
+
+        // 🔔 Send OneSignal Push to Participants
+        if (participantEmails.length > 0) {
+            const pushTitle = `⚠️ Event Cancelled / 活動取消通知`;
+            const pushBody = `The event "${eventTitle}" has been cancelled by the host. / 您參加的活動 "${eventTitle}" 已被主辦人取消。`;
+            await pushService.sendPushNotification(participantEmails, pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
+        }
     } catch (error) {
         console.error("Failed to handle cancellation:", error);
     }
@@ -552,6 +560,14 @@ async function notifySubscribers(category, eventTitle, eventId, eventType, hostE
             }
         }
         console.log(`[Notification] ✅ Successfully sent ${successCount} notifications.`);
+
+        // 🔔 Send OneSignal Push to Subscribers
+        if (subscribers.length > 0) {
+            const subscriberEmails = subscribers.map(s => s.email);
+            const pushTitle = `🚀 New Event in ${category} / 新活動通知`;
+            const pushBody = `[${category.toUpperCase()}] "${eventTitle}" check it out! / 我們有新的 ${category} 活動：「${eventTitle}」，快來查看吧！`;
+            await pushService.sendPushNotification(subscriberEmails, pushTitle, pushBody, `https://joinup-production.onrender.com/#${category}/${eventId}`);
+        }
 
     } catch (error) {
         console.error(`[Notification] ‼️ CRITICAL FAILURE for ${category}:`, error);
@@ -1816,6 +1832,16 @@ cron.schedule('0 12,19 * * *', async () => {
                     { replacements: [user.id, digestId, metadata] }
                 );
             }
+
+            // 🔔 Send OneSignal Push to ALL users for Digest
+            const pushTitle = `📢 Daily Digest / 活動快報`;
+            const pushBody = translationKey === 'notif.digest.morning'
+                ? `There are ${totalCount} new events this morning! / 今天早上有 ${totalCount} 個新活動，快來看看吧！`
+                : `There are ${totalCount} new events this afternoon! / 今天下午有 ${totalCount} 個新活動，快來看看吧！`;
+            
+            const allUsersEmails = users.map(u => u.email).filter(e => !!e);
+            await pushService.sendPushNotification(allUsersEmails, pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
+
             console.log(`[Cron] Sent ${translationKey} to ${users.length} users. Total events: ${totalCount}`);
         } else {
             console.log(`[Cron] No new events found for range. Skipping notification.`);

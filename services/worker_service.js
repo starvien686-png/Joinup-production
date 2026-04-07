@@ -1,6 +1,7 @@
 const sequelize = require('../database');
 const crypto = require('crypto');
 const winston = require('winston');
+const pushService = require('./push_service');
 
 const logger = winston.createLogger({
     level: 'info',
@@ -49,6 +50,18 @@ async function sendNotification(payload) {
         
         await t.commit();
         logger.info(`Notification sent to ${recipient_email} [Type: ${type}]`, { requestId, correlationId });
+
+        // 🔔 OneSignal Push Integration
+        if (type === 'ACCEPTED' || type === 'REJECTED') {
+            const eventTitle = metadata?.event_title || 'Event';
+            const pushTitle = type === 'ACCEPTED' ? '🎉 Join Request Approved / 報名成功！' : '❌ Join Request Declined / 報名未通過';
+            const pushBody = type === 'ACCEPTED' 
+                ? `Your request for "${eventTitle}" was accepted! / 您對「${eventTitle}」的加入申請已獲批准！快來看看細節。`
+                : `Your request for "${eventTitle}" was not accepted. / 您對「${eventTitle}」的加入申請已被婉拒。`;
+            
+            const targetLink = link ? `https://joinup-production.onrender.com${link}` : `https://joinup-production.onrender.com/#home`;
+            await pushService.sendPushNotification([recipient_email], pushTitle, pushBody, targetLink);
+        }
     } catch (e) {
         if (t) await t.rollback();
         throw e;

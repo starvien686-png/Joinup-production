@@ -22,8 +22,22 @@ import { openRatingModal, checkPendingFeedback } from './views/rating.js?v=5';
 
 
 window.showUserProfile = showUserProfile;
-
 window.openRatingModal = openRatingModal;
+
+// --- OneSignal Push Setup ---
+const normalizeEmail = (email) => {
+    if (!email) return '';
+    // Normalize NCNU aliases for OneSignal external_id
+    // s112000000@mail1.ncnu.edu.tw -> s112000000@ncnu.edu.tw
+    return email.toLowerCase().replace('mail1.', '').trim();
+};
+
+window.OneSignal = window.OneSignal || [];
+OneSignal.push(function() {
+    OneSignal.init({
+        appId: "65d2da97-e8f8-40ed-a298-978a485ba6f9",
+    });
+});
 
 
 
@@ -35,11 +49,17 @@ const state = {
 
     isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
 
-    userEmail: localStorage.getItem('userEmail') || '',
-
     onLoggedIn: () => { }
 
 };
+
+// Auto-sync OneSignal if already logged in
+if (state.isLoggedIn && state.userEmail) {
+    const cleanEmail = normalizeEmail(state.userEmail);
+    OneSignal.push(function() {
+        OneSignal.login(cleanEmail);
+    });
+}
 
 
 
@@ -293,11 +313,16 @@ window.validLogin = (user) => {
     state.user = user;
 
     state.onLoggedIn(user);
-
     render();
 
-    setTimeout(window.checkNotificationBadge, 500);
+    // OneSignal Sync
+    const cleanEmail = normalizeEmail(user.email);
+    OneSignal.push(function() {
+        OneSignal.login(cleanEmail);
+        console.log(`[OneSignal] Sync external_id: ${cleanEmail}`);
+    });
 
+    setTimeout(window.checkNotificationBadge, 500);
 };
 
 
