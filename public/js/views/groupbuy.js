@@ -65,18 +65,19 @@ export const renderGroupBuy = () => {
 
     // --- Helper Functions ---
     const getGoogleMapsLink = (location) => {
-        // If location is vague, append Puli/Nantou context
         let query = location;
-        if (!query.includes('埔里') && !query.includes('暨大') && !query.includes('南投')) {
-            query = '南投縣埔里鎮 ' + query;
+        if (!query.includes('埔里') && !query.includes('暨大') && !query.includes('南投') && 
+            !query.includes('Puli') && !query.includes('NCNU')) {
+            query = (I18n.getLanguage() === 'zh-TW' ? '南投縣埔里鎮 ' : 'Puli, Nantou ') + query;
         }
         return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     };
 
     const getGoogleMapsEmbed = (location) => {
         let query = location;
-        if (!query.includes('埔里') && !query.includes('暨大') && !query.includes('南投')) {
-            query = '南投縣埔里鎮 ' + query;
+        if (!query.includes('埔里') && !query.includes('暨大') && !query.includes('南投') && 
+            !query.includes('Puli') && !query.includes('NCNU')) {
+            query = (I18n.getLanguage() === 'zh-TW' ? '南投縣埔里鎮 ' : 'Puli, Nantou ') + query;
         }
         return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     };
@@ -233,12 +234,12 @@ export const renderGroupBuy = () => {
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                         <div class="input-group">
-                            <label>報名截止日期 *</label>
+                            <label>${I18n.t('housing.label.deadline_reg')} *</label>
                             <input type="datetime-local" id="deadline" required>
                         </div>
                         <div class="input-group">
-                            <label>租約期間 *</label>
-                            <input type="text" id="leaseTerm" placeholder="2026/1/1至2026/6/30" required>
+                            <label>${I18n.t('housing.label.lease_term')} *</label>
+                            <input type="text" id="leaseTerm" placeholder="${I18n.t('housing.placeholder.lease_term')}" required>
                         </div>
                     </div>
 
@@ -294,7 +295,7 @@ export const renderGroupBuy = () => {
                                 🐕 ${I18n.t('housing.habit.pet_free')}
                             </label>
                             <button type="button" id="addHabitTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: white; border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
-                                ➕ ${I18n.t('sports.loc.custom')}
+                                ➕ ${I18n.t('common.custom')}
                             </button>
                         </div>
                         <div id="customHabitTags" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
@@ -368,12 +369,12 @@ export const renderGroupBuy = () => {
                     <!-- 租期 & 截止 -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
-                            <label>報名截止日期 *</label>
+                            <label>${I18n.t('housing.label.deadline_reg')} *</label>
                             <input type="datetime-local" id="deadline" required>
                         </div>
                         <div class="input-group">
-                            <label>租約期間 *</label>
-                            <input type="text" id="leaseTerm" placeholder="2026/1/1至2026/6/30" required>
+                            <label>${I18n.t('housing.label.lease_term')} *</label>
+                            <input type="text" id="leaseTerm" placeholder="${I18n.t('housing.placeholder.lease_term')}" required>
                         </div>
                     </div>
 
@@ -585,8 +586,8 @@ export const renderGroupBuy = () => {
             const isHost = (p.host_email || p.authorId) === user.email;
             const safeTitle = (p.title || '').replace(/'/g, "\\'");
             const btnHtml = isHost
-                ? `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`
-                : `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 申請加入 / Apply to Join</button>`;
+                ? `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 ${I18n.t('housing.action.chat')}</button>`
+                : `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 ${I18n.t('housing.action.review_app')}</button>`;
             return `
             <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -779,12 +780,12 @@ export const renderGroupBuy = () => {
                             ${post.genderPreference === 'male' ? I18n.t('housing.gender.male') : (post.genderPreference === 'female' ? I18n.t('housing.gender.female') : I18n.t('housing.gender.any'))}
                         </div>
                         <div>
-                            <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">報名截止日期</span>
-                            ${post.deadline ? new Date(post.deadline).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : (post.leaseTerm || '無')}
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('housing.label.deadline_reg')}</span>
+                            ${post.deadline ? new Date(post.deadline).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : (post.leaseTerm || I18n.t('common.none'))}
                         </div>
                         <div>
-                            <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">租約期間</span>
-                            ${post.leaseTerm || '無'}
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('housing.label.lease_term')}</span>
+                            ${post.leaseTerm || I18n.t('common.none')}
                         </div>
                         ${post.roomNumber ? `
                         <div>
@@ -832,9 +833,9 @@ export const renderGroupBuy = () => {
                             ${(() => {
                 let displayLocation = post.address || post.location;
                 if (!displayLocation && (post.type === 'male_undergrad' || post.type === 'female_undergrad')) {
-                    displayLocation = '國立暨南國際大學 學士班宿舍';
+                    displayLocation = I18n.t('housing.loc.ncnu_undergrad');
                 } else if (!displayLocation && (post.type === 'male_grad' || post.type === 'female_grad')) {
-                    displayLocation = '國立暨南國際大學 研究生宿舍';
+                    displayLocation = I18n.t('housing.loc.ncnu_grad');
                 }
                 return `
                                 <a href="${getGoogleMapsLink(displayLocation)}" target="_blank" style="color: #1976D2; text-decoration: none; display: flex; align-items: center;">
@@ -1023,9 +1024,8 @@ export const renderGroupBuy = () => {
             }
         } catch (e) { console.error(e); }
 
-        const isZH = localStorage.getItem('language') === 'zh-TW' || localStorage.getItem('language') === 'zh-CN';
-        const txtManageTitle = I18n.t('common.manage') || 'Manage My Events';
-        const txtNoData = I18n.t('common.no_data') || 'No records found.';
+        const txtManageTitle = I18n.t('common.manage');
+        const txtNoData = I18n.t('common.no_data');
 
         const combinedPosts = myPosts.map(p => ({
             ...p,
@@ -1063,51 +1063,51 @@ export const renderGroupBuy = () => {
             let statusText = p.status;
 
             switch (p.status) {
-                case 'open': statusColor = '#4CAF50'; statusIcon = '🟢'; statusText = isZH ? '招募中' : 'Status: OK'; break;
-                case 'paused': statusColor = '#ff9800'; statusIcon = '⏸️'; statusText = isZH ? '暫停' : 'Paused'; break;
-                case 'success': case 'full': statusColor = '#2196f3'; statusIcon = '✓'; statusText = isZH ? '已成案' : 'Success'; break;
-                case 'cancelled': statusColor = '#f44336'; statusIcon = '✗'; statusText = isZH ? '已取消' : 'Cancelled'; break;
+                case 'open': statusColor = '#4CAF50'; statusIcon = '🟢'; statusText = I18n.t('housing.status.recruiting'); break;
+                case 'paused': statusColor = '#ff9800'; statusIcon = '⏸️'; statusText = I18n.t('housing.status.paused'); break;
+                case 'success': case 'full': statusColor = '#2196f3'; statusIcon = '✓'; statusText = I18n.t('housing.status.success'); break;
+                case 'cancelled': statusColor = '#f44336'; statusIcon = '✗'; statusText = I18n.t('housing.status.cancelled'); break;
             }
 
             const statusBadge = `<span style="font-size: 0.85rem; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 12px; border-radius: 4px; font-weight: normal;">${statusIcon} ${statusText}</span>`;
             const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-';
             const chatAction = `window.openHousingChat('${p.id}', '${(p.title || '').replace(/'/g, "\\\\'")}')`;
 
-            let actionButtons = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+            let actionButtons = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${I18n.t('housing.action.chat')}</button>`;
 
             if (p.status === 'open') {
                 actionButtons += `
-                    <button onclick="window.pausePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${isZH ? '暫停招募' : 'Pause Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
+                    <button onclick="window.pausePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${I18n.t('housing.action.pause_recruiting')}</button>
+                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${I18n.t('housing.action.confirm_success') || I18n.t('common.success')}</button>
+                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${I18n.t('housing.action.cancel')}</button>`;
             } else if (p.status === 'paused') {
                 actionButtons += `
-                    <button onclick="window.resumePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
+                    <button onclick="window.resumePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${I18n.t('housing.action.resume_recruiting')}</button>
+                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${I18n.t('housing.action.confirm_success') || I18n.t('common.success')}</button>
+                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${I18n.t('housing.action.cancel')}</button>`;
             }
-            actionButtons += `<button onclick="window.deletePost('${p.id}', 'housing')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
+            actionButtons += `<button onclick="window.deletePost('${p.id}', 'housing')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${I18n.t('housing.action.delete')}</button>`;
 
             let appsHtml = '';
             if (pendingApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending'}:</div>`;
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${I18n.t('housing.status.pending_confirm')}:</div>`;
                 appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') || 'Housing'}', 'housing', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') || 'Housing'}', 'housing', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${I18n.t('housing.action.review_app')}</button>
                     </div>
                 `).join('');
             }
             if (acceptedApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已接受' : 'Accepted'}:</div>`;
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9;">✅ ${I18n.t('common.joined')}:</div>`;
                 appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ Joined</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${I18n.t('common.joined')}</span>
                     </div>
                 `).join('');
             }
-            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '尚無人申請' : 'No applications yet.'}</div>`;
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${I18n.t('housing.label.no_roommate')}</div>`;
 
             return `
                 <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -1117,7 +1117,7 @@ export const renderGroupBuy = () => {
                     </div>
                     <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">🗓️ ${dateStr}</div>
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${I18n.t('housing.label.app_list')}</div>
                         ${appsHtml}
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">${actionButtons}</div>
@@ -1360,13 +1360,8 @@ export const renderGroupBuy = () => {
     };
 
     window.cancelPost = (postId) => {
-        const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-        const msg = savedLang.includes('zh') 
-            ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
-            : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
-            
         window.showSimpleConfirm(
-            `${msg}`,
+            I18n.t('common.alert.confirm_cancel_penalty'),
             async () => {
                 const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
                 if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
@@ -1688,7 +1683,7 @@ export const renderGroupBuy = () => {
                     const selectedDate = new Date(deadline);
                     const now = new Date();
                     if (selectedDate < now) {
-                        alert(I18n.t('common.error') + ': 報名截止日期不能早於現在');
+                        alert(I18n.t('common.error') + ': ' + I18n.t('housing.alert.deadline_past'));
                         return;
                     }
                 }
@@ -1738,7 +1733,7 @@ export const renderGroupBuy = () => {
 
                 const btnSubmit = e.target.querySelector('button[type="submit"]');
                 const originalText = btnSubmit.innerText;
-                btnSubmit.innerText = "⏳ Submitting...";
+                btnSubmit.innerText = "⏳ " + I18n.t('common.processing');
                 btnSubmit.disabled = true;
 
                 try {
@@ -1825,16 +1820,13 @@ export const renderGroupBuy = () => {
     window.acceptApplication = async (appId, postId) => {
         await MockStore.updateApplicationStatus(appId, 'accepted', postId);
 
-        // Fetch application for potential future use (or remove if unneeded)
-        const applications = await MockStore.getPostApplications(postId);
-        const acceptedApp = applications.find(a => a.id === appId);
-
         // Refresh the view safely
         if (currentState === 'manage') {
             await updateView();
             bindListeners();
         } else {
-            app.innerHTML = await renderApplicationsList(postId);
+            const appElem = document.getElementById('app');
+            if (appElem) appElem.innerHTML = await renderApplicationsList(postId);
             const btnBackToManage = document.querySelector('.btn-back-to-manage');
             if (btnBackToManage) {
                 btnBackToManage.onclick = () => {
@@ -1857,7 +1849,8 @@ export const renderGroupBuy = () => {
                 await updateView();
                 bindListeners();
             } else {
-                app.innerHTML = await renderApplicationsList(postId);
+                const appElem = document.getElementById('app');
+                if (appElem) appElem.innerHTML = await renderApplicationsList(postId);
                 const btnBackToManage = document.querySelector('.btn-back-to-manage');
                 if (btnBackToManage) {
                     btnBackToManage.onclick = () => {
@@ -1876,25 +1869,22 @@ export const renderGroupBuy = () => {
         const teamName = decodeURIComponent(titleRaw || '');
         const existingOverlay = document.getElementById('housing-join-overlay');
         if (existingOverlay) existingOverlay.remove();
-
-        const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-        const msgConfirm = isZH ? '確認申請加入' : 'Confirm Application';
-        const msgDesc = isZH
-            ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？<br><small style="color:#888">發起人將收到您的個人資料並決定是否接受</small>`
-            : `Apply to join <strong>${teamName}</strong>?<br><small style="color:#888">The host will review your profile and decide</small>`;
+        
+        const msgConfirm = I18n.t('housing.confirm.join_title');
+        const msgDesc = I18n.t('housing.confirm.join_desc', { name: teamName });
 
         const formHtml = `
             <div id="housing-join-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(4px);">
                 <div style="background:white;width:85%;max-width:350px;border-radius:16px;padding:2rem;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2);animation:scaleIn 0.2s ease-out;">
                     <div style="font-size:2.5rem;margin-bottom:0.5rem;">🏠</div>
                     <h3 style="margin:0 0 1rem 0;color:#333;">${msgConfirm}</h3>
-                    <p style="color:#666;margin-bottom:1.5rem;line-height:1.6;">${msgDesc}</p>
+                    <div style="color:#666;margin-bottom:1.5rem;line-height:1.6;">${msgDesc}</div>
                     <div style="display:flex;gap:1rem;">
                         <button onclick="document.getElementById('housing-join-overlay').remove()" style="flex:1;padding:0.8rem;background:#eee;color:#555;border-radius:8px;border:none;cursor:pointer;font-weight:bold;">
-                            ${isZH ? '取消' : 'Cancel'}
+                            ${I18n.t('common.cancel')}
                         </button>
                         <button id="btn-housing-confirm-join" style="flex:1;padding:0.8rem;background:linear-gradient(135deg,#FF8C00,#FF6D00);color:white;border-radius:8px;border:none;cursor:pointer;font-weight:bold;">
-                            ${isZH ? '確認送出' : 'Submit'}
+                            ${I18n.t('common.confirm')}
                         </button>
                     </div>
                 </div>
@@ -1905,7 +1895,7 @@ export const renderGroupBuy = () => {
 
         document.getElementById('btn-housing-confirm-join').onclick = async () => {
             const btn = document.getElementById('btn-housing-confirm-join');
-            btn.innerText = "Syncing...";
+            btn.innerText = "⏳ " + I18n.t('common.processing');
             btn.disabled = true;
 
             const currentUserStr = localStorage.getItem('userProfile');
@@ -1922,7 +1912,7 @@ export const renderGroupBuy = () => {
                 });
 
                 if (out.success) {
-                    alert(isZH ? '申請已送出！等待發起人確認。' : 'Application sent! Waiting for host to confirm.');
+                    alert(I18n.t('housing.alert.app_sent_wait'));
                 }
             } catch (e) {
                 console.error(e);
@@ -1931,6 +1921,7 @@ export const renderGroupBuy = () => {
                 const ov = document.getElementById('housing-join-overlay');
                 if (ov) ov.remove();
                 updateView();
+                bindListeners();
             }
         };
     };
