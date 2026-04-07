@@ -435,10 +435,10 @@ async function handleCancellation(activityId, category) {
         let timeColumn = 'event_time';
         if (category === 'carpool') timeColumn = 'departure_time';
         else if (category === 'housing') timeColumn = 'deadline';
-        
+
         const query = `SELECT host_email, title, ${timeColumn} as event_time FROM ${tableName} WHERE id = ?`;
         const [post] = await sequelize.query(query, { replacements: [activityId] });
-        
+
         if (post.length === 0) return;
         const hostEmail = post[0].host_email;
         const eventTitle = post[0].title;
@@ -478,14 +478,16 @@ async function handleCancellation(activityId, category) {
                 await sequelize.query(
                     `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
                      VALUES (UUID(), ?, 'CANCELLED', ?, ?, '{}', NOW())`,
-                    { replacements: [
-                        p.user_id, 
-                        targetId, 
-                        JSON.stringify({ 
-                            event_title: eventTitle || 'Unknown',
-                            category: eventType
-                        })
-                    ]}
+                    {
+                        replacements: [
+                            p.user_id,
+                            targetId,
+                            JSON.stringify({
+                                event_title: eventTitle || 'Unknown',
+                                category: eventType
+                            })
+                        ]
+                    }
                 );
             }
         }
@@ -496,38 +498,63 @@ async function handleCancellation(activityId, category) {
 
 // 🔔 HELPER: Notify Subscribers for New Event
 async function notifySubscribers(category, eventTitle, eventId, eventType, hostEmail) {
+    const cleanCategory = (category || '').toLowerCase().trim();
+    console.log(`[Notification] 🔍 Searching subscribers for category: "${cleanCategory}" (Event: "${eventTitle}")`);
+
     try {
+        // Use a more flexible JOIN that handles NCNU email aliases (@mail1.ncnu vs @ncnu)
         const query = `
             SELECT DISTINCT u.id, u.email 
             FROM users u
-            JOIN user_subscriptions s ON s.user_email = u.email
-            WHERE s.category_name = ?
+            JOIN user_subscriptions s ON (
+                -- Normalize both sides to @ncnu.edu.tw for comparison
+                REPLACE(LOWER(TRIM(s.user_email)), '@mail1.ncnu.edu.tw', '@ncnu.edu.tw') = 
+                REPLACE(LOWER(TRIM(u.email)), '@mail1.ncnu.edu.tw', '@ncnu.edu.tw')
+            )
+            WHERE LOWER(TRIM(s.category_name)) = ?
         `;
-        const [subscribers] = await sequelize.query(query, { replacements: [category] });
+        const [subscribers] = await sequelize.query(query, { replacements: [cleanCategory] });
+
+        console.log(`[Notification] 👥 Found ${subscribers.length} potential subscribers.`);
 
         if (subscribers.length === 0) return;
 
         const targetId = `${eventType}_${eventId}`;
         const metadata = JSON.stringify({
-            message: `🚀 New ${category} event: "${eventTitle}". Check it out!`,
+            message: `🚀 [New Event] "${eventTitle}" for ${category}! Check it out!`,
             category: category,
-            title: eventTitle,
-            link: `#${category}/${eventId}`
+            event_title: eventTitle,
+            event_id: eventId,
+            event_type: eventType
         });
 
+        let successCount = 0;
+        const hostVariants = getEmailVariations(hostEmail).map(e => e.toLowerCase().trim());
+
         for (const sub of subscribers) {
-            // Avoid notifying the host
-            if (getEmailVariations(hostEmail).includes(sub.email.toLowerCase().trim())) continue;
-            
-            await sequelize.query(
-                `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                 VALUES (UUID(), ?, 'NEW_EVENT', ?, ?, '{}', NOW())
-                 ON DUPLICATE KEY UPDATE created_at = NOW()`,
-                { replacements: [sub.id, targetId, metadata] }
-            );
+            const subEmail = sub.email.toLowerCase().trim();
+            // Avoid notifying the host themselves
+            if (hostVariants.includes(subEmail)) {
+                console.log(`[Notification] ⏭️ Skipping host: ${subEmail}`);
+                continue;
+            }
+
+            try {
+                await sequelize.query(
+                    `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                     VALUES (UUID(), ?, 'NEW_EVENT', ?, ?, '{}', NOW())
+                     ON DUPLICATE KEY UPDATE created_at = NOW()`,
+                    { replacements: [sub.id, targetId, metadata] }
+                );
+                successCount++;
+            } catch (insertErr) {
+                console.error(`[Notification] ❌ INSERT failed for user ${sub.id}:`, insertErr.message);
+            }
         }
+        console.log(`[Notification] ✅ Successfully sent ${successCount} notifications.`);
+
     } catch (error) {
-        console.error(`[Notification] Failed to notify subscribers for ${category}:`, error);
+        console.error(`[Notification] ‼️ CRITICAL FAILURE for ${category}:`, error);
     }
 }
 
@@ -546,7 +573,7 @@ app.post('/api/v1/admin/penalize', async (req, res) => {
     try {
         const { email, penalty, reason } = req.body;
         if (!email || !penalty) return res.status(400).json({ error: 'Missing email or penalty details' });
-        
+
         // Deduct points
         await awardPoints(email, -Math.abs(penalty));
         console.log(`[Admin] Deducted ${penalty} points from ${email}. Reason: ${reason || 'N/A'}`);
@@ -576,9 +603,9 @@ app.post('/create-activity', async (req, res) => {
 
         const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating event!
-        
+
         // 🔔 Notify Instant!
-        notifySubscribers('sports', title, insertId, 'sports', host_email);
+        await notifySubscribers('sports', title, insertId, 'sports', host_email);
 
         res.status(201).json({ message: 'Yeay! Post created successfully! 🏀' });
 
@@ -849,9 +876,9 @@ app.post('/create-carpool', async (req, res) => {
 
         const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating carpool!
-        
+
         // 🔔 Notify Instant!
-        notifySubscribers('carpool', title, insertId, 'carpool', host_email);
+        await notifySubscribers('carpool', title, insertId, 'carpool', host_email);
 
         res.status(201).json({ message: "Carpool created successfully!" });
     } catch (error) {
@@ -949,9 +976,9 @@ app.post('/create-study', async (req, res) => {
 
         const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating study!
-        
+
         // 🔔 Notify Instant!
-        notifySubscribers('study', title, insertId, 'study', host_email);
+        await notifySubscribers('study', title, insertId, 'study', host_email);
 
         res.status(201).json({ message: "Study event created successfully!" });
     } catch (error) {
@@ -1061,9 +1088,9 @@ app.post('/create-hangout', async (req, res) => {
 
         const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating hangout!
-        
+
         // 🔔 Notify Instant!
-        notifySubscribers('hangout', title, insertId, 'hangout', host_email);
+        await notifySubscribers('hangout', title, insertId, 'hangout', host_email);
 
         res.status(201).json({ message: "Hangout event created successfully!" });
     } catch (error) {
@@ -1198,9 +1225,9 @@ app.post('/create-housing', async (req, res) => {
 
         const insertId = result.insertId || result;
         await awardPoints(host_email, 1); // +1 Point for creating housing!
-        
+
         // 🔔 Notify Instant!
-        notifySubscribers('housing', title, insertId, 'housing', host_email);
+        await notifySubscribers('housing', title, insertId, 'housing', host_email);
 
         res.status(201).json({ success: true, id: insertId });
     } catch (error) {
@@ -1743,9 +1770,9 @@ cron.schedule('0 12,19 * * *', async () => {
     try {
         const now = nowTaipei();
         const currentHour = now.hour();
-        
+
         let startTime, endTime, translationKey;
-        
+
         if (currentHour === 12) {
             startTime = now.subtract(1, 'day').hour(19).minute(1).second(0).format('YYYY-MM-DD HH:mm:ss');
             endTime = now.hour(12).minute(0).second(59).format('YYYY-MM-DD HH:mm:ss');
@@ -1760,7 +1787,7 @@ cron.schedule('0 12,19 * * *', async () => {
 
         const tables = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
         let totalCount = 0;
-        
+
         for (const table of tables) {
             const [result] = await sequelize.query(`SELECT COUNT(*) as count FROM ${table} WHERE created_at BETWEEN ? AND ?`, {
                 replacements: [startTime, endTime]
@@ -1771,7 +1798,7 @@ cron.schedule('0 12,19 * * *', async () => {
         if (totalCount > 0) {
             const [users] = await sequelize.query("SELECT id FROM users");
             const metadata = JSON.stringify({
-                message: translationKey === 'notif.digest.morning' 
+                message: translationKey === 'notif.digest.morning'
                     ? `There are ${totalCount} new events this morning! / 今天早上有 ${totalCount} 個新活動！`
                     : `There are ${totalCount} new events this afternoon! / 今天下午有 ${totalCount} 個新活動！`,
                 translationKey: translationKey,
