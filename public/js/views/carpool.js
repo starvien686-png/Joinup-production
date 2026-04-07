@@ -1,7 +1,27 @@
 import { MockStore } from '../models/mockStore.js?v=21';
 import { I18n } from '../services/i18n.js';
-import { notifications } from '../services/notification.js';
-import { openRatingModal } from './rating.js';
+
+// --- SENSOR BAHASA ULTIMATE ---
+const isAppZH = () => {
+    try {
+        const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
+        if (langObj.includes('en')) return false;
+        if (langObj.includes('zh')) return true;
+    } catch (e) { }
+    const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW').toLowerCase();
+    if (ls.includes('en')) return false;
+    return true;
+};
+
+const t = (key, zhText, enText) => {
+    try {
+        if (typeof window.I18n !== 'undefined' && typeof window.I18n.t === 'function') {
+            const trans = window.I18n.t(key);
+            if (trans && trans !== key && trans.trim() !== '') return trans;
+        }
+    } catch (e) { }
+    return isAppZH() ? zhText : enText;
+};
 
 // --- MESIN PENDAFTARAN CARPOOL ---
 window.CarpoolAppEngine = {
@@ -31,19 +51,12 @@ export const renderCarpool = () => {
     const userProfileStr = localStorage.getItem('userProfile');
 
     if (!userProfileStr) {
-        alert(I18n.t('auth.req'));
+        alert(t('auth.req', '請先登入！', 'Please login first!'));
         window.navigateTo('home');
         return;
     }
 
     const user = JSON.parse(userProfileStr);
-
-    if (user && user.credit_points < 0) {
-        alert(I18n.t('common.credit_low'));
-        window.navigateTo('home');
-        return;
-    }
-
     let currentState = 'landing';
 
     let activeFilters = {
@@ -59,48 +72,69 @@ export const renderCarpool = () => {
         return `
             <div class="container fade-in" style="height: 100vh; display: flex; flex-direction: column; justify-content: center;">
                 <div style="text-align: center; margin-bottom: 2rem;">
-                    <span style="font-size: 3rem;">🚗</span>
-                    <h1 style="color: #1976D2; margin-top: 1rem;">${I18n.t('carpool.title')}</h1>
-                    <p style="color: var(--text-secondary);">${I18n.t('carpool.subtitle')}</p>
+                    <span style="font-size: 3.5rem;">🚗</span>
+                    <h1 style="color: var(--primary-dark); margin-top: 1rem;">${t('cp.title', '共乘', 'Carpool')}</h1>
+                    <p style="color: var(--text-secondary);">${t('cp.sub', '一起搭車，省錢又環保！', 'Share a ride, save money, and go green!')}</p>
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
-                    <button id="btn-role-driver" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #1976D2; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
-                        <span style="font-size: 2.5rem; margin-right: 1.5rem;">🚘</span>
+                    <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                        <span style="font-size: 2.5rem; margin-right: 1.5rem;">🚙</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('carpool.role.driver')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('carpool.role.driver_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.host.title', '我是發起人', 'Offer a Ride')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.host.desc', '我有空位，尋找乘客', 'I have empty seats, looking for passengers')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-role-passenger" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #4CAF50; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🎒</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('carpool.role.partner')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('carpool.role.partner_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '我是夥伴', 'I am Partner')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '尋找共乘', 'Looking for a ride')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #1976D2, #42A5F5); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(25, 118, 210, 0.3); transition: transform 0.2s;">
-                        ⚙️ ${I18n.t('common.manage')}
+                    <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #FFD600, #FF6D00); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3); transition: transform 0.2s;">
+                        ⚙️ ${t('common.manage', '管理我的活動', 'Manage My Activities')}
                     </button>
                 </div>
                 
-                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer;">
-                    ⬅️ ${I18n.t('common.back')}
+                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: bold; color: #555;">
+                    ⬅️ ${t('common.back', '返回', 'Back')}
                 </button>
             </div>
         `;
     };
 
     const renderCreateForm = () => {
+        const isZH = isAppZH();
         return `
             <div class="container fade-in" style="padding-bottom: 3rem;">
                 <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
                     <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
-                    <h2>${I18n.t('carpool.create.title')}</h2>
+                    <h2>${t('cp.create.title', '發佈共乘', 'Create Carpool')}</h2>
                 </header>
 
+                <form id="createCarpoolForm" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    
+                    <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF8C00; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.2rem;">🚙 詳細說明</h3>
+                    <div style="color: #888; font-size: 12px; text-align: center; margin-bottom: 1.5rem;">⚠️ 本平台不對任何財務問題負責<br>(This platform is not responsible for any financial issues)</div>
+                    
+                    <div class="input-group">
+                        <label>行程標題 * (Trip Title)</label>
+                        <input type="text" id="cpTitle" placeholder="${isZH ? '例如: 週末返鄉、台中一日遊' : 'e.g. Weekend trip to Taichung'}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>交通工具 * (Vehicle Type)</label>
+                        <select id="cpVehicle" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                            <option value="" disabled selected>請選擇...</option>
+                            <option value="Taxi">🚕 ${isZH ? '計程車' : 'Taxi'}</option>
+                            <option value="Uber">🚙 Uber</option>
+                            <option value="Private">🚗 ${isZH ? '自家車' : 'Private'}</option>
+                            <option value="Rental">🚐 ${isZH ? '租車' : 'Rental'}</option>
+                            <option value="Scooter">🛵 ${isZH ? '機車' : 'Scooter'}</option>
+                        </select>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -416,8 +450,8 @@ export const renderCarpool = () => {
                             <div style="font-size: 0.9rem; color: #2196F3; font-weight: bold; margin-bottom: 1rem;">📍 ${p.departure_loc} ➔ ${p.destination_loc}</div>
                             
                             <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #555; margin-bottom: 15px; display: flex; justify-content: space-between;">
-                                <div><strong>🕒 ${I18n.t('common.time')}:</strong> <br>${timeStr}</div>
-                                <div style="text-align: right;"><strong>💺 ${I18n.t('carpool.label.seats')}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
+                                <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
+                                <div style="text-align: right;"><strong>💺 ${isZH ? '空位' : 'Seats'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
                             </div>
                             <div style="margin-top: 0.5rem; margin-bottom: 10px;">${isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${txtFull}</span>` : ''}</div>
                             ${isHost ? `
@@ -434,7 +468,7 @@ export const renderCarpool = () => {
                         <div style="text-align: center; padding: 3rem 1rem; color: #888;">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
                             <p>${txtNoData}</p>
-                            <button onclick="window.resetCarpoolFilters()" style="margin-top: 1rem; background: #FFB300; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">${I18n.t('common.clear_filter')}</button>
+                            <button onclick="window.resetCarpoolFilters()" style="margin-top: 1rem; background: #FFB300; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">${isZH ? '清除篩選' : 'Clear Filters'}</button>
                         </div>
                     `;
                 }
@@ -455,14 +489,14 @@ export const renderCarpool = () => {
                     </div>
                     
                     <button id="btn-cp-filter" style="background: #eee; border: 1px solid #ccc; padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
-                        🔍 ${I18n.t('common.filter')}
+                        🔍 ${isZH ? '篩選' : 'Filter'}
                         ${activeFilterCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #F44336; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${activeFilterCount}</span>` : ''}
                     </button>
                 </header>
 
                 <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
                     <div style="flex: 1; position: relative;">
-                        <input type="text" id="cpSearchInput" placeholder="${I18n.t('common.search')}..." value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; padding-right: 40px; font-size: 0.95rem;">
+                        <input type="text" id="cpSearchInput" placeholder="${isZH ? '搜尋標題/地點...' : 'Search title/locations...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; padding-right: 40px; font-size: 0.95rem;">
                         <span id="btn-cp-search" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">🔍</span>
                     </div>
                 </div>
@@ -487,14 +521,16 @@ export const renderCarpool = () => {
             myPosts = allPosts.filter(p => p.host_email === user.email);
         } catch (error) { }
 
-        const txtManageTitle = I18n.t('common.manage');
-        const txtNoData = I18n.t('cp.nodata_manage');
-        const txtCreateBtn = I18n.t('cp.btn.create');
+        const isZH = isAppZH();
+        const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
+        const txtNoData = t('cp.nodata_manage', '尚未建立任何活動。', 'No events created yet.');
+        const txtCreateBtn = t('cp.btn.create', '+ 建立新共乘', '+ Create New Ride');
 
         const postsHtmlArray = await Promise.all(myPosts.map(async p => {
             let pendingApps = [];
             let acceptedApps = [];
 
+            // 1. Fetch from Server (Source of Truth)
             try {
                 const data = await api.fetch(`/api/v1/host/participants?event_type=carpool&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
                 if (data.success && data.data) {
@@ -503,6 +539,7 @@ export const renderCarpool = () => {
                 }
             } catch (e) { console.warn("Failed to fetch server participants.", e); }
 
+            // 2. Legacy Fallback
             if (pendingApps.length === 0 && acceptedApps.length === 0) {
                 const legacyApps = window.CarpoolAppEngine.getApps(p.id) || [];
                 pendingApps = legacyApps.filter(a => a.status === 'pending');
@@ -511,39 +548,36 @@ export const renderCarpool = () => {
 
             const participantCount = acceptedApps.length;
 
-            let statusColor = '#333', statusIcon = '⚪', statusText = p.status;
-            switch (p.status) {
-                case 'open': statusColor = '#4CAF50'; statusIcon = '🟢'; statusText = I18n.t('study.status.open'); break;
-                case 'paused': statusColor = '#ff9800'; statusIcon = '⏸️'; statusText = I18n.t('outing.status.paused'); break;
-                case 'success': statusColor = '#2196f3'; statusIcon = '🎉'; statusText = I18n.t('common.success'); break;
-                case 'cancelled': statusColor = '#f44336'; statusIcon = '✗'; statusText = I18n.t('common.cancel'); break;
-            }
-            const statusBadge = `<span style="font-size: 0.8rem; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 10px; border-radius: 20px; font-weight: bold;">${statusIcon} ${statusText}</span>`;
+            let statusBadge = '';
+            if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${t('cp.stat.open', '狀態: 招募中', 'Status: OK')}</span>`;
+            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.8rem; color: #ff9800; border: 1px solid #ff9800; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⏸️ ${t('common.paused', '暫停招募', 'Paused')}</span>`;
+            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${t('common.success', '已成案', 'Success')}</span>`;
+            else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${t('common.cancel', '已取消', 'Cancelled')}</span>`;
 
             let appsHtml = '';
             if (pendingApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${I18n.t('housing.status.pending_confirm')}:</div>`;
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${t('cp.pending', '待確認:', 'Pending Confirmation:')}:</div>`;
                 appsHtml += pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'carpool', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${I18n.t('common.view_details')}</button>
+                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'carpool', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
             }
             if (acceptedApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${I18n.t('outing.status.joined')}:</div>`;
+                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
                 appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${I18n.t('outing.status.joined')}</span>
+                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已在前座' : 'Joined'}</span>
                     </div>
                 `).join('');
             }
-            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${I18n.t('common.no_participants')}</div>`;
+            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
 
             const cpTitle = p.title || `${p.departure_loc} ➔ ${p.destination_loc}`;
             const dTime = new Date(p.departure_time);
-            const dateStr = dTime.toLocaleDateString();
+            const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
 
             return `
                 <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -554,25 +588,25 @@ export const renderCarpool = () => {
                     <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr}</div>
                     
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${I18n.t('cp.passengers')} (${participantCount}/${p.available_seats})</div>
+                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${t('cp.passengers', '乘客名單', 'Participants')} (${participantCount}/${p.available_seats})</div>
                         ${appsHtml}
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="window.navigateTo('messages?room=carpool_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${I18n.t('common.enter_chat')}</button>
+                        <button onclick="window.navigateTo('messages?room=carpool_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('cp.chat', '進入聊天室', 'Enter Chat Room')}</button>
 
                         ${p.status === 'open' ? `
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'paused')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${I18n.t('common.pause')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${I18n.t('common.success')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${I18n.t('common.cancel')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'paused')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${t('common.pause', '暫停招募', 'Pause Recruiting')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
                         ` : p.status === 'paused' ? `
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${I18n.t('common.resume')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${I18n.t('common.success')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${I18n.t('common.cancel')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${t('common.resume', '繼續招募', 'Resume Recruiting')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
+                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
                             ` : p.status === 'success' ? `
-                            <button onclick="window.openRatingModal({ id: '${p.id}', title: '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'")}', category: 'carpool' })" style="width: 100%; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #FFB300, #FF8C00); color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 8px; box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);">⭐ ${I18n.t('common.rate')}</button>
+                            <button onclick="window.openRatingModal({ id: '${p.id}', title: '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'")}', category: 'carpool' })" style="width: 100%; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #FFB300, #FF8C00); color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 8px; box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);">⭐ 給予評價 (Rate Event)</button>
                         ` : ''}
-                        <button onclick="window.deletePost('${p.id}', 'carpool')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">🗑️ ${I18n.t('common.delete')}</button>
+                        <button onclick="window.deletePost('${p.id}', 'carpool')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
                     </div>
                 </div>
             `;
@@ -675,14 +709,14 @@ export const renderCarpool = () => {
 
                 if (response.ok) {
                     if (window.refreshUserProfile) await window.refreshUserProfile();
-                    alert(I18n.t('common.success'));
+                    alert(t('cp.alert.ok', "發佈成功！ 🎉", "Success! 🎉"));
                     currentState = 'manage';
                     updateView();
                 } else {
-                    alert(I18n.t('common.error') + ": " + (result.error || "Unknown"));
+                    alert(t('cp.alert.err1', "資料庫錯誤：", "Database error: ") + (result.error || "Unknown"));
                 }
             } catch (err) {
-                alert(I18n.t('common.error_occurred'));
+                alert(t('cp.alert.err2', "連線失敗！請檢查伺服器是否運行。", "Connection failed! Make sure the server is running."));
             }
             finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
         });
@@ -753,8 +787,16 @@ export const renderCarpool = () => {
     };
 
     window.updateCarpoolStatus = async (postId, newStatus) => {
-        const msgConfirm = I18n.t('common.confirm_action');
-        if (!confirm(msgConfirm)) return;
+        if (newStatus === 'cancelled') {
+            const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+            const msg = savedLang.includes('zh') 
+                ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
+                : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
+            if (!confirm(msg)) return;
+        } else {
+            const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
+            if (!confirm(msgConfirm)) return;
+        }
 
         try {
             const response = await fetch(`/update-carpool-status/${postId}`, {
@@ -767,31 +809,36 @@ export const renderCarpool = () => {
                 if (window.refreshUserProfile) await window.refreshUserProfile();
                 updateView();
             }
-            else { alert(I18n.t('common.error')); }
+            else { alert(t('cp.fail.stat', "更新失敗。", "Failed to update.")); }
         } catch (error) {
-            alert(I18n.t('common.error_occurred'));
+            alert("Error server.");
         }
     };
+
+    // HANDLED GLOBALLY IN app.js (window.handleReviewAction)
 
     updateView();
 };
 
 window.openCarpoolJoinForm = async (postId, teamName) => {
-    const msgConfirm = I18n.t('common.confirm_join');
-    const msgDesc = `${I18n.t('housing.confirm.join_msg') || 'Join'} <strong>${teamName}</strong>?`;
+    const isZH = isAppZH();
+
+    const msgConfirm = t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
+    const msgDesc = t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
+    const txtFinancial = t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues');
 
     const formHtml = `
         <div id="join-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
             <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
                 <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
                 <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
-                <div style="color: #888888; font-size: 11px; text-align: center; margin-bottom: 1.5rem; border-top: 1px dashed #eee; padding-top: 10px;">⚠️ ${I18n.t('common.financial_disclaimer')}</div>
+                <div style="color: #888888; font-size: 11px; text-align: center; margin-bottom: 1.5rem; border-top: 1px dashed #eee; padding-top: 10px;">⚠️ ${txtFinancial}</div>
                 <div style="display: flex; gap: 1rem;">
                     <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
-                        ${I18n.t('common.cancel')}
+                        ${t('common.cancel', '取消', 'Cancel')}
                     </button>
                     <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: linear-gradient(135deg, #FF8C00, #E65100); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(255, 140, 0, 0.3);">
-                        ${I18n.t('common.submit')}
+                        ${t('common.submit', '確認送出', 'Submit')}
                     </button>
                 </div>
             </div>
@@ -823,21 +870,21 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
                     status: 'pending'
                 });
 
-                    alert(I18n.t('carpool.alert.sent'));
-                    document.getElementById('join-overlay').remove();
-                } else {
-                    alert(I18n.t('common.error') + ": " + (result.message || ""));
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerText = I18n.t('common.submit');
-                }
-            } catch (e) {
-                console.error("Join Request Error:", e);
-                alert(I18n.t('common.error_occurred'));
+                alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
+                document.getElementById('join-overlay').remove();
+            } else {
+                alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                 btnSubmit.disabled = false;
-                btnSubmit.innerText = I18n.t('common.submit');
+                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
             }
-        };
+        } catch (e) {
+            console.error("Join Request Error:", e);
+            alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
+        }
     };
+};
 
 
 /// --- FITUR POP-UP DETAIL CARPOOL DENGAN GOOGLE MAPS ---
@@ -871,8 +918,33 @@ window.showCarpoolDetail = async (id) => {
         const hostHobby = hostUser.hobby || '';
         const studyYear = hostUser.study_year || '';
 
+        const isAppZH = () => {
+            try {
+                const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
+                if (langObj.includes('en')) return false;
+                if (langObj.includes('zh')) return true;
+            } catch (e) { }
+            const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
+            if (ls.includes('en')) return false;
+            return true;
+        };
+        const isZH = isAppZH();
+
+        const txtDetails = isZH ? '共乘詳情' : 'Ride Details';
+        const txtDepart = isZH ? '出發地' : 'Departure';
+        const txtDest = isZH ? '目的地' : 'Destination';
+        const txtTime = isZH ? '時間' : 'Time';
+        const txtPrice = isZH ? '費用' : 'Price';
+        const txtSeats = isZH ? '空位' : 'Available Seats';
+        const txtSeatsLeft = isZH ? '個空位' : 'Seats Left';
+        const txtNotes = isZH ? '備註' : 'Notes';
+        const txtClickMap = isZH ? '點擊開啟地圖' : 'Click to open Maps';
+        const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
+
         const dTime = new Date(p.departure_time);
-        const timeStr = dTime.toLocaleString();
+        const timeStr = isZH
+            ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
+            : `${(dTime.getMonth() + 1).toString().padStart(2, '0')}/${dTime.getDate().toString().padStart(2, '0')}/${dTime.getFullYear()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
         const mapRouteUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(p.departure_loc)}&daddr=${encodeURIComponent(p.destination_loc)}&output=embed`;
         const departLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.departure_loc)}`;
@@ -902,7 +974,7 @@ window.showCarpoolDetail = async (id) => {
                         <div>
                             <div style="font-weight: bold; font-size: 1.1rem; color: #333;">${hostName}</div>
                             <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">🎓 ${hostDept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
-                            ${hostHobby ? `<div style="font-size: 0.8rem; color: #2196F3; margin-top: 4px;">🎯 ${I18n.t('reg.hobby_label') || 'Hobby'}: ${hostHobby}</div>` : ''}
+                            ${hostHobby ? `<div style="font-size: 0.8rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
                         </div>
                     </div>
 
@@ -910,7 +982,7 @@ window.showCarpoolDetail = async (id) => {
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                             <span style="font-size: 1.2rem; color: #2196F3;">📍</span>
                             <div>
-                                <div style="font-size: 0.8rem; color: #888;">${I18n.t('carpool.detail.depart')} - <span style="font-size: 0.7rem; color: #2196F3;">${I18n.t('carpool.detail.click_map')}</span></div>
+                                <div style="font-size: 0.8rem; color: #888;">${txtDepart} - <span style="font-size: 0.7rem; color: #2196F3;">${txtClickMap}</span></div>
                                 <a href="${departLink}" target="_blank" style="font-weight: bold; color: #2196F3; text-decoration: none; font-size: 1.1rem;">${p.departure_loc}</a>
                             </div>
                         </div>
@@ -918,7 +990,7 @@ window.showCarpoolDetail = async (id) => {
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                             <span style="font-size: 1.2rem; color: #F44336;">🏁</span>
                             <div>
-                                <div style="font-size: 0.8rem; color: #888;">${I18n.t('carpool.detail.dest')} - <span style="font-size: 0.7rem; color: #F44336;">${I18n.t('carpool.detail.click_map')}</span></div>
+                                <div style="font-size: 0.8rem; color: #888;">${txtDest} - <span style="font-size: 0.7rem; color: #F44336;">${txtClickMap}</span></div>
                                 <a href="${destLink}" target="_blank" style="font-weight: bold; color: #F44336; text-decoration: none; font-size: 1.1rem;">${p.destination_loc}</a>
                             </div>
                         </div>
@@ -930,25 +1002,25 @@ window.showCarpoolDetail = async (id) => {
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">🕒 ${I18n.t('common.time')}</div>
+                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">🕒 ${txtTime}</div>
                             <div style="font-weight: bold; color: #333;">${timeStr}</div>
                         </div>
                         <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💰 ${I18n.t('carpool.label.transport')}</div>
-                            <div style="font-weight: bold; color: #E65100;">${p.price || ''}</div>
+                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💰 ${txtPrice}</div>
+                            <div style="font-weight: bold; color: #E65100;">${p.price}</div>
                         </div>
                     </div>
 
                     <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💺 ${I18n.t('carpool.label.seats')}</div>
-                            <div style="font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${p.available_seats}</div>
+                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💺 ${txtSeats}</div>
+                            <div style="font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${p.available_seats} ${txtSeatsLeft}</div>
                         </div>
                     </div>
 
                     <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                        <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${I18n.t('common.description')}</div>
-                        <div style="color: #444; line-height: 1.5;">${p.description || (I18n.t('common.no_data') || 'None')}</div>
+                        <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${txtNotes}</div>
+                        <div style="color: #444; line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
                     </div>
                 </div>
             </div>
@@ -957,7 +1029,7 @@ window.showCarpoolDetail = async (id) => {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     } catch (e) {
         console.error(e);
-        alert(I18n.t('app.err.load_fail', { error: e.message }));
+        alert("Failed to load the details! Make sure the server is running.");
     }
 };
 
