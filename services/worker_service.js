@@ -59,7 +59,9 @@ async function sendNotification(payload) {
                 ? `Your request for "${eventTitle}" was accepted! / 您對「${eventTitle}」的加入申請已獲批准！快來看看細節。`
                 : `Your request for "${eventTitle}" was not accepted. / 您對「${eventTitle}」的加入申請已被婉拒。`;
             
-            const targetLink = link ? `https://joinup-production.onrender.com${link}` : `https://joinup-production.onrender.com/#home`;
+            // Ensure URL uses hash routing (#) for SPA compatibility to avoid 404 errors
+            let cleanLink = link ? (link.startsWith('/') ? link.substring(1) : link) : 'home';
+            const targetLink = `https://joinup-production.onrender.com/#${cleanLink}`;
             await pushService.sendPushNotification([recipient_email], pushTitle, pushBody, targetLink);
         }
     } catch (e) {
@@ -111,7 +113,7 @@ async function processOutbox() {
                 // Map actionable metadata
                 if (payload.actionType) {
                     payload.action_metadata = { actionType: payload.actionType, targetId: payload.targetId };
-                    payload.link = `/review/${payload.targetId}`; // Example link
+                    payload.link = 'home'; // Simplified for OneSignal URL
                 }
                 
                 // UX: Pass profile snapshots into persistent metadata
