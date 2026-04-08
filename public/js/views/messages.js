@@ -200,27 +200,49 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
                 let contentHtml = msg.content || '';
 
-                if (contentHtml && contentHtml.startsWith('http://googleusercontent.com/maps')) msg.message_type = 'location';
-                else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) msg.message_type = 'image';
-                else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx)$/i) && contentHtml.startsWith('http')) msg.message_type = 'file';
+                const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\/\S+/i;
+                if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || googleMapsRegex.test(contentHtml))) {
+                    msg.message_type = 'location';
+                } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
+                    msg.message_type = 'image';
+                } else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx)$/i) && contentHtml.startsWith('http')) {
+                    msg.message_type = 'file';
+                }
 
                 if (msg.message_type === 'location') {
-                    let lat = 23.9510, lng = 120.9280;
-                    const match = contentHtml.match(/([-+]?\d*\.\d+),\s*([-+]?\d*\.\d+)/);
-                    if (match) { lat = parseFloat(match); lng = parseFloat(match); }
-                    contentHtml = `
-                        <a href="${contentHtml}" target="_blank" style="text-decoration: none; display: block; width: 240px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.15); margin-top: 5px;">
-                            <div style="height: 130px; width: 100%; position: relative; background: #e5e3df; pointer-events: none;">
-                                <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}"></iframe>
-                            </div>
-                            <div style="padding: 10px; background: white; border-top: 1px solid #eee;">
-                                <div style="font-size: 0.95rem; color: #333; font-weight: bold; display: flex; align-items: center; gap: 6px;">
-                                    <span style="color: #25d366; font-size: 1.2rem;">📍</span> Location
+                    const isGoogleMaps = googleMapsRegex.test(contentHtml);
+                    
+                    if (isGoogleMaps) {
+                        contentHtml = `
+                            <a href="${contentHtml}" target="_blank" class="location-card">
+                                <div class="location-icon-wrapper">
+                                    <span class="location-icon">📍</span>
                                 </div>
-                                <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
-                            </div>
-                        </a>
-                    `;
+                                <div class="location-card-content">
+                                    <span class="location-card-title">Google Maps Location</span>
+                                    <span class="location-card-subtitle">${I18n.t('chat.location.view_on_maps') || 'View Location on Google Maps'}</span>
+                                </div>
+                            </a>
+                        `;
+                    } else {
+                        // Original OpenStreetMap logic for coordinate-based locations
+                        let lat = 23.9510, lng = 120.9280;
+                        const match = contentHtml.match(/([-+]?\d*\.\d+),\s*([-+]?\d*\.\d+)/);
+                        if (match) { lat = parseFloat(match[1]); lng = parseFloat(match[2]); }
+                        contentHtml = `
+                            <a href="${contentHtml}" target="_blank" style="text-decoration: none; display: block; width: 240px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.15); margin-top: 5px;">
+                                <div style="height: 130px; width: 100%; position: relative; background: #e5e3df; pointer-events: none;">
+                                    <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}"></iframe>
+                                </div>
+                                <div style="padding: 10px; background: white; border-top: 1px solid #eee;">
+                                    <div style="font-size: 0.95rem; color: #333; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                                        <span style="color: #25d366; font-size: 1.2rem;">📍</span> Location
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+                                </div>
+                            </a>
+                        `;
+                    }
                 } else if (msg.message_type === 'image') {
                     contentHtml = `<a href="${contentHtml}" target="_blank"><img src="${contentHtml}" style="max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 5px;" alt="Image"></a>`;
                 } else if (msg.message_type === 'file') {
@@ -788,6 +810,60 @@ export const renderMessages = (roomId = null, prefill = null) => {
             .btn-icon:hover { transform: scale(1.1); }
             .chat-input-box { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; outline: none; font-size: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
             .btn-send { background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
+            
+            /* Location Card Styles */
+            .location-card {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                background: #ffffff;
+                border: 1px solid #e0e0e0;
+                border-radius: 12px;
+                padding: 12px 16px;
+                text-decoration: none;
+                color: #333;
+                width: 240px;
+                margin-top: 8px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            }
+            .location-card:hover {
+                background: #f8f9fa;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+                transform: translateY(-1px);
+            }
+            .location-icon-wrapper {
+                width: 42px;
+                height: 42px;
+                background: #e8f5e9;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .location-icon {
+                font-size: 1.4rem;
+            }
+            .location-card-content {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .location-card-title {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #1a1a1a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .location-card-subtitle {
+                font-size: 0.75rem;
+                color: #25d366;
+                font-weight: 600;
+                margin-top: 2px;
+            }
         `;
         document.head.appendChild(style);
     }
