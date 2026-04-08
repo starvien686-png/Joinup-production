@@ -362,11 +362,12 @@ window.handleDeepLink = (payload) => {
         window.navigateTo(`messages?room=${supportRoom.id}&prefill=${encodeURIComponent(prefill)}`);
 
     } else if (type === 'chat') {
-
         window.navigateTo(`messages?room=${id}`);
-
-    } else if (type === 'violation') { window.navigateTo('profile'); }
-
+    } else if (type === 'violation') {
+        window.navigateTo('profile');
+    } else if (type === 'ACCEPTED' || type === 'REJECTED') {
+        window.navigateTo('activities');
+    }
 };
 
 
@@ -462,10 +463,11 @@ window.showAnnouncements = async () => {
                     } else if (n.type === 'ACCEPTED') {
                         msg = I18n.t('notifications.type.accepted', { eventTitle: meta.event_title || 'Event' });
                         iconType = 'success';
-                        link = `activity/${meta.event_id || ''}`;
+                        link = 'activities';
                     } else if (n.type === 'REJECTED') {
                         msg = I18n.t('notifications.type.rejected', { eventTitle: meta.event_title || 'Event' });
                         iconType = 'info';
+                        link = 'activities';
                     } else if (n.type === 'NEW_EVENT') {
                         const category = meta.category || 'sports';
                         const displayCat = I18n.t(`home.cat.${category}`);
@@ -641,7 +643,14 @@ window.handleNotificationClick = (link) => {
 
             if (post) openRatingModal(post);
 
-        } else { window.location.href = link; }
+        } else {
+            // Safely navigate using hash if it's a relative path to prevent server-side API hits
+            if (link && !link.includes(':') && !link.startsWith('#')) {
+                window.navigateTo(link);
+            } else if (link) {
+                window.location.href = link;
+            }
+        }
 
     }
 
