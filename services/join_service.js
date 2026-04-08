@@ -3,6 +3,7 @@ const router = express.Router();
 const sequelize = require('../database');
 const crypto = require('crypto');
 const winston = require('winston');
+const pushService = require('./push_service');
 
 const logger = winston.createLogger({
     level: 'info',
@@ -224,6 +225,20 @@ router.post('/join', async (req, res) => {
         );
 
         await t.commit();
+
+        // 🔔 Notify Host! (Push Notification)
+        try {
+            const hostEmail = event.host_email;
+            const pushTitle = `🚀 New Participant Request / 新成員加入申請`;
+            const pushBody = `There is a new participant request for your event ("${event_title}"). Open the app to confirm! / 叮咚！有新夥伴想加入你的活動「${event_title}」，趕快打開 App 看看吧！`;
+
+            // Send push to host via OneSignal
+            pushService.sendPushNotification([hostEmail], pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
+            console.log(`[Notification] Join request push sent to Host: ${hostEmail} / 成功發送加入通知給發起人: ${hostEmail}`);
+        } catch (pushErr) {
+            console.error(`[Notification] Failed to send push to Host: / 哎呀，發送推播給主辦人失敗：`, pushErr.message);
+        }
+
         res.status(202).json({ success: true, message: 'Join request pending approval', data: { status: 'pending' }, requestId: req.requestId });
     } catch (err) {
         if (t) await t.rollback();
@@ -295,7 +310,7 @@ router.post('/join/approve', async (req, res) => {
             { replacements: [event_type, event_id, targetEmailVars], transaction: t }
         );
         if (lookup.length === 0) throw { status: 404, message: 'Participant not found' };
-        
+
         let finalPartId = lookup[0].id;
 
         const [approved] = await sequelize.query(
@@ -318,7 +333,7 @@ router.post('/join/approve', async (req, res) => {
             "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
             { replacements: [event_type, event_id], transaction: t }
         );
-        
+
         if (updatedApproved[0].count >= events[0][capacityCol]) {
             await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
             logger.info(`Event ${event_type}:${event_id} marked as FULL. (Count: ${updatedApproved[0].count}/${events[0][capacityCol]})`);
@@ -373,7 +388,7 @@ router.post('/join/reject', async (req, res) => {
             { replacements: [event_type, event_id, targetEmailVars], transaction: t }
         );
         if (lookup.length === 0) throw { status: 404, message: 'Not found' };
-        
+
         let finalPartId = lookup[0].id;
 
         const [parts] = await sequelize.query("SELECT user_id FROM event_participants WHERE id = ? FOR UPDATE", { replacements: [finalPartId], transaction: t });
