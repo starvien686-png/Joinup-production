@@ -200,9 +200,13 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
                 let contentHtml = msg.content || '';
 
-                const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\/\S+/i;
-                if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || googleMapsRegex.test(contentHtml))) {
+                // 📍 Enhanced Google Maps Detection Regex
+                const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\b\S*/i;
+                const mapMatch = contentHtml && contentHtml.match(googleMapsRegex);
+                
+                if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
                     msg.message_type = 'location';
+                    if (mapMatch) console.log("📍 Maps link detected:", mapMatch[0]);
                 } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
                     msg.message_type = 'image';
                 } else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx)$/i) && contentHtml.startsWith('http')) {
@@ -210,11 +214,12 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 }
 
                 if (msg.message_type === 'location') {
-                    const isGoogleMaps = googleMapsRegex.test(contentHtml);
+                    const extractedUrl = mapMatch ? mapMatch[0] : contentHtml;
+                    const isGoogleMaps = !!mapMatch;
                     
                     if (isGoogleMaps) {
                         contentHtml = `
-                            <a href="${contentHtml}" target="_blank" class="location-card">
+                            <a href="${extractedUrl}" target="_blank" class="location-card">
                                 <div class="location-icon-wrapper">
                                     <span class="location-icon">📍</span>
                                 </div>
@@ -227,8 +232,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     } else {
                         // Original OpenStreetMap logic for coordinate-based locations
                         let lat = 23.9510, lng = 120.9280;
-                        const match = contentHtml.match(/([-+]?\d*\.\d+),\s*([-+]?\d*\.\d+)/);
-                        if (match) { lat = parseFloat(match[1]); lng = parseFloat(match[2]); }
+                        const coordMatch = contentHtml.match(/([-+]?\d*\.\d+),\s*([-+]?\d*\.\d+)/);
+                        if (coordMatch) { lat = parseFloat(coordMatch[1]); lng = parseFloat(coordMatch[2]); }
                         contentHtml = `
                             <a href="${contentHtml}" target="_blank" style="text-decoration: none; display: block; width: 240px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.15); margin-top: 5px;">
                                 <div style="height: 130px; width: 100%; position: relative; background: #e5e3df; pointer-events: none;">
