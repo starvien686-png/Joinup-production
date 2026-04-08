@@ -496,13 +496,18 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             if (!query) return;
             searchBtn.innerText = '⏳';
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Taiwan')}`);
+                // 🔍 Nominatim Search with identification
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Taiwan')}&email=112212060@ncnu.edu.tw`);
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const data = await res.json();
                 if (data && data.length > 0) {
-                    currentLat = parseFloat(data.lat); currentLng = parseFloat(data.lon);
+                    currentLat = parseFloat(data[0].lat); currentLng = parseFloat(data[0].lon);
                     map.flyTo([currentLat, currentLng], 16); marker.setLatLng([currentLat, currentLng]);
                 } else { alert(I18n.t('chat.map.not_found') || 'Not found'); }
-            } catch (err) { alert(I18n.t('chat.map.search_error') || 'Error'); }
+            } catch (err) { 
+                console.error("❌ Map Search failed:", err); 
+                alert(I18n.t('chat.map.search_error') || 'Search failed, please check internet or console.'); 
+            }
             finally { searchBtn.innerText = I18n.t('chat.map.search_btn') || 'Search'; }
         };
         searchBtn.onclick = performSearch;
@@ -526,8 +531,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
             let addressStr = 'Unknown Location';
             try {
-                // 🕵️ Reverse Geocoding with Nominatim
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLat}&lon=${currentLng}&format=json`);
+                // 🕵️ Reverse Geocoding with Nominatim + Identification
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLat}&lon=${currentLng}&format=json&email=112212060@ncnu.edu.tw`);
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const data = await res.json();
                 if (data && data.display_name) {
                     addressStr = data.display_name;
@@ -536,7 +542,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     if (parts.length > 3) addressStr = `${parts[0].trim()}, ${parts[1].trim()}, ${parts[2].trim()}`;
                 }
             } catch (e) {
-                console.warn("Reverse Geocoding failed:", e);
+                console.error("❌ Reverse Geocoding failed:", e);
                 addressStr = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
             }
 
