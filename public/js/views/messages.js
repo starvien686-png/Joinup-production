@@ -200,11 +200,20 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
                 let contentHtml = msg.content || '';
 
-                // 📍 Enhanced Google Maps Detection Regex
+                // 📍 Enhanced Detection Logic
                 const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\b\S*/i;
                 const mapMatch = contentHtml && contentHtml.match(googleMapsRegex);
                 
-                if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
+                let locationData = null;
+                // Check if it's Native JSON Location
+                if (contentHtml && contentHtml.startsWith('{"type":"location"')) {
+                    try {
+                        locationData = JSON.parse(contentHtml);
+                        msg.message_type = 'location_native';
+                    } catch (e) {
+                        console.error("JSON Parse error for location:", e);
+                    }
+                } else if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
                     msg.message_type = 'location';
                     if (mapMatch) console.log("📍 Maps link detected:", mapMatch[0]);
                 } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
@@ -213,7 +222,25 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     msg.message_type = 'file';
                 }
 
-                if (msg.message_type === 'location') {
+                if (msg.message_type === 'location_native' && locationData) {
+                    const lat = locationData.lat;
+                    const lng = locationData.lng;
+                    const address = locationData.address || 'Unknown Location';
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    
+                    contentHtml = `
+                        <a href="${mapsUrl}" target="_blank" class="native-location-card">
+                            <div class="location-card-banner">
+                                <iframe width="100%" height="100%" frameborder="0" scrolling="no" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.003},${lat - 0.003},${lng + 0.003},${lat + 0.003}&layer=mapnik&marker=${lat},${lng}" style="pointer-events: none; opacity: 0.9;"></iframe>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">📍</div>
+                            </div>
+                            <div class="location-card-footer">
+                                <span class="location-card-address">${address}</span>
+                                <span class="location-card-hint">${I18n.t('chat.location.open_maps') || 'View on Google Maps'}</span>
+                            </div>
+                        </a>
+                    `;
+                } else if (msg.message_type === 'location') {
                     const extractedUrl = mapMatch ? mapMatch[0] : contentHtml;
                     const isGoogleMaps = !!mapMatch;
                     
@@ -491,8 +518,34 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         }
 
         document.getElementById('btn-close-map').onclick = () => mapModal.remove();
-        document.getElementById('btn-send-map').onclick = () => {
-            sendMessage('location', `https://www.google.com/maps?q=$${currentLat},${currentLng}`);
+        document.getElementById('btn-send-map').onclick = async () => {
+            const sendBtn = document.getElementById('btn-send-map');
+            const originalText = sendBtn.innerText;
+            sendBtn.disabled = true;
+            sendBtn.innerText = '⏳...';
+
+            let addressStr = 'Unknown Location';
+            try {
+                // 🕵️ Reverse Geocoding with Nominatim
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLat}&lon=${currentLng}&format=json`);
+                const data = await res.json();
+                if (data && data.display_name) {
+                    addressStr = data.display_name;
+                    // Simplify address: Take first 2 parts if possible
+                    const parts = addressStr.split(',');
+                    if (parts.length > 3) addressStr = `${parts[0].trim()}, ${parts[1].trim()}, ${parts[2].trim()}`;
+                }
+            } catch (e) {
+                console.warn("Reverse Geocoding failed:", e);
+                addressStr = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+            }
+
+            sendMessage('location', JSON.stringify({
+                type: 'location',
+                lat: currentLat,
+                lng: currentLng,
+                address: addressStr
+            }));
             mapModal.remove();
         };
     });
@@ -868,6 +921,54 @@ export const renderMessages = (roomId = null, prefill = null) => {
                 color: #25d366;
                 font-weight: 600;
                 margin-top: 2px;
+            }
+
+            /* WhatsApp Style Native Location Card */
+            .native-location-card {
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                width: 250px;
+                margin-top: 8px;
+                border: 1px solid #e0e0e0;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                text-decoration: none;
+                display: block;
+            }
+            .native-location-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            }
+            .location-card-banner {
+                background: #e1f5fe;
+                height: 120px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 3rem;
+                position: relative;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .location-card-footer {
+                padding: 12px;
+                background: white;
+            }
+            .location-card-address {
+                font-size: 0.95rem;
+                font-weight: bold;
+                color: #1a1a1a;
+                display: block;
+                line-height: 1.3;
+                white-space: normal;
+                word-wrap: break-word;
+            }
+            .location-card-hint {
+                font-size: 0.75rem;
+                color: #25d366;
+                margin-top: 6px;
+                display: block;
+                font-weight: 600;
             }
         `;
         document.head.appendChild(style);
