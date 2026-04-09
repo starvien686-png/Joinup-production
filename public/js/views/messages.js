@@ -144,6 +144,31 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     const inputField = document.getElementById('chat-input-msg');
     const pinnedBanner = document.getElementById('chat-pinned-banner');
 
+    const renderAttachment = (data, isMine) => {
+        const type = data.type || 'file';
+        const url = data.url || '#';
+        const fileName = data.fileName || url.split('/').pop() || 'Attachment';
+        const cleanFileName = fileName.includes('---') ? fileName.split('---').pop() : (fileName.length > 14 ? fileName.substring(14) : fileName);
+
+        if (type === 'image') {
+            return `<a href="${url}" target="_blank"><img src="${url}" alt="${cleanFileName}" class="chat-attachment-img"></a>`;
+        } else if (type === 'video') {
+            return `<video src="${url}" controls class="chat-attachment-video"></video>`;
+        } else {
+            // Document/File Card UI
+            return `
+                <a href="${url}" download="${cleanFileName}" target="_blank" class="file-card">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <span class="file-name" title="${cleanFileName}">${cleanFileName}</span>
+                        <span class="file-size">${I18n.t('chat.file.click_download') || 'Click to download'}</span>
+                    </div>
+                    <span class="file-download-icon">📥</span>
+                </a>
+            `;
+        }
+    };
+
     window.jumpToMsg = (msgId) => {
         const el = document.getElementById(`msg-${msgId}`);
         if (el) {
@@ -200,47 +225,45 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
                 let contentHtml = msg.content || '';
 
-                // 📍 Enhanced Detection Logic
+                // 📍 Enhanced Parsing Logic (JSON First with Legacy Fallback)
+                let attachmentData = null;
                 const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\b\S*/i;
                 const mapMatch = contentHtml && contentHtml.match(googleMapsRegex);
-                
-                let locationData = null;
-                // Check if it's Native JSON Location
-                if (contentHtml && contentHtml.startsWith('{"type":"location"')) {
-                    try {
-                        locationData = JSON.parse(contentHtml);
-                        msg.message_type = 'location_native';
-                    } catch (e) {
-                        console.error("JSON Parse error for location:", e);
+
+                try {
+                    if (contentHtml && contentHtml.trim().startsWith('{')) {
+                        attachmentData = JSON.parse(contentHtml);
                     }
-                } else if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
-                    msg.message_type = 'location';
-                    if (mapMatch) console.log("📍 Maps link detected:", mapMatch[0]);
-                } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
-                    msg.message_type = 'image';
-                } else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx)$/i) && contentHtml.startsWith('http')) {
-                    msg.message_type = 'file';
+                } catch (e) {
+                    attachmentData = null;
                 }
 
-                if (msg.message_type === 'location_native' && locationData) {
-                    const lat = locationData.lat;
-                    const lng = locationData.lng;
-                    const address = locationData.address || 'Unknown Location';
-                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                    
-                    contentHtml = `
-                        <a href="${mapsUrl}" target="_blank" class="native-location-card">
-                            <div class="location-card-banner">
-                                <iframe width="100%" height="100%" frameborder="0" scrolling="no" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.003},${lat - 0.003},${lng + 0.003},${lat + 0.003}&layer=mapnik&marker=${lat},${lng}" style="pointer-events: none; opacity: 0.9;"></iframe>
-                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">📍</div>
-                            </div>
-                            <div class="location-card-footer">
-                                <span class="location-card-address">${address}</span>
-                                <span class="location-card-hint">${I18n.t('chat.location.open_maps') || 'View on Google Maps'}</span>
-                            </div>
-                        </a>
-                    `;
-                } else if (msg.message_type === 'location') {
+                if (attachmentData) {
+                    // Case A: JSON Attachment (New)
+                    if (attachmentData.type === 'location') {
+                        const lat = attachmentData.lat;
+                        const lng = attachmentData.lng;
+                        const address = attachmentData.address || 'Unknown Location';
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                        
+                        contentHtml = `
+                            <a href="${mapsUrl}" target="_blank" class="native-location-card">
+                                <div class="location-card-banner">
+                                    <iframe width="100%" height="100%" frameborder="0" scrolling="no" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.003},${lat - 0.003},${lng + 0.003},${lat + 0.003}&layer=mapnik&marker=${lat},${lng}" style="pointer-events: none; opacity: 0.9;"></iframe>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">📍</div>
+                                </div>
+                                <div class="location-card-footer">
+                                    <span class="location-card-address">${address}</span>
+                                    <span class="location-card-hint">${I18n.t('chat.location.open_maps') || 'View on Google Maps'}</span>
+                                </div>
+                            </a>
+                        `;
+                    } else {
+                        contentHtml = renderAttachment(attachmentData, isMine);
+                    }
+                } else if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
+                    // Case B: Legacy/Regex Location
+                    msg.message_type = 'location';
                     const extractedUrl = mapMatch ? mapMatch[0] : contentHtml;
                     const isGoogleMaps = !!mapMatch;
                     
@@ -257,7 +280,6 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                             </a>
                         `;
                     } else {
-                        // Original OpenStreetMap logic for coordinate-based locations
                         let lat = 23.9510, lng = 120.9280;
                         const coordMatch = contentHtml.match(/([-+]?\d*\.\d+),\s*([-+]?\d*\.\d+)/);
                         if (coordMatch) { lat = parseFloat(coordMatch[1]); lng = parseFloat(coordMatch[2]); }
@@ -275,12 +297,14 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                             </a>
                         `;
                     }
-                } else if (msg.message_type === 'image') {
-                    contentHtml = `<a href="${contentHtml}" target="_blank"><img src="${contentHtml}" style="max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 5px;" alt="Image"></a>`;
-                } else if (msg.message_type === 'file') {
-                    const fileName = contentHtml.split('/').pop().substring(14) || 'File';
-                    contentHtml = `📄 <a href="${contentHtml}" target="_blank" style="color: ${isMine ? '#d35400' : '#2980b9'}; font-weight: bold; text-decoration: underline;">Download File</a><br><small>${fileName}</small>`;
+                } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
+                    // Case C: Legacy Image (URL only)
+                    contentHtml = renderAttachment({ type: 'image', url: contentHtml }, isMine);
+                } else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx|zip|rar|xls|xlsx)$/i) && contentHtml.startsWith('http')) {
+                    // Case D: Legacy File (URL only)
+                    contentHtml = renderAttachment({ type: 'file', url: contentHtml }, isMine);
                 }
+
 
                 if (msg.message_type === 'announcement' || (msg.content && String(msg.content).startsWith('!'))) {
                     messageArea.innerHTML += `

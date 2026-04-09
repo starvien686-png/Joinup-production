@@ -665,6 +665,8 @@ export const Translations = {
         'chat.album.empty_alert': 'Album is empty!',
         'chat.album.downloading': 'Downloading',
         'chat.announcement_label': 'Announcement',
+        'chat.file.click_download': 'Click to download',
+        'chat.attachment.download': 'Download',
 
         // Admin
         'admin.title': 'Admin Dashboard',
@@ -1296,6 +1298,8 @@ export const Translations = {
         'chat.album.empty_alert': '相簿是空的！',
         'chat.album.downloading': '正在下載',
         'chat.announcement_label': '公告',
+        'chat.file.click_download': '點擊下載檔案',
+        'chat.attachment.download': '下載',
 
         // Settings
         'settings.title': '⚙️ 帳號設定',
