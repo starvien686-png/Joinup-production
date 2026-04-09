@@ -152,6 +152,10 @@ class EmailQueue {
 const emailQueue = new EmailQueue();
 
 // --- RATE LIMITING ---
+const otpRateLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: { error: 'Too many OTP requests. Please try again after 5 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -480,10 +484,14 @@ async function handleCancellation(activityId, category) {
 
         // 2. Count Accepted Participants
         const [parts] = await sequelize.query(
-            "SELECT user_id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND status IN ('approved', 'accepted')",
+            `SELECT p.user_id, p.status, u.email 
+             FROM event_participants p 
+             JOIN users u ON p.user_id = u.id 
+             WHERE p.event_type = ? AND p.event_id = ? AND p.status IN ('approved', 'accepted')`,
             { replacements: [eventType, activityId] }
         );
         const acceptedCount = parts.length;
+        const participantEmails = parts.map(p => p.email);
 
         // 3. Deduction Rule Engine
         let shouldDeduct = false;
