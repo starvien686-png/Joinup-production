@@ -14,9 +14,17 @@ const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 const joinService = require('./services/join_service');
 const workerService = require('./services/worker_service');
 const pushService = require('./services/push_service');
+
+// --- CLOUDINARY CONFIGURATION ---
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // --- TIMEZONE UTILITY (Asia/Taipei = UTC+8) ---
 const dayjs = require('dayjs');
@@ -144,13 +152,38 @@ class EmailQueue {
 const emailQueue = new EmailQueue();
 
 // --- RATE LIMITING ---
-const otpRateLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 3, // 3 requests
-    message: { error: "Too many OTP requests. Please try again in 10 minutes." },
     standardHeaders: true,
     legacyHeaders: false,
 });
+
+// --- AUTHENTICATION MIDDLEWARE ---
+const checkAuth = async (req, res, next) => {
+    // Check various sources for user identification (header, body, or query)
+    const userEmail = req.headers['x-user-email'] || req.body.sender_email || req.body.email || req.query.email;
+    if (!userEmail) return res.status(401).json({ error: 'Authentication required. Please login first.' });
+    
+    try {
+        const user = await User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(403).json({ error: 'Access denied. Invalid user session.' });
+        req.user = user; // Attach user to request
+        next();
+    } catch (err) {
+        res.status(500).json({ error: 'Authentication check failed: ' + err.message });
+    }
+};
+
+// --- MULTER ERROR HANDLING MIDDLEWARE ---
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File too large! Maximum limit is 50MB.' });
+        }
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+        return res.status(500).json({ error: `Server error during upload: ${err.message}` });
+    }
+    next();
+};
 
 // --- SMTP TRANSPORTER (POOLED) ---
 const transporter = nodemailer.createTransport({
@@ -827,21 +860,55 @@ app.post('/activity/:id/close', async (req, res) => {
     }
 });
 
-const uploadDir = path.join(__dirname, '.uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, '.uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'))
+// --- MULTER CONFIGURATION (Memory Storage for Cloudinary Stream) ---
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 } // Strict 50MB limit
 });
-const upload = multer({ storage: storage });
 
-app.use('/uploads', express.static(path.join(__dirname, '.uploads')));
-
-app.post('/upload', upload.single('file'), (req, res) => {
+// Original local upload route (Deprecated - Kept for compatibility but converted to handle memory)
+app.post('/upload', checkAuth, upload.single('file'), handleMulterError, (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl, type: req.file.mimetype.startsWith('image') ? 'image' : 'file' });
+    
+    // Default to a warning since local storage is disabled on Render
+    res.status(410).json({ error: 'Legacy /upload is deprecated. Please use /api/chat/upload for Cloudinary storage.' });
+});
+
+// --- NEW CLOUDINARY UPLOAD ENDPOINT ---
+app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError, async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    try {
+        // Implementation of upload_stream to push buffer to Cloudinary
+        const stream = cloudinary.uploader.upload_stream(
+            { 
+                resource_type: 'auto', 
+                folder: 'joinup_chat',
+                public_id: `chat_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9]/g, '_')}`
+            },
+            (error, result) => {
+                if (error) {
+                    console.error("Cloudinary upload failed:", error);
+                    return res.status(500).json({ error: 'Cloudinary storage failed: ' + error.message });
+                }
+                
+                // Success: return optimized JSON for frontend rendering
+                res.status(200).json({
+                    url: result.secure_url,
+                    type: result.resource_type === 'image' ? 'image' : (result.resource_type === 'video' ? 'video' : 'file'),
+                    fileName: req.file.originalname,
+                    size: result.bytes
+                });
+            }
+        );
+
+        // Pipe the buffer directly into the Cloudinary stream
+        stream.end(req.file.buffer);
+    } catch (err) {
+        console.error("Upload stream error:", err);
+        res.status(500).json({ error: 'Internal upload crash: ' + err.message });
+    }
 });
 
 
