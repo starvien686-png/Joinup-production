@@ -131,7 +131,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             </div>
 
             <div class="chat-input-area">
-                <input type="file" id="input-file-chat" style="display: none;" accept="image/*, .pdf, .doc, .docx">
+                <input type="file" id="input-file-chat" style="display: none;" accept="image/*, video/*, .pdf, .doc, .docx, .xls, .xlsx">
                 <button id="btn-attach" class="btn-icon" title="${I18n.t('chat.send_file') || 'Attach'}">📎</button>
                 <button id="btn-location" class="btn-icon" title="${I18n.t('chat.send_location') || 'Location'}">📍</button>
                 <input type="text" id="chat-input-msg" class="chat-input-box" placeholder="${I18n.t('messages.input.placeholder') || 'Type a message...'}" value="${prefill || ''}">
@@ -149,29 +149,41 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         const url = data.url || '#';
         const fileName = data.fileName || url.split('/').pop() || 'Attachment';
         
-        // Premium cleaning for filenames (remove Cloudinary timestamps/UUIDs)
+        // Premium cleaning for filenames
         const cleanFileName = fileName.includes('---') ? fileName.split('---').pop() : (fileName.length > 25 ? fileName.substring(fileName.length - 25) : fileName);
+        
+        // Cloudinary Force Download URL (inserts fl_attachment)
+        const downloadUrl = url.includes('cloudinary.com') ? url.replace('/upload/', '/upload/fl_attachment/') : url;
 
         if (type === 'image') {
-            // Click to download / open in new tab
             return `
                 <div class="chat-attachment-wrapper">
                     <a href="${url}" target="_blank" title="${I18n.t('chat.image.click_zoom') || 'Click to open'}">
                         <img src="${url}" alt="${cleanFileName}" class="chat-attachment-img">
                     </a>
+                    <div class="chat-media-actions">
+                        <a href="${downloadUrl}" download="${cleanFileName}" class="btn-media-download" title="${I18n.t('chat.download') || 'Download'}">
+                            <span class="icon">📥</span> ${I18n.t('chat.download') || 'Download'}
+                        </a>
+                    </div>
                 </div>
             `;
         } else if (type === 'video') {
             return `
                 <div class="chat-attachment-wrapper">
-                    <video src="${url}" controls class="chat-attachment-video" preload="metadata"></video>
+                    <video src="${url}" controls playsinline preload="metadata" class="chat-attachment-video"></video>
+                    <div class="chat-media-actions">
+                        <a href="${downloadUrl}" download="${cleanFileName}" class="btn-media-download">
+                            <span class="icon">📥</span> ${I18n.t('chat.download') || 'Download'}
+                        </a>
+                    </div>
                 </div>
             `;
         } else {
             // Document/File Card UI - Premium Refined
             const fileExt = fileName.split('.').pop().toUpperCase() || 'FILE';
             return `
-                <a href="${url}" download="${cleanFileName}" target="_blank" class="file-card">
+                <a href="${downloadUrl}" download="${cleanFileName}" target="_blank" class="file-card">
                     <div class="file-icon">
                         <span style="font-size: 0.7rem; font-weight: 800; color: white;">${fileExt}</span>
                     </div>
