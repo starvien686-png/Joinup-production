@@ -228,23 +228,32 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 };
             });
 
+            if (!isInitial && rawMessages.length === lastMsgCount) {
+                return; // Guard: No new messages, stop here to preserve media playback
+            }
+
             if (!isInitial && rawMessages.length > lastMsgCount) {
                 const lastMsg = rawMessages[rawMessages.length - 1];
                 if (lastMsg.sender_email !== user.email) playNotificationSound();
             }
-            lastMsgCount = rawMessages.length;
 
-            messageArea.innerHTML = '';
+            // Identify only NEW messages to be appended
+            const newMessages = isInitial ? rawMessages : rawMessages.slice(lastMsgCount);
+            
+            if (isInitial) {
+                messageArea.innerHTML = '';
+            }
 
-            if (rawMessages.length === 0) {
+            if (rawMessages.length === 0 && isInitial) {
                 messageArea.innerHTML = `<div style="text-align:center; color:#888; margin-top: 20px; font-size: 0.9rem;">${I18n.t('common.no_data') || 'No messages yet.'}</div>`;
+                lastMsgCount = 0;
                 return;
             }
 
             const allAnnouncements = rawMessages.filter(m => m.message_type === 'announcement' || (m.content && String(m.content).startsWith('!')));
             const latestAnnouncement = allAnnouncements.length > 0 ? allAnnouncements[allAnnouncements.length - 1] : null;
 
-            rawMessages.forEach(msg => {
+            newMessages.forEach(msg => {
                 const isMine = msg.sender_email === user.email;
                 const date = new Date(msg.created_at);
                 const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -253,7 +262,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
                 let contentHtml = msg.content || '';
 
-                // 📍 Enhanced Parsing Logic (JSON First with Legacy Fallback)
+                // 📍 Enhanced Parsing Logic
                 let attachmentData = null;
                 const googleMapsRegex = /https?:\/\/(?:www\.)?(?:google\.com\/maps|maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\b\S*/i;
                 const mapMatch = contentHtml && contentHtml.match(googleMapsRegex);
@@ -267,7 +276,6 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 }
 
                 if (attachmentData) {
-                    // Case A: JSON Attachment (New)
                     if (attachmentData.type === 'location') {
                         const lat = attachmentData.lat;
                         const lng = attachmentData.lng;
@@ -290,7 +298,6 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                         contentHtml = renderAttachment(attachmentData, isMine);
                     }
                 } else if (contentHtml && (contentHtml.startsWith('http://googleusercontent.com/maps') || mapMatch)) {
-                    // Case B: Legacy/Regex Location
                     msg.message_type = 'location';
                     const extractedUrl = mapMatch ? mapMatch[0] : contentHtml;
                     const isGoogleMaps = !!mapMatch;
@@ -326,23 +333,20 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                         `;
                     }
                 } else if (contentHtml && contentHtml.match(/\.(jpeg|jpg|gif|png)$/i) && contentHtml.startsWith('http')) {
-                    // Case C: Legacy Image (URL only)
                     contentHtml = renderAttachment({ type: 'image', url: contentHtml }, isMine);
                 } else if (contentHtml && contentHtml.match(/\.(pdf|doc|docx|zip|rar|xls|xlsx)$/i) && contentHtml.startsWith('http')) {
-                    // Case D: Legacy File (URL only)
                     contentHtml = renderAttachment({ type: 'file', url: contentHtml }, isMine);
                 }
 
-
                 if (msg.message_type === 'announcement' || (msg.content && String(msg.content).startsWith('!'))) {
-                    messageArea.innerHTML += `
+                    messageArea.insertAdjacentHTML('beforeend', `
                         <div id="msg-${uniqueId}" class="chat-announcement" style="padding: 10px; border-radius: 8px;">
                             📢 <b>${I18n.t('chat.announcement_label') || 'Announcement'} ${crownIcon}${msg.sender_name}</b><br>
                             ${contentHtml.replace('!', '').trim()}
                         </div>
-                    `;
+                    `);
                 } else {
-                    messageArea.innerHTML += `
+                    messageArea.insertAdjacentHTML('beforeend', `
                         <div id="msg-${uniqueId}" class="chat-bubble ${isMine ? 'chat-mine' : 'chat-other'}" data-type="${msg.message_type}" data-content="${msg.content.replace(/"/g, '"')}">
                             ${!isMine ? `
                             <div class="chat-sender-info">
@@ -351,9 +355,11 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                             <div>${contentHtml}</div>
                             <div class="chat-time">${timeStr}</div>
                         </div>
-                    `;
+                    `);
                 }
             });
+
+            lastMsgCount = rawMessages.length;
 
             if (latestAnnouncement) {
                 pinnedBanner.style.display = 'flex';
