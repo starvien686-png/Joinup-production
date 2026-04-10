@@ -893,7 +893,12 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
             { 
                 resource_type: 'auto', 
                 folder: 'joinup_chat',
-                public_id: `chat_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9]/g, '_')}`
+                public_id: `chat_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9]/g, '_')}`,
+                // Eager transformation: optimize SAAT UPLOAD (backend), bukan on-the-fly (frontend)
+                eager: [
+                    { width: 720, crop: "limit", quality: "auto", format: "mp4" }
+                ],
+                eager_async: true // Don't block the response for heavy encoding
             },
             (error, result) => {
                 if (error) {

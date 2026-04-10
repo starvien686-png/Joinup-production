@@ -232,11 +232,13 @@ h2 {
 .chat-attachment-video {
     max-width: 250px;
     width: 100%;
+    aspect-ratio: 16/9; /* Reserve space to prevent UI Jumping */
+    object-fit: contain;
+    background: #000;
     border-radius: 8px;
     margin-top: 8px;
     display: block;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    background: #000;
 }
 
 /* Elegant File Card (WhatsApp Inspired) */
