@@ -169,9 +169,12 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 </div>
             `;
         } else if (type === 'video') {
+            // Cloudinary Optimized Video URL (inserts auto-compression/optimization)
+            const optimizedVideoUrl = url.includes('cloudinary.com') ? url.replace('/upload/', '/upload/q_auto,f_auto,vc_auto,w_720/') : url;
+            
             return `
                 <div class="chat-attachment-wrapper">
-                    <video src="${url}" controls playsinline preload="metadata" class="chat-attachment-video"></video>
+                    <video src="${optimizedVideoUrl}" controls playsinline preload="metadata" class="chat-attachment-video"></video>
                     <div class="chat-media-actions">
                         <a href="${downloadUrl}" download="${cleanFileName}" class="btn-media-download">
                             <span class="icon">📥</span> ${I18n.t('chat.download') || 'Download'}
