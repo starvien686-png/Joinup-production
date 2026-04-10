@@ -148,17 +148,33 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         const type = data.type || 'file';
         const url = data.url || '#';
         const fileName = data.fileName || url.split('/').pop() || 'Attachment';
-        const cleanFileName = fileName.includes('---') ? fileName.split('---').pop() : (fileName.length > 14 ? fileName.substring(14) : fileName);
+        
+        // Premium cleaning for filenames (remove Cloudinary timestamps/UUIDs)
+        const cleanFileName = fileName.includes('---') ? fileName.split('---').pop() : (fileName.length > 25 ? fileName.substring(fileName.length - 25) : fileName);
 
         if (type === 'image') {
-            return `<a href="${url}" target="_blank"><img src="${url}" alt="${cleanFileName}" class="chat-attachment-img"></a>`;
+            // Click to download / open in new tab
+            return `
+                <div class="chat-attachment-wrapper">
+                    <a href="${url}" target="_blank" title="${I18n.t('chat.image.click_zoom') || 'Click to open'}">
+                        <img src="${url}" alt="${cleanFileName}" class="chat-attachment-img">
+                    </a>
+                </div>
+            `;
         } else if (type === 'video') {
-            return `<video src="${url}" controls class="chat-attachment-video"></video>`;
+            return `
+                <div class="chat-attachment-wrapper">
+                    <video src="${url}" controls class="chat-attachment-video" preload="metadata"></video>
+                </div>
+            `;
         } else {
-            // Document/File Card UI
+            // Document/File Card UI - Premium Refined
+            const fileExt = fileName.split('.').pop().toUpperCase() || 'FILE';
             return `
                 <a href="${url}" download="${cleanFileName}" target="_blank" class="file-card">
-                    <div class="file-icon">📄</div>
+                    <div class="file-icon">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: white;">${fileExt}</span>
+                    </div>
                     <div class="file-info">
                         <span class="file-name" title="${cleanFileName}">${cleanFileName}</span>
                         <span class="file-size">${I18n.t('chat.file.click_download') || 'Click to download'}</span>
@@ -582,18 +598,43 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     document.getElementById('btn-attach').addEventListener('click', () => document.getElementById('input-file-chat').click());
     document.getElementById('input-file-chat').addEventListener('change', async (e) => {
-        const file = e.target.files;
-        if (!file) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        
+        const file = files[0];
         const formData = new FormData();
         formData.append('file', file);
+        
         try {
-            messageArea.innerHTML += `<div id="upload-loading" style="text-align:center; color:#888; margin-top: 10px; font-size: 0.8rem;">Uploading... ⏳</div>`;
+            messageArea.innerHTML += `<div id="upload-loading" style="text-align:center; color:#888; margin-top: 10px; font-size: 0.8rem;">${I18n.t('chat.uploading') || 'Uploading...'} ⏳</div>`;
             messageArea.scrollTop = messageArea.scrollHeight;
-            const res = await fetch('/upload', { method: 'POST', body: formData });
+            
+            // Fixed: Use the correct Cloudinary endpoint
+            const res = await fetch('/api/chat/upload', { 
+                method: 'POST', 
+                headers: { 'x-user-email': user.email }, // Auth header
+                body: formData 
+            });
+            
+            if (!res.ok) throw new Error("Upload failed");
+            
             const data = await res.json();
             document.getElementById('upload-loading')?.remove();
-            sendMessage(data.type, data.url);
-        } catch (err) { alert("Upload failed!"); }
+            
+            // Send as JSON metadata so the parser can handle filename, type, and size
+            sendMessage('file', JSON.stringify({
+                type: data.type,
+                url: data.url,
+                fileName: data.fileName,
+                size: data.size
+            }));
+        } catch (err) { 
+            document.getElementById('upload-loading')?.remove();
+            console.error("Upload error:", err);
+            alert(I18n.t('chat.upload_failed') || "Upload failed!"); 
+        } finally {
+            e.target.value = ''; // Reset input
+        }
     });
 
     const optBtn = document.getElementById('btn-chat-options');
