@@ -5,6 +5,85 @@ import { formatTime } from '../utils/dateFormatter.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
 import { ThemeToggle } from '../components/ThemeToggle.js';
 
+const departmentsData = [
+    {
+        college: { zh: '人文學院', en: 'College of Humanities' },
+        departments: [
+            { zh: '中國語文學系', en: 'Department of Chinese Language and Literature' },
+            { zh: '外國語文學系', en: 'Department of Foreign Languages and Literature' },
+            { zh: '歷史學系', en: 'Department of History' },
+            { zh: '公共行政與政策學系', en: 'Department of Public Policy and Administration' },
+            { zh: '社會政策與社會工作學系', en: 'Department of Social Policy and Social Work' },
+            { zh: '東南亞學系', en: 'Department of Southeast Asian Studies' },
+            { zh: '原住民文化產業與社會工作學士學位學程原住民族專班', en: 'Indigenous Culture Industry and Social Work Program' },
+            { zh: '華語文教學碩士學位學程', en: 'Teaching Chinese as a Second Language' },
+            { zh: '非營利組織經營管理碩士學位學程', en: 'Non-Profit Organization Management' },
+            { zh: '文化創意與社會行銷碩士學位學程', en: 'Cultural Creative Industry and Social Marketing' },
+            { zh: '長期照顧經營管理碩士在職學位學程', en: 'Long-Term Care Management' }
+        ]
+    },
+    {
+        college: { zh: '管理學院', en: 'College of Management' },
+        departments: [
+            { zh: '國際企業學系', en: 'Department of International Business Studies' },
+            { zh: '經濟學系', en: 'Department of Economics' },
+            { zh: '財務金融學系', en: 'Department of Banking and Finance' },
+            { zh: '資訊管理學系', en: 'Department of Information Management' },
+            { zh: '觀光休閒與餐旅管理學系', en: 'Department of Tourism, Leisure and Hospitality Management' },
+            { zh: '管理學院學士班', en: 'Interdisciplinary Program of College of Management' },
+            { zh: '經營管理碩士學位學程在職專班', en: 'Executive Master Program of Administration' },
+            { zh: '新興產業策略與發展碩士/博士學位學程', en: 'Strategy and Development of Emerging Industries' },
+            { zh: '區域發展重點產業碩士專班', en: 'Industry-Academy Collaborated Master Program on Regional Development Focuses' }
+        ]
+    },
+    {
+        college: { zh: '科技學院', en: 'College of Science and Technology' },
+        departments: [
+            { zh: '土木工程學系', en: 'Department of Civil Engineering' },
+            { zh: '資訊工程學系', en: 'Department of Computer Science and Information Engineering' },
+            { zh: '電機工程學系', en: 'Department of Electrical Engineering' },
+            { zh: '應用化學系', en: 'Department of Applied Chemistry' },
+            { zh: '應用材料及光電工程學系', en: 'Department of Applied Materials and Optoelectronic Engineering' },
+            { zh: '科技學院學士班', en: 'Bachelor Program of College of Science and Technology' },
+            { zh: '人工智慧與機器人碩士學位學程', en: 'Master Program in Artificial Intelligence and Robotics' },
+            { zh: '智慧半導體及綠色科技國際碩士學位學程', en: 'International Master Program in Intelligent Semiconductor and Green Technology' },
+            { zh: '智慧精準農業產學研發博士學位學程', en: 'PhD Program in Smart Precision Agriculture' }
+        ]
+    },
+    {
+        college: { zh: '教育學院', en: 'College of Education' },
+        departments: [
+            { zh: '國際文教與比較教育學系', en: 'Department of International and Comparative Education' },
+            { zh: '教育政策與行政學系', en: 'Department of Educational Policy and Administration' },
+            { zh: '諮商心理與人力資源發展學系', en: 'Department of Counseling Psychology and Human Resource Development' },
+            { zh: '教育學院學士班', en: 'Interdisciplinary Program of Education' },
+            { zh: '課程教學與科技研究所', en: 'Institute of Curriculum Instruction and Technology' },
+            { zh: '終身學習與人力資源發展碩士學位學程', en: 'Institute of Lifelong Learning & Human Resource Development' },
+            { zh: '心理健康與諮詢碩士在職學位學程', en: 'Mental Health and Counseling Master\'s Degree Program' }
+        ]
+    },
+    {
+        college: { zh: '護理暨健康福祉學院', en: 'College of Nursing and Health Welfare' },
+        departments: [
+            { zh: '護理學系', en: 'Department of Nursing' },
+            { zh: '學士後護理', en: 'Post-Baccalaureate Nursing' },
+            { zh: '高齡健康與長期照顧管理學士學位學程原住民族專班', en: 'High-quality Health and Long-term Care Management' },
+            { zh: '智慧健康管理碩士在職學位學程', en: 'Smart Health Management' }
+        ]
+    },
+    {
+        college: { zh: '水沙連學院', en: 'Shui Sha Lian College' },
+        departments: [
+            { zh: '地方創生與跨域治理碩士學位學程', en: 'Master Program of Regional Revitalization and Cross-boundary Governance' }
+        ]
+    },
+    {
+        college: { zh: '獨立學程', en: 'Independent Programs' },
+        departments: [
+            { zh: '智慧暨永續農業學士學位學程公費專班', en: 'Smart and Sustainable Agriculture Bachelor\'s Degree Program' }
+        ]
+    }
+];
 export const renderRegister = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userProfile');
@@ -30,6 +109,31 @@ export const renderRegister = () => {
                 el.innerText = I18n.t(key);
             }
         });
+    };
+
+    const renderDepartmentDropdown = (currentLang) => {
+        const isEng = (currentLang || '').includes('en');
+        const langKey = isEng ? 'en' : 'zh';
+        
+        const selectEl = document.getElementById('reg-major');
+        if (!selectEl) return;
+        
+        const currentVal = selectEl.value; // Keep selection intact
+        
+        let html = `<option value="" disabled ${!currentVal ? 'selected' : ''}>${isEng ? '-- Select Department --' : '-- 請選擇系所 --'}</option>`;
+        
+        departmentsData.forEach(collegeData => {
+            html += `<optgroup label="[${collegeData.college[langKey]}]">`;
+            collegeData.departments.forEach(dept => {
+                const isSelected = (currentVal === dept.zh) ? 'selected' : '';
+                html += `<option value="${dept.zh}" ${isSelected}>${dept[langKey]}</option>`;
+            });
+            html += `</optgroup>`;
+        });
+        
+        if (selectEl.innerHTML !== html) {
+            selectEl.innerHTML = html;
+        }
     };
 
     const startClock = () => {
@@ -118,7 +222,7 @@ export const renderRegister = () => {
                                 <div class="grid-2-1">
                                     <div class="form-group">
                                         <label id="label-major" data-i18n="reg.major_label">Major</label>
-                                        <input type="text" id="reg-major" class="form-control" placeholder="CSIE" required>
+                                        <select id="reg-major" class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; font-family: inherit;" required></select>
                                     </div>
                                     <div class="form-group" id="group-year">
                                         <label data-i18n="reg.year_label">Year</label>
@@ -285,6 +389,7 @@ export const renderRegister = () => {
         new LanguageSelector('header-lang-selector', {
             onUpdate: (lang) => {
                 updateTexts();
+                renderDepartmentDropdown(lang);
                 const timeEl = document.querySelector('#auth-clock .time');
                 if (timeEl) timeEl.innerText = formatTime(new Date());
             }
@@ -485,6 +590,7 @@ export const renderRegister = () => {
         };
 
         updateTexts();
+        renderDepartmentDropdown(typeof I18n !== 'undefined' && I18n.getLanguage ? I18n.getLanguage() : (localStorage.getItem('language') || 'en'));
         startClock();
     };
 
