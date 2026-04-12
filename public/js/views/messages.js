@@ -1077,24 +1077,24 @@ export const renderMessages = (roomId = null, prefill = null) => {
 
     app.innerHTML = `
         <style>
-            body, html, #app { background-color: #ffffff !important; }
+            body, html, #app { background-color: var(--bg-body) !important; color: var(--text-main); }
             .container { box-shadow: none !important; border: none !important; }
         </style>
         
-        <div class="container fade-in" style="padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; background: #ffffff;">
-            <header style="padding: 15px 20px; background: #ffffff; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #f4f4f4;">
+        <div class="container fade-in" style="padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-body);">
+            <header style="padding: 15px 20px; background: var(--bg-body); display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color);">
                 <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #4285F4; padding: 0; display: flex; align-items: center;">⬅️</button>
                 <h1 style="margin: 0; font-size: 1.5rem; color: #f39c12; font-weight: bold;">${I18n.t('messages.title') || 'Messages'}</h1>
             </header>
             
-            <div id="inbox-list" style="flex: 1; overflow-y: auto; padding: 15px 20px; background: #ffffff;">
-                <div style="text-align:center; color:#888; margin-top: 3rem; font-size: 0.9rem;">
+            <div id="inbox-list" style="flex: 1; overflow-y: auto; padding: 15px 20px; background: var(--bg-body);">
+                <div style="text-align:center; color: var(--text-secondary); margin-top: 3rem; font-size: 0.9rem;">
                     ${I18n.t('chat.inbox.loading') || 'Loading...'}
                 </div>
             </div>
         </div>
         
-        <nav class="bottom-nav" style="background: #ffffff; border-top: 1px solid #f4f4f4;">
+        <nav class="bottom-nav" style="background: var(--bg-card); border-top: 1px solid var(--border-color);">
             <a href="#" class="nav-item" onclick="window.navigateTo('home')"><span class="nav-icon">🏠</span><span>${I18n.t('nav.home') || 'Home'}</span></a>
             <a href="#" class="nav-item active"><span class="nav-icon">💬</span><span>${I18n.t('nav.messages') || 'Messages'}</span></a>
             <a href="#" class="nav-item" onclick="window.navigateTo('profile')"><span class="nav-icon">👤</span><span>${I18n.t('nav.profile') || 'Profile'}</span></a>
@@ -1155,15 +1155,15 @@ export const renderMessages = (roomId = null, prefill = null) => {
                 const senderDisplay = item.isMyMsg ? (I18n.t('chat.inbox.you') || 'You') : (item.senderName ? item.senderName.split(' ') : '');
 
                 listHtml += `
-                    <div onclick="window.navigateTo('messages?room=${item.roomId}')" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid #f4f4f4; transition: transform 0.2s;">
-                        <div style="width: 52px; height: 52px; background: #e1f5fe; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">💬</div>
+                    <div onclick="window.navigateTo('messages?room=${item.roomId}')" style="background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid var(--border-color); transition: transform 0.2s, background-color 0.3s ease, border-color 0.3s ease;">
+                        <div style="width: 52px; height: 52px; background: rgba(33, 150, 243, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;">💬</div>
                         <div style="flex: 1; overflow: hidden;">
                             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-                                <h4 style="margin: 0; font-size: 1.05rem; color: #222; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</h4>
-                                <span style="font-size: 0.75rem; color: #999; flex-shrink: 0; margin-left: 10px;">${timeStr}</span>
+                                <h4 style="margin: 0; font-size: 1.05rem; color: var(--text-primary); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</h4>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0; margin-left: 10px;">${timeStr}</span>
                             </div>
-                            <div style="font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                <strong>${senderDisplay ? senderDisplay + ':' : ''}</strong> ${previewText}
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <strong style="color: var(--text-main);">${senderDisplay ? senderDisplay + ':' : ''}</strong> ${previewText}
                             </div>
                         </div>
                     </div>

@@ -970,67 +970,67 @@ window.showCarpoolDetail = async (id) => {
 
         const modalHtml = `
             <div id="carpool-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
-                <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                    <button onclick="document.getElementById('carpool-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; color: var(--text-main);">
+                    <button onclick="document.getElementById('carpool-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-body); border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--text-secondary);">X</button>
                     
                     <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #E65100; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">
                         ${vIcon} ${p.vehicle_type}
                     </div>
                     
-                    <h2 style="margin: 0 0 20px 0; color: #333; font-size: 1.3rem;">${cpDisplayTitle}</h2>
+                    <h2 style="margin: 0 0 20px 0; color: var(--text-main); font-size: 1.3rem;">${cpDisplayTitle}</h2>
                     
-                    <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; margin-bottom: 20px;">
-                        <img src="${hostAvatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                    <div style="background: var(--bg-body); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                        <img src="${hostAvatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
                         <div>
-                            <div style="font-weight: bold; font-size: 1.1rem; color: #333;">${hostName}</div>
-                            <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">🎓 ${hostDept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
+                            <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-main);">${hostName}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">🎓 ${hostDept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
                             ${hostHobby ? `<div style="font-size: 0.8rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
                         </div>
                     </div>
 
-                    <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-bottom: 20px;">
+                    <div style="background: var(--bg-body); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                             <span style="font-size: 1.2rem; color: #2196F3;">📍</span>
                             <div>
-                                <div style="font-size: 0.8rem; color: #888;">${txtDepart} - <span style="font-size: 0.7rem; color: #2196F3;">${txtClickMap}</span></div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDepart} - <span style="font-size: 0.7rem; color: #2196F3;">${txtClickMap}</span></div>
                                 <a href="${departLink}" target="_blank" style="font-weight: bold; color: #2196F3; text-decoration: none; font-size: 1.1rem;">${p.departure_loc}</a>
                             </div>
                         </div>
-                        <div style="margin-left: 6px; border-left: 2px dashed #ccc; height: 20px; margin-bottom: 10px;"></div>
+                        <div style="margin-left: 6px; border-left: 2px dashed var(--border-color); height: 20px; margin-bottom: 10px;"></div>
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                             <span style="font-size: 1.2rem; color: #F44336;">🏁</span>
                             <div>
-                                <div style="font-size: 0.8rem; color: #888;">${txtDest} - <span style="font-size: 0.7rem; color: #F44336;">${txtClickMap}</span></div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDest} - <span style="font-size: 0.7rem; color: #F44336;">${txtClickMap}</span></div>
                                 <a href="${destLink}" target="_blank" style="font-weight: bold; color: #F44336; text-decoration: none; font-size: 1.1rem;">${p.destination_loc}</a>
                             </div>
                         </div>
                         
-                        <div style="width: 100%; height: 200px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #eee;">
+                        <div style="width: 100%; height: 200px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-body);">
                             <iframe width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen src="${mapRouteUrl}"></iframe>
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">🕒 ${txtTime}</div>
-                            <div style="font-weight: bold; color: #333;">${timeStr}</div>
+                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">🕒 ${txtTime}</div>
+                            <div style="font-weight: bold; color: var(--text-main);">${timeStr}</div>
                         </div>
-                        <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💰 ${txtPrice}</div>
+                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💰 ${txtPrice}</div>
                             <div style="font-weight: bold; color: #E65100;">${p.price}</div>
                         </div>
                     </div>
 
-                    <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-size: 0.8rem; color: #888; margin-bottom: 5px;">💺 ${txtSeats}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💺 ${txtSeats}</div>
                             <div style="font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${p.available_seats} ${txtSeatsLeft}</div>
                         </div>
                     </div>
 
-                    <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <div style="background: rgba(255, 140, 0, 0.05); border: 1px solid rgba(255, 140, 0, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                         <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${txtNotes}</div>
-                        <div style="color: #444; line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
+                        <div style="color: var(--text-secondary); line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
                     </div>
                 </div>
             </div>
