@@ -598,15 +598,25 @@ export const renderHome = () => {
             const hostFinalNm = p.host_name || hostNm;
             const hostFinalDp = p.host_dept || hostDp;
 
+            const getGeoQuery = (locStr) => {
+                if (locStr && locStr.includes('宿舍')) {
+                    return '國立暨南國際大學 學生宿舍, 埔里鎮';
+                }
+                return locStr;
+            };
+
             const makeMap = loc => {
                 if (!loc) return 'There is no location information for this post.';
-                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(loc)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                const geoLoc = getGeoQuery(loc);
+                const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(geoLoc)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
                 return `<div style="margin-top: 8px;"><iframe width="100%" height="200" src="${mapUrl}" style="border:0; border-radius: 10px;" allowfullscreen loading="lazy"></iframe></div>`;
             };
 
             const makeDirectionMap = (from, to) => {
                 if (!from || !to) return '';
-                const mapUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(from)}&daddr=${encodeURIComponent(to)}&output=embed`;
+                const geoFrom = getGeoQuery(from);
+                const geoTo = getGeoQuery(to);
+                const mapUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(geoFrom)}&daddr=${encodeURIComponent(geoTo)}&output=embed`;
                 return `<div style="margin-top: 8px;"><iframe width="100%" height="200" src="${mapUrl}" style="border:0; border-radius: 10px;" allowfullscreen loading="lazy"></iframe></div>`;
             };
 

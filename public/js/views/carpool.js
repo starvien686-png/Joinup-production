@@ -946,9 +946,19 @@ window.showCarpoolDetail = async (id) => {
             ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
             : `${(dTime.getMonth() + 1).toString().padStart(2, '0')}/${dTime.getDate().toString().padStart(2, '0')}/${dTime.getFullYear()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
-        const mapRouteUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(p.departure_loc)}&daddr=${encodeURIComponent(p.destination_loc)}&output=embed`;
-        const departLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.departure_loc)}`;
-        const destLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.destination_loc)}`;
+        const getGeoQuery = (locStr) => {
+            if (locStr && locStr.includes('宿舍')) {
+                return '國立暨南國際大學 學生宿舍, 埔里鎮';
+            }
+            return locStr;
+        };
+
+        const mapDepart = getGeoQuery(p.departure_loc);
+        const mapDest = getGeoQuery(p.destination_loc);
+
+        const mapRouteUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(mapDepart)}&daddr=${encodeURIComponent(mapDest)}&output=embed`;
+        const departLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapDepart)}`;
+        const destLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapDest)}`;
 
         let vIcon = '🚗';
         if (p.vehicle_type === 'Taxi') vIcon = '🚕';
