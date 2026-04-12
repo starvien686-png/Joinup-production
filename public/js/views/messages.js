@@ -942,20 +942,21 @@ export const renderMessages = (roomId = null, prefill = null) => {
         const style = document.createElement('style');
         style.id = 'chat-fullscreen-styles';
         style.innerHTML = `
-            .chat-container { display: flex; flex-direction: column; height: 100vh; background: #EFEAE2; }
-            .chat-header { background: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+            .chat-container { display: flex; flex-direction: column; height: 100vh; background: var(--bg-primary); transition: background-color 0.3s ease; }
+            .chat-header { background: var(--bg-card); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.3s ease, border-color 0.3s ease; }
             .chat-message-area { flex: 1; padding: 20px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: url("https://www.transparenttextures.com/patterns/cubes.png"); }
-            .chat-input-area { background: #f0f2f5; padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-            .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 4px; font-size: 0.95rem; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; transition: filter 0.2s; }
+            .chat-input-area { background: var(--bg-secondary); padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color); padding-bottom: calc(10px + env(safe-area-inset-bottom)); transition: background-color 0.3s ease, border-color 0.3s ease; }
+            .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 15px; margin-bottom: 4px; font-size: 0.95rem; line-height: 1.4; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; transition: filter 0.2s, background-color 0.3s ease, color 0.3s ease; }
             .chat-bubble:active { filter: brightness(0.9); }
-            .chat-mine { background: #FFE082; align-self: flex-end; border-top-right-radius: 4px; } 
-            .chat-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 4px; }
-            .chat-sender-info { font-size: 0.75rem; color: #667781; margin-bottom: 4px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-            .chat-time { font-size: 0.65rem; color: #667781; text-align: right; margin-top: 4px; }
+            .chat-mine { background: var(--chat-bubble-mine); color: var(--chat-bubble-mine-text); align-self: flex-end; border-top-right-radius: 4px; } 
+            .chat-other { background: var(--chat-bubble-other); color: var(--chat-bubble-other-text); align-self: flex-start; border-top-left-radius: 4px; }
+            .chat-sender-info { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+            .chat-time { font-size: 0.65rem; color: var(--text-secondary); text-align: right; margin-top: 4px; opacity: 0.8; }
             .chat-announcement { background: #fff3cd; color: #856404; text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin: 10px auto; width: 80%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: bold; border: 1px solid #ffeeba; }
-            .btn-icon { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #54656f; padding: 5px; transition: transform 0.2s; }
-            .btn-icon:hover { transform: scale(1.1); }
-            .chat-input-box { flex: 1; padding: 12px 15px; border-radius: 20px; border: none; outline: none; font-size: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+            .btn-icon { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); padding: 5px; transition: transform 0.2s, color 0.3s ease; }
+            .btn-icon:hover { transform: scale(1.1); color: var(--primary-color); }
+            .chat-input-box { flex: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid var(--border-color); outline: none; font-size: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: var(--chat-input-bg); color: var(--chat-input-text); transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+            .chat-input-box::placeholder { color: var(--text-secondary); opacity: 0.7; }
             .btn-send { background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
             
             /* Location Card Styles */

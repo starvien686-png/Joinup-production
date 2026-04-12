@@ -8,13 +8,24 @@
     /* Energetic Orange */
     --accent-hover: #F57C00;
 
-    /* Neutral Colors */
+    /* Neutral Colors / Base Variables */
     --text-main: #333333;
+    --text-primary: #333333;
     --text-secondary: #666666;
     --text-light: #FFFFFF;
     --bg-body: #f9fafb;
+    --bg-primary: #EFEAE2; /* Chat Background */
+    --bg-secondary: #f0f2f5; /* Chat Input Area */
     --bg-card: #FFFFFF;
     --border-color: #E0E0E0;
+
+    /* Chat Elements */
+    --chat-bubble-mine: var(--primary-color);
+    --chat-bubble-mine-text: #FFFFFF;
+    --chat-bubble-other: #FFFFFF;
+    --chat-bubble-other-text: #333333;
+    --chat-input-bg: #FFFFFF;
+    --chat-input-text: #333333;
 
     /* Shadows & Effects */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -31,12 +42,24 @@
 
 /* Dark Theme Variables */
 :root[data-theme="dark"] {
-    --text-main: #f0f4f8;
-    --text-secondary: #cbd5e1;
+    --text-main: #E4E6EB;
+    --text-primary: #E4E6EB;
+    --text-secondary: #B0B3B8;
     --text-light: #f8fafc;
-    --bg-body: #0f172a;
-    --bg-card: #1e293b;
-    --border-color: #334155;
+    --bg-body: #18191A;
+    --bg-primary: #0F0F0F; /* Dark Chat Background */
+    --bg-secondary: #242526; /* Dark Chat Input Area */
+    --bg-card: #242526;
+    --border-color: #3E4042;
+    
+    /* Chat Elements Dark */
+    --chat-bubble-mine: var(--primary-dark);
+    --chat-bubble-mine-text: #FFFFFF;
+    --chat-bubble-other: #3A3B3C;
+    --chat-bubble-other-text: #E4E6EB;
+    --chat-input-bg: #3A3B3C;
+    --chat-input-text: #E4E6EB;
+
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
@@ -58,7 +81,7 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     padding-bottom: 80px;
-    /* Space for Bottom Nav */
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a {
