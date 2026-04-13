@@ -815,14 +815,12 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
 
 
 window.deletePost = async (id, category) => {
-    const isZH = localStorage.getItem('language')?.includes('zh') || false;
-    const confirmMsg = isZH
-        ? "⚠️ 確定要刪除此活動嗎？\n一旦刪除，所有人都將無法在列表中看到它。數據將被保留在系統中，但此操作無法撤回。\n\n(注意：如果已有參與者被接受，將會扣除 1 積分)"
-        : "⚠️ Are you sure you want to delete this event?\nOnce deleted, no one will be able to see it in the lists. Data will be preserved in the system, but this action cannot be undone.\n\n(Note: If participants have already been accepted, 1 credit point will be deducted)";
+    const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+    const isZH = currentLang.toLowerCase().includes('zh');
+    const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
-    if (!confirm(confirmMsg)) return;
-
-    try {
+    // --- Helper: Execute the actual delete API call ---
+    const executeDelete = async () => {
         let endpoint = '';
         switch (category) {
             case 'carpool': endpoint = `/update-carpool-status/${id}`; break;
@@ -840,16 +838,180 @@ window.deletePost = async (id, category) => {
 
         if (response.ok) {
             alert(isZH ? "✅ 活動已成功刪除！" : "✅ Event deleted successfully!");
-            // Refresh current view or redirect
             window.location.reload();
         } else {
             const err = await response.json();
             alert((isZH ? "❌ 刪除失敗: " : "❌ Delete failed: ") + (err.error || err.message));
         }
-    } catch (error) {
-        console.error("Delete Error:", error);
-        alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
+    };
+
+    // --- Helper: Fetch created_at from server ---
+    const fetchCreatedAt = async () => {
+        try {
+            let fetchUrl = '';
+            switch (category) {
+                case 'carpool': fetchUrl = `/carpool/${id}`; break;
+                case 'study': fetchUrl = `/study/${id}`; break;
+                case 'hangout': fetchUrl = `/hangouts`; break;
+                case 'housing': fetchUrl = `/housing`; break;
+                default: fetchUrl = `/activity/${id}`; // sports
+            }
+
+            const res = await fetch(fetchUrl);
+            const data = await res.json();
+
+            // For list endpoints, find the matching item
+            if (Array.isArray(data)) {
+                const found = data.find(item => String(item.id) === String(id));
+                return found ? found.created_at : null;
+            }
+            return data.created_at || null;
+        } catch (e) {
+            console.warn('Could not fetch created_at:', e);
+            return null;
+        }
+    };
+
+    // --- Step 1: Get created_at and check the 10-minute rule ---
+    const createdAt = await fetchCreatedAt();
+    
+    if (createdAt) {
+        const ageMs = Date.now() - new Date(createdAt).getTime();
+        const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes
+
+        if (ageMs <= GRACE_PERIOD_MS) {
+            // Within grace period → Silent delete with simple confirm
+            const silentMsg = isZH 
+                ? "此活動剛建立不久，確定要刪除嗎？" 
+                : "This event was just created. Are you sure you want to delete it?";
+            if (!confirm(silentMsg)) return;
+            
+            try { await executeDelete(); } 
+            catch (error) { 
+                console.error("Delete Error:", error);
+                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
+            }
+            return;
+        }
     }
+
+    // --- Step 2: > 10 minutes → Show Mandatory Feedback Modal ---
+    const existingModal = document.getElementById('cancel-feedback-overlay');
+    if (existingModal) existingModal.remove();
+
+    const reasons = isZH ? [
+        { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
+        { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
+        { value: 'wrong_info', label: '📝 發佈資訊有誤' },
+        { value: 'personal_reason', label: '🙋 個人原因' },
+        { value: 'other', label: '💬 其他原因' }
+    ] : [
+        { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
+        { value: 'not_enough_people', label: '👥 Not Enough Participants' },
+        { value: 'wrong_info', label: '📝 Posted Wrong Information' },
+        { value: 'personal_reason', label: '🙋 Personal Reason' },
+        { value: 'other', label: '💬 Other' }
+    ];
+
+    const reasonRadios = reasons.map(r => `
+        <label>
+            <input type="radio" name="cancel-reason" value="${r.value}">
+            <span>${r.label}</span>
+        </label>
+    `).join('');
+
+    const modalHtml = `
+        <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
+            <div class="cancel-feedback-modal">
+                <div class="cancel-warning-badge">⚠️ ${isZH ? '刪除前必填' : 'Required Before Delete'}</div>
+                <h3>${isZH ? '為什麼要刪除此活動？' : 'Why are you deleting this event?'}</h3>
+                <p class="modal-subtitle">${isZH 
+                    ? '請告訴我們刪除原因，此資訊僅供系統改進使用。注意：如有已核準的參與者，將扣除積分。' 
+                    : 'Please tell us the reason for deletion. This data is only used for system improvement. Note: If participants have been accepted, credit points will be deducted.'}</p>
+                
+                <div class="cancel-reason-group" id="cancel-reason-group">
+                    ${reasonRadios}
+                </div>
+
+                <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
+
+                <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>
+                    ${isZH ? '🗑️ 確認刪除並送出' : '🗑️ Confirm Delete & Submit'}
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // --- Block Escape key ---
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    };
+    document.addEventListener('keydown', escHandler, true);
+
+    // --- Block overlay click (only modal content area is clickable) ---
+    const overlay = document.getElementById('cancel-feedback-overlay');
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Shake animation to indicate unclosable
+            const modal = overlay.querySelector('.cancel-feedback-modal');
+            modal.style.animation = 'none';
+            requestAnimationFrame(() => {
+                modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            });
+        }
+    });
+
+    // --- Enable submit when a reason is selected ---
+    const radioGroup = document.getElementById('cancel-reason-group');
+    const submitBtn = document.getElementById('cancel-submit-btn');
+    
+    radioGroup.addEventListener('change', () => {
+        const selected = document.querySelector('input[name="cancel-reason"]:checked');
+        submitBtn.disabled = !selected;
+    });
+
+    // --- Submit handler ---
+    submitBtn.addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="cancel-reason"]:checked');
+        if (!selected) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
+
+        try {
+            // 1. Save feedback
+            await fetch('/api/v1/cancellation-feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_id: id,
+                    event_category: category,
+                    user_email: userProfile.email || '',
+                    action_type: 'delete',
+                    reason: selected.value,
+                    detail: document.getElementById('cancel-detail-text').value || ''
+                })
+            });
+
+            // 2. Execute delete
+            await executeDelete();
+        } catch (error) {
+            console.error("Delete Error:", error);
+            alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = isZH ? '🗑️ 確認刪除並送出' : '🗑️ Confirm Delete & Submit';
+        } finally {
+            document.removeEventListener('keydown', escHandler, true);
+            overlay?.remove();
+        }
+    });
 };
 
 

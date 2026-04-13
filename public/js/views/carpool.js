@@ -787,18 +787,11 @@ export const renderCarpool = () => {
     };
 
     window.updateCarpoolStatus = async (postId, newStatus) => {
-        if (newStatus === 'cancelled') {
-            const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-            const msg = savedLang.includes('zh') 
-                ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
-                : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
-            if (!confirm(msg)) return;
-        } else {
-            const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
-            if (!confirm(msgConfirm)) return;
-        }
+        const isZH = isAppZH();
+        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
-        try {
+        // --- Helper: Execute the actual status update ---
+        const executeUpdate = async () => {
             const response = await fetch(`/update-carpool-status/${postId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -808,11 +801,164 @@ export const renderCarpool = () => {
             if (response.ok) {
                 if (window.refreshUserProfile) await window.refreshUserProfile();
                 updateView();
+            } else {
+                alert(t('cp.fail.stat', "更新失敗。", "Failed to update."));
             }
-            else { alert(t('cp.fail.stat', "更新失敗。", "Failed to update.")); }
-        } catch (error) {
-            alert("Error server.");
+        };
+
+        // --- For non-cancel statuses, use simple confirm ---
+        if (newStatus !== 'cancelled') {
+            const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
+            if (!confirm(msgConfirm)) return;
+            try { await executeUpdate(); }
+            catch (error) { alert("Error server."); }
+            return;
         }
+
+        // --- CANCEL FLOW: Apply 10-minute grace period ---
+        let createdAt = null;
+        try {
+            const res = await fetch(`/carpool/${postId}`);
+            const data = await res.json();
+            createdAt = data.created_at || null;
+        } catch (e) {
+            console.warn('Could not fetch carpool created_at:', e);
+        }
+
+        if (createdAt) {
+            const ageMs = Date.now() - new Date(createdAt).getTime();
+            const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes
+
+            if (ageMs <= GRACE_PERIOD_MS) {
+                // Within grace period → Silent cancel
+                const silentMsg = isZH
+                    ? "此共乘剛建立不久，確定要取消嗎？"
+                    : "This ride was just created. Are you sure you want to cancel?";
+                if (!confirm(silentMsg)) return;
+                try { await executeUpdate(); }
+                catch (error) { alert("Error server."); }
+                return;
+            }
+        }
+
+        // --- > 10 minutes → Show Mandatory Feedback Modal ---
+        const existingModal = document.getElementById('cancel-feedback-overlay');
+        if (existingModal) existingModal.remove();
+
+        const reasons = isZH ? [
+            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
+            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
+            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
+            { value: 'vehicle_issue', label: '🚗 車輛問題 / 無法出車' },
+            { value: 'personal_reason', label: '🙋 個人原因' },
+            { value: 'other', label: '💬 其他原因' }
+        ] : [
+            { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
+            { value: 'not_enough_people', label: '👥 Not Enough Passengers' },
+            { value: 'wrong_info', label: '📝 Posted Wrong Information' },
+            { value: 'vehicle_issue', label: '🚗 Vehicle Issue / Can\'t Drive' },
+            { value: 'personal_reason', label: '🙋 Personal Reason' },
+            { value: 'other', label: '💬 Other' }
+        ];
+
+        const reasonRadios = reasons.map(r => `
+            <label>
+                <input type="radio" name="cancel-reason" value="${r.value}">
+                <span>${r.label}</span>
+            </label>
+        `).join('');
+
+        const modalHtml = `
+            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
+                <div class="cancel-feedback-modal">
+                    <div class="cancel-warning-badge">⚠️ ${isZH ? '取消前必填' : 'Required Before Cancel'}</div>
+                    <h3>${isZH ? '為什麼要取消此共乘？' : 'Why are you canceling this ride?'}</h3>
+                    <p class="modal-subtitle">${isZH 
+                        ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
+                        : 'Please tell us the reason. Canceling with accepted participants, or within 2 hours of start time, will result in a -2 point deduction.'}</p>
+                    
+                    <div class="cancel-reason-group" id="cancel-reason-group">
+                        ${reasonRadios}
+                    </div>
+
+                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
+
+                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>
+                        ${isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit'}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // --- Block Escape key ---
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        document.addEventListener('keydown', escHandler, true);
+
+        // --- Block overlay click ---
+        const overlay = document.getElementById('cancel-feedback-overlay');
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                e.preventDefault();
+                e.stopPropagation();
+                const modal = overlay.querySelector('.cancel-feedback-modal');
+                modal.style.animation = 'none';
+                requestAnimationFrame(() => {
+                    modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                });
+            }
+        });
+
+        // --- Enable submit when a reason is selected ---
+        const radioGroup = document.getElementById('cancel-reason-group');
+        const submitBtn = document.getElementById('cancel-submit-btn');
+
+        radioGroup.addEventListener('change', () => {
+            const selected = document.querySelector('input[name="cancel-reason"]:checked');
+            submitBtn.disabled = !selected;
+        });
+
+        // --- Submit handler ---
+        submitBtn.addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="cancel-reason"]:checked');
+            if (!selected) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
+
+            try {
+                // 1. Save feedback
+                await fetch('/api/v1/cancellation-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event_id: postId,
+                        event_category: 'carpool',
+                        user_email: userProfile.email || '',
+                        action_type: 'cancel',
+                        reason: selected.value,
+                        detail: document.getElementById('cancel-detail-text').value || ''
+                    })
+                });
+
+                // 2. Execute cancel
+                await executeUpdate();
+            } catch (error) {
+                console.error("Cancel Error:", error);
+                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit';
+            } finally {
+                document.removeEventListener('keydown', escHandler, true);
+                overlay?.remove();
+            }
+        });
     };
 
     // HANDLED GLOBALLY IN app.js (window.handleReviewAction)
