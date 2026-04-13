@@ -1359,22 +1359,99 @@ export const renderGroupBuy = () => {
         bindListeners();
     };
 
-    window.cancelPost = (postId) => {
+    window.cancelPost = async (postId) => {
         const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-        const msg = savedLang.includes('zh') 
-            ? '確定要取消嗎？取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
-            : 'Are you sure you want to cancel? Canceling an event with accepted participants, or canceling within the last 2 hours of the start time, will result in a -2 point deduction.';
-            
-        window.showSimpleConfirm(
-            `${msg}`,
-            async () => {
-                const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
-                if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
-                currentState = 'manage';
-                updateView();
-                bindListeners();
+        const isZH = savedLang.toLowerCase().includes('zh');
+        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+
+        const executeCancel = async () => {
+            const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
+            if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
+            currentState = 'manage';
+            updateView();
+            bindListeners();
+        };
+
+        // --- Fetch created_at ---
+        let createdAt = null;
+        try {
+            const res = await fetch('/my-housing/' + (userProfile.email || ''));
+            const data = await res.json();
+            const found = data.find(item => String(item.id) === String(postId));
+            createdAt = found ? found.created_at : null;
+        } catch (e) { console.warn('Could not fetch housing created_at:', e); }
+
+        if (createdAt) {
+            const ageMs = Date.now() - new Date(createdAt).getTime();
+            if (ageMs <= 10 * 60 * 1000) {
+                const silentMsg = isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure you want to cancel?";
+                window.showSimpleConfirm(silentMsg, executeCancel);
+                return;
             }
-        );
+        }
+
+        // > 10 min → Mandatory Feedback Modal
+        const existingModal = document.getElementById('cancel-feedback-overlay');
+        if (existingModal) existingModal.remove();
+
+        const reasons = isZH ? [
+            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
+            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
+            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
+            { value: 'personal_reason', label: '🙋 個人原因' },
+            { value: 'other', label: '💬 其他原因' }
+        ] : [
+            { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
+            { value: 'not_enough_people', label: '👥 Not Enough Participants' },
+            { value: 'wrong_info', label: '📝 Posted Wrong Information' },
+            { value: 'personal_reason', label: '🙋 Personal Reason' },
+            { value: 'other', label: '💬 Other' }
+        ];
+
+        const reasonRadios = reasons.map(r => `<label><input type="radio" name="cancel-reason" value="${r.value}"><span>${r.label}</span></label>`).join('');
+
+        const modalHtml = `
+            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
+                <div class="cancel-feedback-modal">
+                    <div class="cancel-warning-badge">⚠️ ${isZH ? '取消前必填' : 'Required Before Cancel'}</div>
+                    <h3>${isZH ? '為什麼要取消此活動？' : 'Why are you canceling this event?'}</h3>
+                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please tell us the reason. Canceling with accepted participants, or within 2 hours of start time, will result in a -2 point deduction.'}</p>
+                    <div class="cancel-reason-group" id="cancel-reason-group">${reasonRadios}</div>
+                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
+                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>${isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit'}</button>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const escHandler = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); } };
+        document.addEventListener('keydown', escHandler, true);
+
+        const overlay = document.getElementById('cancel-feedback-overlay');
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) { e.preventDefault(); e.stopPropagation(); const modal = overlay.querySelector('.cancel-feedback-modal'); modal.style.animation = 'none'; requestAnimationFrame(() => { modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'; }); }
+        });
+
+        document.getElementById('cancel-reason-group').addEventListener('change', () => {
+            document.getElementById('cancel-submit-btn').disabled = !document.querySelector('input[name="cancel-reason"]:checked');
+        });
+
+        document.getElementById('cancel-submit-btn').addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="cancel-reason"]:checked');
+            if (!selected) return;
+            const submitBtn = document.getElementById('cancel-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
+            try {
+                await fetch('/api/v1/cancellation-feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: postId, event_category: 'housing', user_email: userProfile.email || '', action_type: 'cancel', reason: selected.value, detail: document.getElementById('cancel-detail-text').value || '' }) });
+                await executeCancel();
+            } catch (error) {
+                console.error("Cancel Error:", error);
+                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit';
+            } finally { document.removeEventListener('keydown', escHandler, true); overlay?.remove(); }
+        });
     };
 
     window.confirmSuccess = async (postId) => {
