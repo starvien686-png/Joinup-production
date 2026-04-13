@@ -64,9 +64,22 @@ export const renderHome = () => {
     const renderContent = () => {
         app.innerHTML = `
             <div class="container fade-in" style="padding-bottom: 90px;">
-                <!-- Banner -->
-                <div style="margin-bottom: 1.5rem; border-radius: 16px; overflow: hidden;">
-                    <img src="assets/transparent banner.png" alt="JoinUp Banner" style="width: 100%; display: block;">
+                <!-- Carousel Ads Banner -->
+                <div class="ads-carousel-container" style="margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; position: relative; width: 100%; box-shadow: var(--shadow-sm); aspect-ratio: auto; max-height: 200px;">
+                    <div class="ads-carousel-track" id="home-ads-track" style="display: flex; height: 100%; transition: transform 0.5s ease-in-out;">
+                        <a href="https://maps.app.goo.gl/3YY9eU1GpaV18AJ68" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-1.png" alt="Ads 鬲饕火鍋店" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        </a>
+                        <a href="https://maps.app.goo.gl/5ZwaSAsvJadtDK628" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-2.png" alt="Ads 林媽媽好味廚房" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        </a>
+                        <a href="https://maps.app.goo.gl/jULcMeWmt6KSJgtk8" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-3.png" alt="Ads 八六麵食館" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        </a>
+                        <a href="https://maps.app.goo.gl/iLAKmQvLXhMJpGhQ7" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-4.png" alt="Ads 嚼嚼斯" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        </a>
+                    </div>
                 </div>
 
                 <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start;">
@@ -229,6 +242,27 @@ export const renderHome = () => {
     };
 
     renderContent();
+
+    // --- Carousel Autoplay Logic ---
+    const initCarousel = () => {
+        const track = document.getElementById('home-ads-track');
+        if (!track) return;
+        let currentIndex = 0;
+        const totalSlides = 4;
+
+        if (window.homeCarouselInterval) clearInterval(window.homeCarouselInterval);
+
+        window.homeCarouselInterval = setInterval(() => {
+            // Stop if element is no longer in DOM
+            if (!document.getElementById('home-ads-track')) {
+                clearInterval(window.homeCarouselInterval);
+                return;
+            }
+            currentIndex = (currentIndex + 1) % totalSlides;
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        }, 3000);
+    };
+    initCarousel();
 
     // Fetch live activities from Supabase dynamically (Now from MySQL 🚀)
     // Fetch live activities from Supabase dynamically (Now from MySQL 🚀)
