@@ -65,19 +65,19 @@ export const renderHome = () => {
         app.innerHTML = `
             <div class="container fade-in" style="padding-bottom: 90px;">
                 <!-- Carousel Ads Banner -->
-                <div class="ads-carousel-container" style="margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; position: relative; width: 100%; box-shadow: var(--shadow-sm); aspect-ratio: auto; max-height: 200px;">
+                <div class="ads-carousel-container" style="margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; position: relative; width: 100%; box-shadow: var(--shadow-sm); aspect-ratio: 3 / 1;">
                     <div class="ads-carousel-track" id="home-ads-track" style="display: flex; height: 100%; transition: transform 0.5s ease-in-out;">
-                        <a href="https://maps.app.goo.gl/3YY9eU1GpaV18AJ68" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
-                            <img src="ads-1.png" alt="Ads 鬲饕火鍋店" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        <a href="https://maps.app.goo.gl/3YY9eU1GpaV18AJ68" target="_blank" style="min-width: 100%; height: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-1.png" alt="Ads 鬲饕火鍋店" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </a>
-                        <a href="https://maps.app.goo.gl/5ZwaSAsvJadtDK628" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
-                            <img src="ads-2.png" alt="Ads 林媽媽好味廚房" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        <a href="https://maps.app.goo.gl/5ZwaSAsvJadtDK628" target="_blank" style="min-width: 100%; height: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-2.png" alt="Ads 林媽媽好味廚房" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </a>
-                        <a href="https://maps.app.goo.gl/jULcMeWmt6KSJgtk8" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
-                            <img src="ads-3.png" alt="Ads 八六麵食館" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        <a href="https://maps.app.goo.gl/jULcMeWmt6KSJgtk8" target="_blank" style="min-width: 100%; height: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-3.png" alt="Ads 八六麵食館" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </a>
-                        <a href="https://maps.app.goo.gl/iLAKmQvLXhMJpGhQ7" target="_blank" style="min-width: 100%; display: block; flex-shrink: 0;">
-                            <img src="ads-4.png" alt="Ads 嚼嚼斯" style="width: 100%; max-height: 200px; object-fit: cover; display: block;">
+                        <a href="https://maps.app.goo.gl/iLAKmQvLXhMJpGhQ7" target="_blank" style="min-width: 100%; height: 100%; display: block; flex-shrink: 0;">
+                            <img src="ads-4.png" alt="Ads 嚼嚼斯" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         </a>
                     </div>
                 </div>
