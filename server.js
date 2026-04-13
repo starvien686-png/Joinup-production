@@ -926,26 +926,6 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 
 
 // ==========================================
-// --- API: CANCELLATION FEEDBACK (Grace Period) ---
-// ==========================================
-app.post('/api/v1/cancellation-feedback', async (req, res) => {
-    try {
-        const { event_id, event_category, user_email, action_type, reason, detail } = req.body;
-        if (!event_id || !event_category || !user_email) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        await sequelize.query(
-            `INSERT INTO cancellation_feedback (event_id, event_category, user_email, action_type, reason, detail) VALUES (?, ?, ?, ?, ?, ?)`,
-            { replacements: [event_id, event_category, user_email, action_type || 'cancel', reason || '', detail || ''] }
-        );
-        res.json({ success: true, message: 'Feedback recorded.' });
-    } catch (error) {
-        console.error('Cancellation feedback error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// ==========================================
 // --- API UNTUK CARPOOL (TEBENGAN) ---
 // ==========================================
 
@@ -1756,16 +1736,6 @@ async function syncAll() {
                 category_name ENUM('carpool', 'hangout', 'sports', 'study', 'housing'),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_email, category_name)
-            )`,
-            `CREATE TABLE IF NOT EXISTS cancellation_feedback (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                event_id INT,
-                event_category VARCHAR(50),
-                user_email VARCHAR(255),
-                action_type VARCHAR(50),
-                reason VARCHAR(100),
-                detail TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];
 
