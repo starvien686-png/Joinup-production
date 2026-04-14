@@ -45,6 +45,10 @@ const User = sequelize.define('user', {
     is_delayed_graduation: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    violation_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     tableName: 'users',

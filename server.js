@@ -261,13 +261,36 @@ app.post('/login', async (req, res) => {
                 bio: user.bio,
                 hobby: user.hobby,
                 profile_pic: user.profile_pic,
-                credit_points: user.credit_points
+                credit_points: user.credit_points,
+                violation_count: user.violation_count || 0
             }
         });
 
     } catch (error) {
         res.status(500).json({ error: 'A server error occured: ' + error.message });
     }
+});
+
+// --- GET CURRENT USER SESSION ---
+app.get('/api/v1/users/me', checkAuth, (req, res) => {
+    // req.user is attached by checkAuth middleware
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    
+    res.json({
+        success: true,
+        user: {
+            username: req.user.username,
+            email: req.user.email,
+            major: req.user.major,
+            study_year: req.user.study_year,
+            role: req.user.role,
+            bio: req.user.bio,
+            hobby: req.user.hobby,
+            profile_pic: req.user.profile_pic,
+            credit_points: req.user.credit_points,
+            violation_count: req.user.violation_count || 0
+        }
+    });
 });
 
 app.post('/update-profile', async (req, res) => {
@@ -1420,8 +1443,20 @@ app.get('/profile/:email', async (req, res) => {
         });
 
         if (results.length > 0) {
-            // KIRIM OBJEK PERTAMA SAJA (results[0]), biar frontend gak bingung baca array
-            res.json(results[0]);
+            // KIRIM OBJEK PERTAMA SAJA (results[0])
+            const user = results[0];
+            res.json({
+                username: user.username,
+                email: user.email,
+                major: user.major,
+                study_year: user.study_year,
+                role: user.role,
+                bio: user.bio,
+                hobby: user.hobby,
+                profile_pic: user.profile_pic,
+                credit_points: user.credit_points,
+                violation_count: user.violation_count || 0
+            });
         } else {
             res.status(404).json({ error: 'User not found!' });
         }
