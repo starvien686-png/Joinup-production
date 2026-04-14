@@ -113,19 +113,19 @@ export const renderGroupBuy = () => {
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
-                    <button id="btn-role-poster" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <button id="btn-role-poster" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🏠</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('housing.role.host')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('housing.role.host_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('housing.role.host')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('housing.role.host_desc')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <button id="btn-role-partner" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">👀</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('housing.role.partner')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('housing.role.partner_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('housing.role.partner')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('housing.role.partner_desc')}</p>
                         </div>
                     </button>
                     
@@ -134,7 +134,7 @@ export const renderGroupBuy = () => {
                     </button>
                 </div>
                 
-                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer;">
+                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);">
                     ⬅️ ${I18n.t('common.back')}
                 </button>
             </div>
@@ -185,7 +185,7 @@ export const renderGroupBuy = () => {
                     <h3 style="margin-bottom: 1rem; color: var(--primary-dark); border-bottom: 2px solid var(--primary-light); padding-bottom: 0.5rem;">📋 ${I18n.t('common.description')}</h3>
                     
                     <div class="input-group">
-                        <div style="color: #888888; font-size: 12px; text-align: center; margin-top: 10px; margin-bottom: 5px;">${I18n.t('common.financial_disclaimer')}</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; text-align: center; margin-top: 10px; margin-bottom: 5px;">${I18n.t('common.financial_disclaimer')}</div>
                         <label>${I18n.t('sports.label.title')} *</label>
                         <input type="text" id="postTitle" placeholder="${I18n.t('housing.placeholder.title')}" required>
                     </div>
@@ -203,7 +203,7 @@ export const renderGroupBuy = () => {
 
                     <div class="input-group">
                         <label>${I18n.t('housing.loc.on_campus')} *</label>
-                        <select id="dormType" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" required>
+                        <select id="dormType" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                             <option value="">${I18n.t('common.select') || 'Select'}</option>
                             <option value="male_undergrad">${I18n.t('housing.dorm.male_undergrad')}</option>
                             <option value="female_undergrad">${I18n.t('housing.dorm.female_undergrad')}</option>
@@ -224,7 +224,7 @@ export const renderGroupBuy = () => {
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('housing.label.gender')} *</label>
-                            <select id="genderPreference" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" required>
+                            <select id="genderPreference" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                                 <option value="male">${I18n.t('housing.gender.male')}</option>
                                 <option value="female">${I18n.t('housing.gender.female')}</option>
                             </select>
@@ -260,7 +260,7 @@ export const renderGroupBuy = () => {
                                 <input type="checkbox" name="scheduleTags" value="規律作息" style="margin-right: 0.4rem;">
                                 ⏰ ${I18n.t('housing.schedule.regular')}
                             </label>
-                            <button type="button" id="addScheduleTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: white; border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
+                            <button type="button" id="addScheduleTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: var(--bg-card); border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
                                 ➕ ${I18n.t('housing.schedule.custom')}
                             </button>
                         </div>
@@ -269,7 +269,7 @@ export const renderGroupBuy = () => {
 
                     <div class="input-group">
                         <label>${I18n.t('common.description')}</label>
-                        <textarea id="scheduleDetail" rows="2" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></textarea>
+                        <textarea id="scheduleDetail" rows="2" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);"></textarea>
                     </div>
 
                     <h3 style="margin: 2rem 0 1rem 0; color: var(--primary-dark); border-bottom: 2px solid var(--primary-light); padding-bottom: 0.5rem;">🏠 ${I18n.t('housing.label.habits')}</h3>
@@ -302,14 +302,14 @@ export const renderGroupBuy = () => {
 
                     <div class="input-group">
                         <label>${I18n.t('common.description')}</label>
-                        <textarea id="habitDetail" rows="3" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></textarea>
+                        <textarea id="habitDetail" rows="3" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-large" style="margin-top: 1.5rem; width: 100%;">${I18n.t('common.submit')}</button>
                 </form>
             </div>
             <style>
-                .tag-label { display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px solid var(--border-color); border-radius: 15px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; background: white; color: var(--text-primary); }
+                .tag-label { display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px solid var(--border-color); border-radius: 15px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; background: var(--bg-card); color: var(--text-primary); }
                 .tag-label input:checked { display: none; }
                 .tag-label:has(input:checked) { background: var(--primary-light); border-color: var(--primary-color); color: var(--primary-dark); font-weight: bold; }
                 .tag-label input { margin-right: 0.4rem; }
@@ -333,7 +333,7 @@ export const renderGroupBuy = () => {
                     <h3 style="margin-bottom: 1rem; color: var(--primary-dark); border-bottom: 2px solid var(--primary-light); padding-bottom: 0.5rem;">🏠 ${I18n.t('common.description')}</h3>
                     
                     <div class="input-group">
-                        <div style="color: #888888; font-size: 12px; text-align: center; margin-top: 10px; margin-bottom: 5px;">${I18n.t('common.financial_disclaimer')}</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; text-align: center; margin-top: 10px; margin-bottom: 5px;">${I18n.t('common.financial_disclaimer')}</div>
                         <label>${I18n.t('sports.label.title')} *</label>
                         <input type="text" id="postTitle" placeholder="${I18n.t('housing.placeholder.title')}" required>
                     </div>
@@ -401,7 +401,7 @@ export const renderGroupBuy = () => {
                                 <input type="checkbox" name="facilityTags" value="WIFI">
                                 📶 ${I18n.t('housing.facility.wifi')}
                             </label>
-                            <button type="button" id="addFacilityTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: white; border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
+                            <button type="button" id="addFacilityTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: var(--bg-card); border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
                                 ➕ ${I18n.t('housing.facility.custom')}
                             </button>
                         </div>
@@ -418,7 +418,7 @@ export const renderGroupBuy = () => {
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('housing.label.gender')} *</label>
-                            <select id="genderPreference" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" required>
+                            <select id="genderPreference" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                                 <option value="male">${I18n.t('housing.gender.male')}</option>
                                 <option value="female">${I18n.t('housing.gender.female')}</option>
                                 <option value="any">${I18n.t('housing.gender.any')}</option>
@@ -447,7 +447,7 @@ export const renderGroupBuy = () => {
                                 <input type="checkbox" name="habitTags" value="不養寵物">
                                 🐕 ${I18n.t('housing.habit.pet_free')}
                             </label>
-                             <button type="button" id="addHabitTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: white; border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
+                             <button type="button" id="addHabitTagBtn" style="display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px dashed var(--primary-light); background: var(--bg-card); border-radius: 15px; cursor: pointer; font-size: 0.9rem; color: var(--primary-dark);">
                                 ➕ ${I18n.t('housing.habit.custom')}
                             </button>
                         </div>
@@ -456,14 +456,14 @@ export const renderGroupBuy = () => {
 
                     <div class="input-group">
                         <label>${I18n.t('common.description')}</label>
-                        <textarea id="offCampusDetail" rows="3" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></textarea>
+                        <textarea id="offCampusDetail" rows="3" placeholder="" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-large" style="margin-top: 1.5rem; width: 100%;">${I18n.t('common.submit')}</button>
                 </form>
             </div>
             <style>
-                .tag-label { display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px solid var(--border-color); border-radius: 15px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; background: white; color: var(--text-primary); }
+                .tag-label { display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; border: 2px solid var(--border-color); border-radius: 15px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; background: var(--bg-card); color: var(--text-primary); }
                 .tag-label input:checked { display: none; }
                 .tag-label:has(input:checked) { background: var(--primary-light); border-color: var(--primary-color); color: var(--primary-dark); font-weight: bold; }
                 .tag-label input { margin-right: 0.4rem; }
@@ -612,8 +612,8 @@ export const renderGroupBuy = () => {
                     <span style="display: flex; align-items: center;">🚻 ${p.genderPreference === 'any' ? I18n.t('housing.gender.any') : (p.genderPreference === 'male' ? I18n.t('housing.gender.male') : I18n.t('housing.gender.female'))}</span>
                 </div>
                 <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.3rem;">
-                    ${sTags.slice(0, 3).map(t => `<span style="background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: #666;">${getTranslatedTags([t])}</span>`).join('')}
-                    ${hTags.slice(0, 3).map(t => `<span style="background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: #666;">${getTranslatedTags([t])}</span>`).join('')}
+                    ${sTags.slice(0, 3).map(t => `<span style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: var(--text-secondary);">${getTranslatedTags([t])}</span>`).join('')}
+                    ${hTags.slice(0, 3).map(t => `<span style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: var(--text-secondary);">${getTranslatedTags([t])}</span>`).join('')}
                 </div>
                 ${btnHtml}
             </div>
@@ -647,10 +647,10 @@ export const renderGroupBuy = () => {
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                     <div style="position: relative; flex-grow: 1;">
                         <input type="text" id="searchInput" placeholder="${I18n.t('common.search') || 'Search'}..." value="${currentFilters.keyword || ''}" 
-                            style="width: 100%; padding: 0.8rem 2.5rem 0.8rem 1rem; border-radius: 25px; border: 1px solid var(--border-color); background: white;">
+                            style="width: 100%; padding: 0.8rem 2.5rem 0.8rem 1rem; border-radius: 25px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
                         <span style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);">🔍</span>
                     </div>
-                    <button class="btn" onclick="window.openFilterPanel()" style="background: white; border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 50%; width: 3rem; height: 3rem; padding: 0; display: flex; align-items: center; justify-content: center;">
+                    <button class="btn" onclick="window.openFilterPanel()" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 50%; width: 3rem; height: 3rem; padding: 0; display: flex; align-items: center; justify-content: center;">
                         ⚙️
                     </button>
                 </div>
@@ -735,7 +735,7 @@ export const renderGroupBuy = () => {
                 if (trimmed === '整潔') label = I18n.t('housing.habit.clean');
                 if (trimmed === '不養寵物') label = I18n.t('housing.habit.pet_free');
 
-                return `<span style="font-size: 0.9rem; color: #666; background: #eee; padding: 4px 8px; border-radius: 10px; margin-right: 6px;">#${label}</span>`;
+                return `<span style="font-size: 0.9rem; color: var(--text-secondary); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; margin-right: 6px;">#${label}</span>`;
             }).join('');
         };
 

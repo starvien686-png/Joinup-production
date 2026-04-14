@@ -161,24 +161,24 @@ export const renderActivities = async () => {
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName}
                         </span>
-                        <span style="font-size: 0.8rem; color: #999;">${dateStr}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">${dateStr}</span>
                     </div>
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: #111;">${p.title}</h3>
+                    <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: var(--text-primary);">${p.title}</h3>
                     
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: var(--bg-body); border-radius: 10px; border: 1px solid var(--border-color);">
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">${p.hostName}</div>
-                            <div style="font-size: 0.7rem; color: #64748b;">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${p.hostName}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                         </div>
                     </div>
 
-                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
                         <div>📍 ${translatedLoc || 'NCNU'}</div>
                     </div>
 
                     ${p.description ? `
-                    <p style="color: #475569; font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                    <p style="color: var(--text-main); font-size: 0.9rem; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                         ${p.description}
                     </p>` : ''}
 
@@ -191,8 +191,8 @@ export const renderActivities = async () => {
     app.innerHTML = `
         <div class="container fade-in" style="padding-bottom: 80px;">
             <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer; color: #334155;">⬅️</button>
-                <h2 style="margin: 0; font-size: 1.5rem; color: #1e293b; font-weight: 700;">${I18n.t('home.section.new_activity')}</h2>
+                <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer; color: var(--text-primary);">⬅️</button>
+                <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); font-weight: 700;">${I18n.t('home.section.new_activity')}</h2>
             </header>
             <div class="activity-list">${renderList()}</div>
         </div>
@@ -202,7 +202,7 @@ export const renderActivities = async () => {
         const style = document.createElement('style');
         style.id = 'activities-styles';
         style.innerHTML = `
-            .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; transition: transform 0.2s, box-shadow 0.2s; }
+            .card { background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; }
             .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
             @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -220,8 +220,8 @@ export const renderActivities = async () => {
                 <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
                     <div style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">🤝</div>
-                        <h3 style="margin: 0 0 10px 0; color: #1e293b;">${I18n.t('common.confirm_join') || 'Confirm Join?'}</h3>
-                        <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">${I18n.t('common.confirm_join') || 'Confirm Join?'}</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
                             ${I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.'}
                         </p>
                         <div style="display: flex; gap: 12px;">

@@ -88,19 +88,19 @@ export const renderSports = () => {
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
-                    <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <button id="btn-role-host" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">💪</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('sports.role.host')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('sports.role.host_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('sports.role.host')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('sports.role.host_desc')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <button id="btn-role-partner" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">👟</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('sports.role.join')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('sports.role.join_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('sports.role.join')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('sports.role.join_desc')}</p>
                         </div>
                     </button>
                     
@@ -426,11 +426,11 @@ export const renderSports = () => {
 
         const formHtml = `
             <div id="join-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
-                <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
-                    <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
-                    <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
+                <div style="background: var(--bg-card); width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: var(--shadow-lg); animation: scaleIn 0.2s ease-out; border: 1px solid var(--border-color);">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">${msgConfirm}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
                     <div style="display: flex; gap: 1rem;">
-                        <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+                        <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: var(--bg-secondary); color: var(--text-secondary); border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
                             ${msgCancel}
                         </button>
                         <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: #FF8C00; color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
@@ -518,39 +518,39 @@ export const renderSports = () => {
 
         return `
             <div id="filter-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: end; z-index: 1000;">
-                <div class="slide-up" style="background: white; width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto;">
+                <div class="slide-up" style="background: var(--bg-card); border: 1px solid var(--border-color); width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
-                        <h3>🔍 ${I18n.t('common.filter')}</h3>
-                        <button onclick="window.closeFilterPanel()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+                        <h3 style="color: var(--text-primary);">🔍 ${I18n.t('common.filter')}</h3>
+                        <button onclick="window.closeFilterPanel()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary);">×</button>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; font-size: 1.1rem; color: #333;">${I18n.t('sports.label.sport')}</label>
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${I18n.t('sports.label.sport')}</label>
                         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
                             ${eventTypesHtml}
                         </div>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">${I18n.t('common.date')}</label>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: var(--text-primary);">${I18n.t('common.date')}</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="filter-option ${activeFilters.dateRange === 'today' ? 'active' : ''}" data-filter="dateRange" data-value="today" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'today' ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.dateRange === 'today' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_today')}</button>
-                            <button class="filter-option ${activeFilters.dateRange === 'week' ? 'active' : ''}" data-filter="dateRange" data-value="week" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'week' ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.dateRange === 'week' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_week')}</button>
-                            <button class="filter-option ${activeFilters.dateRange === 'month' ? 'active' : ''}" data-filter="dateRange" data-value="month" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'month' ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.dateRange === 'month' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_month')}</button>
+                            <button class="filter-option ${activeFilters.dateRange === 'today' ? 'active' : ''}" data-filter="dateRange" data-value="today" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'today' ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'today' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_today')}</button>
+                            <button class="filter-option ${activeFilters.dateRange === 'week' ? 'active' : ''}" data-filter="dateRange" data-value="week" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'week' ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'week' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_week')}</button>
+                            <button class="filter-option ${activeFilters.dateRange === 'month' ? 'active' : ''}" data-filter="dateRange" data-value="month" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.dateRange === 'month' ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'month' ? 'white' : 'inherit'}; cursor: pointer;">${I18n.t('outing.filter.date_month')}</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">${I18n.t('common.people_needed')} <=</label>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: var(--text-primary);">${I18n.t('common.people_needed')} <=</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="filter-option ${activeFilters.peopleCount === 5 ? 'active' : ''}" data-filter="peopleCount" data-value="5" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 5 ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.peopleCount === 5 ? 'white' : 'inherit'}; cursor: pointer;">5</button>
-                            <button class="filter-option ${activeFilters.peopleCount === 10 ? 'active' : ''}" data-filter="peopleCount" data-value="10" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 10 ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.peopleCount === 10 ? 'white' : 'inherit'}; cursor: pointer;">10</button>
-                            <button class="filter-option ${activeFilters.peopleCount === 20 ? 'active' : ''}" data-filter="peopleCount" data-value="20" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 20 ? 'var(--primary-light)' : 'white'}; color: ${activeFilters.peopleCount === 20 ? 'white' : 'inherit'}; cursor: pointer;">20</button>
+                            <button class="filter-option ${activeFilters.peopleCount === 5 ? 'active' : ''}" data-filter="peopleCount" data-value="5" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 5 ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.peopleCount === 5 ? 'white' : 'inherit'}; cursor: pointer;">5</button>
+                            <button class="filter-option ${activeFilters.peopleCount === 10 ? 'active' : ''}" data-filter="peopleCount" data-value="10" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 10 ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.peopleCount === 10 ? 'white' : 'inherit'}; cursor: pointer;">10</button>
+                            <button class="filter-option ${activeFilters.peopleCount === 20 ? 'active' : ''}" data-filter="peopleCount" data-value="20" style="flex: 1; padding: 0.6rem; border: 2px solid var(--border-color); border-radius: 8px; background: ${activeFilters.peopleCount === 20 ? 'var(--primary-light)' : 'var(--bg-card)'}; color: ${activeFilters.peopleCount === 20 ? 'white' : 'inherit'}; cursor: pointer;">20</button>
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; margin-top: 2rem;">
-                        <button onclick="window.resetFilters()" class="btn" style="flex: 1; background: #eee; color: #333;">${I18n.t('common.reset')}</button>
+                        <button onclick="window.resetFilters()" class="btn" style="flex: 1; background: var(--bg-body); color: var(--text-primary); border: 1px solid var(--border-color);">${I18n.t('common.reset')}</button>
                         <button onclick="window.applyFilters()" class="btn btn-primary" style="flex: 2;">${I18n.t('common.apply')}</button>
                     </div>
                 </div>
@@ -618,7 +618,7 @@ export const renderSports = () => {
                     ${pendingApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #ff9800; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #ffe0b2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>` : ''}
                     ${pendingApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-                        <span style="font-size: 0.9rem; color: #333;"><b>${app.snapshot_display_name || app.applicantName}</b> <span style="color: #888;">(${app.applicantDept || ''})</span></span>
+                        <span style="font-size: 0.9rem; color: var(--text-primary);"><b>${app.snapshot_display_name || app.applicantName}</b> <span style="color: var(--text-secondary);">(${app.applicantDept || ''})</span></span>
                         <button class="btn" onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${p.teamName.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'sports', null)" style="padding: 4px 10px; font-size: 0.75rem; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                     `).join('')}
@@ -626,7 +626,7 @@ export const renderSports = () => {
                     ${acceptedApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #4caf50; margin-top: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>` : ''}
                     ${acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-                        <span style="font-size: 0.9rem; color: #333;">${app.snapshot_display_name || app.applicantName} <span style="color: #888;">(${app.applicantDept || ''})</span></span>
+                        <span style="font-size: 0.9rem; color: var(--text-primary);">${app.snapshot_display_name || app.applicantName} <span style="color: var(--text-secondary);">(${app.applicantDept || ''})</span></span>
                     </div>
                     `).join('')}
                 </div>`;
@@ -641,9 +641,9 @@ export const renderSports = () => {
             const txtCancel = isZH ? '取消' : 'Cancel';
 
             return `
-                <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border: 1px solid #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <h4 style="margin: 0; font-size: 1.2rem; color: #333;">${p.teamName}</h4>
+                        <h4 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${p.teamName}</h4>
                         ${statusBadge}
                     </div>
                     <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
@@ -664,7 +664,7 @@ export const renderSports = () => {
                             <button class="btn" style="background: #2196f3; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.confirmSuccess('${p.id}')">${txtSuccess}</button>
                             <button class="btn" style="background: #F44336; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.cancelPost('${p.id}')">${txtCancel}</button>
                         ` : ''}
-                        <button class="btn" style="background: #333; color: white; padding: 0.8rem; border-radius: 8px; font-weight: bold; border: none;" onclick="window.deletePost('${p.id}', 'sports')">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
+                        <button class="btn" style="background: var(--bg-secondary); color: var(--text-primary); padding: 0.8rem; border-radius: 8px; font-weight: bold; border: 1px solid var(--border-color);" onclick="window.deletePost('${p.id}', 'sports')">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
                     </div>
                 </div>
             `;

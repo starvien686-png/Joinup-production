@@ -91,7 +91,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     <button id="btn-back-messages" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">⬅️</button>
                     <div style="width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem;">💬</div>
                     <div>
-                        <h3 style="margin: 0; font-size: 1.1rem; color: #111; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chatTitle}</h3>
+                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chatTitle}</h3>
                         <span style="font-size: 0.8rem; color: #25d366;">● Online</span>
                     </div>
                 </div>
@@ -105,7 +105,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                         ✅ ${I18n.t('chat.action.complete') || 'Completed'}
                     </button>` : ''}
                     <button id="btn-chat-options" class="btn-icon">⋮</button>
-                    <div id="chat-options-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 200; min-width: 170px; overflow: hidden;">
+                    <div id="chat-options-menu" style="display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); z-index: 200; min-width: 170px; overflow: hidden;">
                         ${(() => {
             const isZH = localStorage.getItem('language')?.includes('zh') || false;
             const txtKick = isZH ? '🛡️ 管理成員' : '🛡️ Kick Members';
@@ -115,9 +115,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                             </button>
                             `;
         })()}
-                        <button id="menu-report" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; border-bottom: 1px solid #eee; cursor: pointer; color: #D32F2F;">⚠️ ${I18n.t('chat.menu.report') || 'Report'}</button>
-                        <button id="menu-album" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; border-bottom: 1px solid #eee; cursor: pointer; color: #333;">🖼️ ${I18n.t('chat.menu.album') || 'Album'}</button>
-                        <button id="menu-clear" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; cursor: pointer; color: #333;">🗑️ ${I18n.t('chat.menu.clear') || 'Clear Cache'}</button>
+                             <button id="menu-report" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; border-bottom: 1px solid var(--border-color); cursor: pointer; color: #D32F2F;">⚠️ ${I18n.t('chat.menu.report') || 'Report'}</button>
+                        <button id="menu-album" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; border-bottom: 1px solid var(--border-color); cursor: pointer; color: var(--text-primary);">🖼️ ${I18n.t('chat.menu.album') || 'Album'}</button>
+                        <button id="menu-clear" style="width: 100%; text-align: left; padding: 12px; background: none; border: none; cursor: pointer; color: var(--text-primary);">🗑️ ${I18n.t('chat.menu.clear') || 'Clear Cache'}</button>
                     </div>
                 </div>
             </header>
@@ -131,7 +131,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             </div>
 
             <div id="chat-messages-area" class="chat-message-area">
-                <div style="text-align:center; color:#888; margin-top: 20px; font-size: 0.9rem;">${I18n.t('chat.connecting') || 'Connecting...'}</div>
+                <div style="text-align:center; color:var(--text-secondary); margin-top: 20px; font-size: 0.9rem;">${I18n.t('chat.connecting') || 'Connecting...'}</div>
             </div>
 
             <div class="chat-input-area">
@@ -327,11 +327,11 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                                 <div style="height: 130px; width: 100%; position: relative; background: #e5e3df; pointer-events: none;">
                                     <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}"></iframe>
                                 </div>
-                                <div style="padding: 10px; background: white; border-top: 1px solid #eee;">
-                                    <div style="font-size: 0.95rem; color: #333; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                                <div style="padding: 10px; background: var(--bg-card); border-top: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold; display: flex; align-items: center; gap: 6px;">
                                         <span style="color: #25d366; font-size: 1.2rem;">📍</span> Location
                                     </div>
-                                    <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
                                 </div>
                             </a>
                         `;
@@ -398,8 +398,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     `}).join('');
 
                     historyModal.innerHTML = `
-                        <div style="background: white; width: 90%; max-width: 450px; max-height: 80vh; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                            <h3 style="margin-top: 0; color: #333; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">${I18n.t('chat.history_title') || 'History'}</h3>
+                        <div style="background: var(--bg-card); width: 90%; max-width: 450px; max-height: 80vh; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);">
+                            <h3 style="margin-top: 0; color: var(--text-primary); margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">${I18n.t('chat.history_title') || 'History'}</h3>
                             <div style="flex: 1; overflow-y: auto; padding-right: 5px;">
                                 ${listHtml}
                             </div>
@@ -689,7 +689,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         const saveAlbums = (data) => localStorage.setItem(dbKey, JSON.stringify(data));
 
         const appAlbum = document.createElement('div');
-        appAlbum.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 10000; display: flex; flex-direction: column; font-family: sans-serif; animation: slideUp 0.3s ease;';
+        appAlbum.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 10000; display: flex; flex-direction: column; font-family: sans-serif; animation: slideUp 0.3s ease;';
         document.body.appendChild(appAlbum);
 
         const todayDate = new Date().toLocaleDateString('en-GB');
@@ -699,10 +699,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         viewContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; overflow: hidden;';
 
         const sheetHtml = `
-            <div id="album-bottom-sheet" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top-left-radius: 15px; border-top-right-radius: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); flex-direction: column; padding: 20px 0; z-index: 10001; animation: slideUp 0.3s ease;">
-                <button id="menu-add-item" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: #333; cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_add') || 'Add items'}</button>
-                <button id="menu-rename-album" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: #333; cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_rename') || 'Rename album'}</button>
-                <button id="menu-download-album" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: #333; cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_download') || 'Download album'}</button>
+            <div id="album-bottom-sheet" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-card); border-top-left-radius: 15px; border-top-right-radius: 15px; box-shadow: var(--shadow-lg); flex-direction: column; padding: 20px 0; z-index: 10001; animation: slideUp 0.3s ease; border-top: 1px solid var(--border-color);">
+                <button id="menu-add-item" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: var(--text-primary); cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_add') || 'Add items'}</button>
+                <button id="menu-rename-album" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: var(--text-primary); cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_rename') || 'Rename album'}</button>
+                <button id="menu-download-album" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: var(--text-primary); cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_download') || 'Download album'}</button>
                 <button id="menu-delete-album" style="padding: 15px 25px; text-align: left; background: none; border: none; font-size: 1.05rem; color: #e74c3c; cursor: pointer; width: 100%;">${I18n.t('chat.album.menu_delete') || 'Delete album'}</button>
             </div>
             <div id="album-menu-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;"></div>
@@ -775,9 +775,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             if (albums.length === 0) {
                 content = `
                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
-                        <h2 style="margin: 0 0 10px 0; color: #111; font-size: 1.2rem;">${I18n.t('chat.album.no_albums') || 'No albums yet.'}</h2>
-                        <p style="color: #888; text-align: center; font-size: 0.9rem; margin-bottom: 20px; max-width: 250px;">${I18n.t('chat.album.keep_photos') || 'Keep your best photos in albums and share them with the chat.'}</p>
-                        <button id="btn-create-empty" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">${I18n.t('chat.album.btn_create') || 'Create album'}</button>
+                        <h2 style="margin: 0 0 10px 0; color: var(--text-primary); font-size: 1.2rem;">${I18n.t('chat.album.no_albums') || 'No albums yet.'}</h2>
+                        <p style="color: var(--text-secondary); text-align: center; font-size: 0.9rem; margin-bottom: 20px; max-width: 250px;">${I18n.t('chat.album.keep_photos') || 'Keep your best photos in albums and share them with the chat.'}</p>
+                        <button id="btn-create-empty" style="padding: 10px 20px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">${I18n.t('chat.album.btn_create') || 'Create album'}</button>
                     </div>
                 `;
             } else {
@@ -788,10 +788,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="flex: 1; overflow: hidden;" onclick="window.openAlbumDetail('${a.id}')">
-                                <span style="font-weight: bold; font-size: 0.95rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${a.title}</span>
-                                <span style="font-size: 0.8rem; color: #888;">${a.photos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</span>
+                                <span style="font-weight: bold; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${a.title}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${a.photos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</span>
                             </div>
-                            <button onclick="window.openAlbumMenu('${a.id}')" style="background:none; border:none; font-size: 1.4rem; cursor: pointer; padding: 0 5px; color: #555; line-height: 1;">⋮</button>
+                            <button onclick="window.openAlbumMenu('${a.id}')" style="background:none; border:none; font-size: 1.4rem; cursor: pointer; padding: 0 5px; color: var(--text-secondary); line-height: 1;">⋮</button>
                         </div>
                     </div>
                 `).join('');
@@ -827,10 +827,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                             ${I18n.t('chat.album.btn_save') || 'Save'}
                         </button>
                     </header>
-                    <div style="padding: 20px; flex: 1; overflow-y: auto; background: white;">
-                        <h1 style="color: #e0e0e0; font-size: 2.5rem; margin: 0 0 5px 0;">${todayDate}</h1>
-                        <div style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">${tempPhotos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</div>
-                        <input type="text" id="album-title-input" placeholder="${I18n.t('chat.album.name_placeholder') || 'Album name'}" style="width: 100%; border: none; border-bottom: 1px solid #ddd; padding: 10px 0; font-size: 1.1rem; outline: none; margin-bottom: 25px; font-weight: bold;">
+                    <div style="padding: 20px; flex: 1; overflow-y: auto; background: var(--bg-body);">
+                        <h1 style="color: var(--text-secondary); opacity: 0.3; font-size: 2.5rem; margin: 0 0 5px 0;">${todayDate}</h1>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">${tempPhotos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</div>
+                        <input type="text" id="album-title-input" placeholder="${I18n.t('chat.album.name_placeholder') || 'Album name'}" style="width: 100%; border: none; border-bottom: 1px solid var(--border-color); background: transparent; color: var(--text-primary); padding: 10px 0; font-size: 1.1rem; outline: none; margin-bottom: 25px; font-weight: bold;">
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">${gridHtml}</div>
                     </div>
                     <input type="file" id="upload-album-photo" multiple accept="image/*" style="display: none;">
@@ -884,10 +884,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${album.title}</h3>
                         <div style="width: 24px;"></div>
                     </header>
-                    <div style="padding: 20px; flex: 1; overflow-y: auto; background: white;">
-                        <h2 style="margin: 0 0 5px 0; font-size: 1.5rem; color: #111;">${album.title}</h2>
-                        <h3 style="color: #333; font-size: 1.2rem; margin: 25px 0 5px 0;">${album.date}</h3>
-                        <div style="color: #888; font-size: 0.9rem; margin-bottom: 20px;">${album.photos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</div>
+                    <div style="padding: 20px; flex: 1; overflow-y: auto; background: var(--bg-body);">
+                        <h2 style="margin: 0 0 5px 0; font-size: 1.5rem; color: var(--text-primary);">${album.title}</h2>
+                        <h3 style="color: var(--text-primary); font-size: 1.2rem; margin: 25px 0 5px 0;">${album.date}</h3>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px;">${album.photos.length} ${I18n.t('chat.album.photos_count') || 'photos'}</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px;">${gridHtml}</div>
                     </div>
                 </div>
@@ -903,13 +903,13 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         const reportModal = document.createElement('div');
         reportModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);';
         reportModal.innerHTML = `
-            <div style="background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                <h3 style="margin: 0; color: #333;">⚠️ ${I18n.t('chat.report.title') || 'Report'}</h3>
-                <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">${I18n.t('chat.report.ask') || 'Who?'}</p>
-                <select id="report-user-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;"></select>
-                <textarea id="report-reason" rows="4" placeholder="${I18n.t('chat.report.reason') || 'Reason'}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; resize: none;"></textarea>
+            <div style="background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);">
+                <h3 style="margin: 0; color: var(--text-primary);">⚠️ ${I18n.t('chat.report.title') || 'Report'}</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">${I18n.t('chat.report.ask') || 'Who?'}</p>
+                <select id="report-user-select" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-primary); border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;"></select>
+                <textarea id="report-reason" rows="4" placeholder="${I18n.t('chat.report.reason') || 'Reason'}" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-primary); border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; resize: none;"></textarea>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button id="btn-cancel-report" style="padding: 10px 15px; border: none; background: #f0f0f0; border-radius: 8px; cursor: pointer;">${I18n.t('chat.report.cancel') || 'Cancel'}</button>
+                    <button id="btn-cancel-report" style="padding: 10px 15px; border: none; background: var(--bg-secondary); color: var(--text-primary); border-radius: 8px; cursor: pointer;">${I18n.t('chat.report.cancel') || 'Cancel'}</button>
                     <button id="btn-submit-report" style="padding: 10px 15px; border: none; background: #D32F2F; color: white; border-radius: 8px; cursor: pointer; font-weight: bold;">${I18n.t('chat.report.submit') || 'Submit'}</button>
                 </div>
             </div>

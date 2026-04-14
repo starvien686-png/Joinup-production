@@ -78,19 +78,19 @@ export const renderCarpool = () => {
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
-                    <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                    <button id="btn-role-host" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🚙</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.host.title', '我是發起人', 'Offer a Ride')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.host.desc', '我有空位，尋找乘客', 'I have empty seats, looking for passengers')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${t('cp.host.title', '我是發起人', 'Offer a Ride')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${t('cp.host.desc', '我有空位，尋找乘客', 'I have empty seats, looking for passengers')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                    <button id="btn-role-partner" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🎒</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${t('cp.join.title', '我是夥伴', 'I am Partner')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${t('cp.join.desc', '尋找共乘', 'Looking for a ride')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${t('cp.join.title', '我是夥伴', 'I am Partner')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${t('cp.join.desc', '尋找共乘', 'Looking for a ride')}</p>
                         </div>
                     </button>
 
@@ -115,7 +115,7 @@ export const renderCarpool = () => {
                     <h2>${t('cp.create.title', '發佈共乘', 'Create Carpool')}</h2>
                 </header>
 
-                <form id="createCarpoolForm" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <form id="createCarpoolForm" style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
                     
                     <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF8C00; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.2rem;">🚙 詳細說明</h3>
                     <div style="color: #888; font-size: 12px; text-align: center; margin-bottom: 1.5rem;">⚠️ 本平台不對任何財務問題負責<br>(This platform is not responsible for any financial issues)</div>
@@ -178,11 +178,11 @@ export const renderCarpool = () => {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
                             <label>發起人 * (Host)</label>
-                            <input type="text" value="${user.displayName || user.name || ''}" readonly style="background: #f5f5f5;">
+                            <input type="text" value="${user.displayName || user.name || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                         <div class="input-group">
                             <label>系所 * (Dept)</label>
-                            <input type="text" value="${user.department || user.major || ''}" readonly style="background: #f5f5f5;">
+                            <input type="text" value="${user.department || user.major || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                     </div>
 
@@ -234,25 +234,25 @@ export const renderCarpool = () => {
 
         let vehicleHtml = vehicles.map(v => {
             const isActive = activeFilters.vehicleType === v.id;
-            return `<button class="filter-option" data-filter="vehicleType" data-value="${v.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : '#ddd'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'white'}; color: ${isActive ? '#E65100' : '#555'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${v.label}</button>`;
+            return `<button class="filter-option" data-filter="vehicleType" data-value="${v.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : 'var(--border-color)'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'var(--bg-card)'}; color: ${isActive ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${v.label}</button>`;
         }).join('');
 
         let pickupHtml = pickups.map(p => {
             const isActive = activeFilters.pickupLoc === p.id;
-            return `<button class="filter-option" data-filter="pickupLoc" data-value="${p.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : '#ddd'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'white'}; color: ${isActive ? '#E65100' : '#555'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${p.label}</button>`;
+            return `<button class="filter-option" data-filter="pickupLoc" data-value="${p.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : 'var(--border-color)'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'var(--bg-card)'}; color: ${isActive ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${p.label}</button>`;
         }).join('');
 
         let priceHtml = prices.map(p => {
             const isActive = activeFilters.priceRange === p.id;
-            return `<button class="filter-option" data-filter="priceRange" data-value="${p.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : '#ddd'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'white'}; color: ${isActive ? '#E65100' : '#555'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${p.label}</button>`;
+            return `<button class="filter-option" data-filter="priceRange" data-value="${p.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF8C00' : 'var(--border-color)'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'var(--bg-card)'}; color: ${isActive ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${p.label}</button>`;
         }).join('');
 
         return `
             <div id="filter-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: end; z-index: 1000;">
-                <div style="background: white; width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="background: var(--bg-card); width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                         <h3 style="color: #FF8C00; margin: 0;">${txtFilterTitle}</h3>
-                        <button onclick="window.closeCarpoolFilter()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #333;">×</button>
+                        <button onclick="window.closeCarpoolFilter()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary);">×</button>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
@@ -280,16 +280,16 @@ export const renderCarpool = () => {
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtSeats}</label>
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: var(--text-primary);">${txtSeats}</label>
                         <div style="display: flex; gap: 0.5rem;">
                             ${[1, 2, 3, 4].map(num => `
-                                <button class="filter-option" data-filter="seatCount" data-value="${num}" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.seatCount === num ? '#FF8C00' : '#ddd'}; border-radius: 8px; background: ${activeFilters.seatCount === num ? '#FFF3E0' : 'white'}; color: ${activeFilters.seatCount === num ? '#E65100' : '#555'}; cursor: pointer;">≤ ${num} ${isZH ? '人' : ''}</button>
+                                <button class="filter-option" data-filter="seatCount" data-value="${num}" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.seatCount === num ? '#FF8C00' : 'var(--border-color)'}; border-radius: 8px; background: ${activeFilters.seatCount === num ? '#FFF3E0' : 'var(--bg-card)'}; color: ${activeFilters.seatCount === num ? '#E65100' : 'var(--text-secondary)'}; cursor: pointer;">≤ ${num} ${isZH ? '人' : ''}</button>
                             `).join('')}
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                        <button onclick="window.resetCarpoolFilters()" class="btn" style="flex: 1; background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-weight: bold;">${txtClear}</button>
+                        <button onclick="window.resetCarpoolFilters()" class="btn" style="flex: 1; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: bold;">${txtClear}</button>
                         <button onclick="window.applyCarpoolFilters()" class="btn btn-primary" style="flex: 2; background: #FF8C00; border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold;">${txtConfirm}</button>
                     </div>
                 </div>
@@ -430,13 +430,13 @@ export const renderCarpool = () => {
                     const hostHobby = hostData?.hobby || hostData?.hobbies || '';
 
                     return `
-                        <div class="card carpool-card" onclick="window.showCarpoolDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; padding: 1.2rem; transition: transform 0.2s;">
+                        <div class="card carpool-card" onclick="window.showCarpoolDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                                    <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
                                     <div>
-                                        <div style="font-weight: bold; color: #333; font-size: 1rem;">${p.host_name}</div>
-                                        <div style="font-size: 0.8rem; color: #666; margin-top: 2px;">🎓 ${p.host_dept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
+                                        <div style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${p.host_name}</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">🎓 ${p.host_dept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
                                         ${hostHobby ? `<div style="font-size: 0.75rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
                                     </div>
                                 </div>
@@ -446,10 +446,10 @@ export const renderCarpool = () => {
                                 </div>
                             </div>
                             
-                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; color: #333;">${cpDisplayTitle}</h3>
+                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1.15rem; color: var(--text-primary);">${cpDisplayTitle}</h3>
                             <div style="font-size: 0.9rem; color: #2196F3; font-weight: bold; margin-bottom: 1rem;">📍 ${p.departure_loc} ➔ ${p.destination_loc}</div>
                             
-                            <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #555; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                            <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: flex; justify-content: space-between;">
                                 <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
                                 <div style="text-align: right;"><strong>💺 ${isZH ? '空位' : 'Seats'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
                             </div>
@@ -488,7 +488,7 @@ export const renderCarpool = () => {
                         <h2 style="margin: 0; color: #FF8C00; font-size: 1.3rem;">${txtTitle}</h2>
                     </div>
                     
-                    <button id="btn-cp-filter" style="background: #eee; border: 1px solid #ccc; padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
+                    <button id="btn-cp-filter" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
                         🔍 ${isZH ? '篩選' : 'Filter'}
                         ${activeFilterCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #F44336; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${activeFilterCount}</span>` : ''}
                     </button>
@@ -496,7 +496,7 @@ export const renderCarpool = () => {
 
                 <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
                     <div style="flex: 1; position: relative;">
-                        <input type="text" id="cpSearchInput" placeholder="${isZH ? '搜尋標題/地點...' : 'Search title/locations...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; padding-right: 40px; font-size: 0.95rem;">
+                        <input type="text" id="cpSearchInput" placeholder="${isZH ? '搜尋標題/地點...' : 'Search title/locations...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); outline: none; padding-right: 40px; font-size: 0.95rem;">
                         <span id="btn-cp-search" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">🔍</span>
                     </div>
                 </div>
@@ -580,9 +580,9 @@ export const renderCarpool = () => {
             const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
 
             return `
-                <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-card); padding: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${cpTitle}</h3>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${cpTitle}</h3>
                         ${statusBadge}
                     </div>
                     <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr}</div>
@@ -606,7 +606,7 @@ export const renderCarpool = () => {
                             ` : p.status === 'success' ? `
                             <button onclick="window.openRatingModal({ id: '${p.id}', title: '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'")}', category: 'carpool' })" style="width: 100%; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #FFB300, #FF8C00); color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 8px; box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);">⭐ 給予評價 (Rate Event)</button>
                         ` : ''}
-                        <button onclick="window.deletePost('${p.id}', 'carpool')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
+                        <button onclick="window.deletePost('${p.id}', 'carpool')" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
                     </div>
                 </div>
             `;

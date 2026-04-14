@@ -93,7 +93,7 @@ export const renderHome = () => {
                         <div id="header-user-dept" style="min-width: 80px;" class="${!username ? 'skeleton skeleton-text' : ''}">
                             ${deptInfo}
                         </div>
-                        <p id="location-text" style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #999;" data-i18n="loc.ncnu">${I18n.t('loc.ncnu')}</p>
+                        <p id="location-text" style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-secondary);" data-i18n="loc.ncnu">${I18n.t('loc.ncnu')}</p>
                     </div>
                     
                     <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 250px;">
@@ -131,7 +131,7 @@ export const renderHome = () => {
                     </div>
                     
                     <div id="home-upcoming-scroll" class="upcoming-scroll" style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory;">
-                        <div style="text-align:center;width:100%;color:#999;padding: 1rem;">Loading...</div>
+                        <div style="text-align:center;width:100%;color:var(--text-secondary);padding: 1rem;">Loading...</div>
                     </div>
                 </section>
 

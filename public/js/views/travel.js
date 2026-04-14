@@ -99,19 +99,19 @@ export const renderTravel = () => {
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
-                    <button id="btn-role-host" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                    <button id="btn-role-host" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FF8C00; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🥳</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('outing.role.host')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('outing.role.host_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('outing.role.host')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('outing.role.host_desc')}</p>
                         </div>
                     </button>
 
-                    <button id="btn-role-partner" class="role-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                    <button id="btn-role-partner" class="role-card" style="background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: none; border-left: 4px solid #FFD600; padding: 1.5rem; text-align: left; display: flex; align-items: center; cursor: pointer; width: 100%; transition: transform 0.2s;">
                         <span style="font-size: 2.5rem; margin-right: 1.5rem;">🔍</span>
                         <div>
-                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: #333;">${I18n.t('outing.role.join')}</h3>
-                            <p style="margin: 0; font-size: 0.9rem; color: #666;">${I18n.t('outing.role.join_desc')}</p>
+                            <h3 style="margin: 0 0 0.2rem 0; font-size: 1.2rem; color: var(--text-primary);">${I18n.t('outing.role.join')}</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${I18n.t('outing.role.join_desc')}</p>
                         </div>
                     </button>
 
@@ -120,7 +120,7 @@ export const renderTravel = () => {
                     </button>
                 </div>
                 
-                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: bold; color: #555;">
+                <button onclick="window.navigateTo('home')" style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: bold; color: var(--text-secondary);">
                     ⬅️ ${t('common.back', '返回', 'Back')}
                 </button>
             </div>
@@ -136,7 +136,7 @@ export const renderTravel = () => {
                     <h2 style="color: #FF9800;">${t('ho.create.title', '創建活動', 'Create Activity')}</h2>
                 </header>
 
-                <form id="createHangoutForm" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <form id="createHangoutForm" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm);">
                     
                     <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF9800; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.1rem;">📋 ${t('ho.desc_head', '詳細說明', 'Description')}</h3>
                     <div style="color: #888; font-size: 12px; text-align: center; margin-bottom: 1.5rem;">此平台不負責任何金錢問題<br>(This platform is not responsible for any financial issues)</div>
@@ -148,7 +148,7 @@ export const renderTravel = () => {
 
                     <div class="input-group">
                         <label>${t('ho.cat', '活動類別 *', 'Category *')}</label>
-                        <select id="hoCategory" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                        <select id="hoCategory" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                             <option value="" disabled selected>請選擇...</option>
                             <option value="Food">🍽️ ${isZH ? '聚餐/美食' : 'Food/Dining'}</option>
                             <option value="Outdoor">🏕️ ${isZH ? '戶外/踏青' : 'Outdoor/Nature'}</option>
@@ -189,7 +189,7 @@ export const renderTravel = () => {
 
                     <div class="input-group">
                         <label>${t('ho.meet', '身分 *', 'Meeting Location*')}</label>
-                        <select id="hoMeetLoc" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                        <select id="hoMeetLoc" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                             <option value="" disabled selected>請選擇...</option>
                             <option value="暨大圖書館">🏛️ ${isZH ? '暨大圖書館' : 'NCNU Library'}</option>
                             <option value="學生活動中心">🏢 ${isZH ? '學生活動中心' : 'Student Activity Center'}</option>
@@ -200,12 +200,12 @@ export const renderTravel = () => {
                             <option value="埔里車站">🚌 ${isZH ? '埔里車站' : 'Puli Station'}</option>
                             <option value="自訂">📍 ${isZH ? '自訂' : 'Custom'}</option>
                         </select>
-                        <input type="text" id="hoMeetLocCustom" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd; display: none;" placeholder="${isZH ? '請輸入集合地點...' : 'Enter meeting location...'}">
+                        <input type="text" id="hoMeetLocCustom" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); display: none;" placeholder="${isZH ? '請輸入集合地點...' : 'Enter meeting location...'}">
                     </div>
 
                     <div class="input-group">
                         <label>${t('ho.dest', '活動目的地 *', 'Destination *')}</label>
-                        <select id="hoDestLoc" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
+                        <select id="hoDestLoc" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                             <option value="" disabled selected>請選擇...</option>
                             <option value="埔里市區">🏙️ ${isZH ? '埔里市區' : 'Puli Town'}</option>
                             <option value="台中市區">🌆 ${isZH ? '台中市區' : 'Taichung City'}</option>
@@ -213,12 +213,12 @@ export const renderTravel = () => {
                             <option value="合歡山">⛰️ ${isZH ? '合歡山' : 'Hehuan Mountain'}</option>
                             <option value="自訂">📍 ${isZH ? '自訂' : 'Custom'}</option>
                         </select>
-                        <input type="text" id="hoDestLocCustom" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd; display: none;" placeholder="${isZH ? '請輸入目的地...' : 'Enter destination...'}">
+                        <input type="text" id="hoDestLocCustom" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); display: none;" placeholder="${isZH ? '請輸入目的地...' : 'Enter destination...'}">
                     </div>
 
                     <div class="input-group">
                         <label>${t('ho.notes', '詳細說明', 'Details / Notes')}</label>
-                        <textarea id="hoDesc" rows="4" placeholder="${isZH ? '說明活動內容、注意事項等...' : 'Explain the activity details, things to note...'}" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+                        <textarea id="hoDesc" rows="4" placeholder="${isZH ? '說明活動內容、注意事項等...' : 'Explain the activity details, things to note...'}" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; font-size: 1.1rem; border-radius: 8px; background: #FF9800; border: none; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);">
@@ -250,15 +250,15 @@ export const renderTravel = () => {
 
         let catHtml = categories.map(c => {
             const isActive = activeFilters.category === c.id;
-            return `<button class="filter-option" data-filter="category" data-value="${c.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF9800' : '#ddd'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'white'}; color: ${isActive ? '#E65100' : '#555'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${c.label}</button>`;
+            return `<button class="filter-option" data-filter="category" data-value="${c.id}" style="padding: 0.6rem 1rem; border: 1px solid ${isActive ? '#FF9800' : 'var(--border-color)'}; border-radius: 8px; background: ${isActive ? '#FFF3E0' : 'var(--bg-card)'}; color: ${isActive ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${isActive ? 'bold' : 'normal'}; cursor: pointer;">${c.label}</button>`;
         }).join('');
 
         return `
             <div id="ho-filter-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: end; z-index: 1000;">
-                <div style="background: white; width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="background: var(--bg-card); width: 100%; border-radius: 16px 16px 0 0; padding: 1.5rem; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                         <h3 style="color: #FF9800; margin: 0;">${txtFilterTitle}</h3>
-                        <button onclick="window.closeHangoutFilter()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #333;">×</button>
+                        <button onclick="window.closeHangoutFilter()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary);">×</button>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
@@ -267,19 +267,19 @@ export const renderTravel = () => {
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtDate}</label>
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: var(--text-primary);">${txtDate}</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="filter-option" data-filter="dateRange" data-value="today" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'today' ? '#FF9800' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'today' ? '#FFF3E0' : 'white'}; color: ${activeFilters.dateRange === 'today' ? '#E65100' : '#555'}; font-weight: ${activeFilters.dateRange === 'today' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '今天' : 'Today'}</button>
-                            <button class="filter-option" data-filter="dateRange" data-value="week" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'week' ? '#FF9800' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'week' ? '#FFF3E0' : 'white'}; color: ${activeFilters.dateRange === 'week' ? '#E65100' : '#555'}; font-weight: ${activeFilters.dateRange === 'week' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一週內' : 'Within 1 Week'}</button>
-                            <button class="filter-option" data-filter="dateRange" data-value="month" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'month' ? '#FF9800' : '#ddd'}; border-radius: 8px; background: ${activeFilters.dateRange === 'month' ? '#FFF3E0' : 'white'}; color: ${activeFilters.dateRange === 'month' ? '#E65100' : '#555'}; font-weight: ${activeFilters.dateRange === 'month' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一個月內' : 'Within 1 Month'}</button>
+                            <button class="filter-option" data-filter="dateRange" data-value="today" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'today' ? '#FF9800' : 'var(--border-color)'}; border-radius: 8px; background: ${activeFilters.dateRange === 'today' ? '#FFF3E0' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'today' ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${activeFilters.dateRange === 'today' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '今天' : 'Today'}</button>
+                            <button class="filter-option" data-filter="dateRange" data-value="week" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'week' ? '#FF9800' : 'var(--border-color)'}; border-radius: 8px; background: ${activeFilters.dateRange === 'week' ? '#FFF3E0' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'week' ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${activeFilters.dateRange === 'week' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一週內' : 'Within 1 Week'}</button>
+                            <button class="filter-option" data-filter="dateRange" data-value="month" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.dateRange === 'month' ? '#FF9800' : 'var(--border-color)'}; border-radius: 8px; background: ${activeFilters.dateRange === 'month' ? '#FFF3E0' : 'var(--bg-card)'}; color: ${activeFilters.dateRange === 'month' ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${activeFilters.dateRange === 'month' ? 'bold' : 'normal'}; cursor: pointer;">${isZH ? '一個月內' : 'Within 1 Month'}</button>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: #333;">${txtPeople}</label>
+                        <label style="display: block; margin-bottom: 0.8rem; font-weight: bold; color: var(--text-primary);">${txtPeople}</label>
                         <div style="display: flex; gap: 0.5rem;">
                             ${[2, 4, 6, 8].map(num => `
-    <button class="filter-option" data-filter="peopleCount" data-value="${num}" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.peopleCount === num ? '#FF9800' : '#ddd'}; border-radius: 8px; background: ${activeFilters.peopleCount === num ? '#FFF3E0' : 'white'}; color: ${activeFilters.peopleCount === num ? '#E65100' : '#555'}; font-weight: ${activeFilters.peopleCount === num ? 'bold' : 'normal'}; cursor: pointer;">
+    <button class="filter-option" data-filter="peopleCount" data-value="${num}" style="flex: 1; padding: 0.6rem; border: 1px solid ${activeFilters.peopleCount === num ? '#FF9800' : 'var(--border-color)'}; border-radius: 8px; background: ${activeFilters.peopleCount === num ? '#FFF3E0' : 'var(--bg-card)'}; color: ${activeFilters.peopleCount === num ? '#E65100' : 'var(--text-secondary)'}; font-weight: ${activeFilters.peopleCount === num ? 'bold' : 'normal'}; cursor: pointer;">
         ≤ ${num} ${isZH ? '人' : ''}
     </button>
 `).join('')}
@@ -287,7 +287,7 @@ export const renderTravel = () => {
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                        <button onclick="window.resetHangoutFilters()" class="btn" style="flex: 1; background: #f5f5f5; color: #333; border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-weight: bold;">${txtClear}</button>
+                        <button onclick="window.resetHangoutFilters()" class="btn" style="flex: 1; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: bold;">${txtClear}</button>
                         <button onclick="window.applyHangoutFilters()" class="btn btn-primary" style="flex: 2; background: #FF9800; border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold;">${txtConfirm}</button>
                     </div>
                 </div>
@@ -394,7 +394,7 @@ export const renderTravel = () => {
                     }
 
                     return `
-                        <div class="card" onclick="window.showHangoutDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; padding: 1.2rem; transition: transform 0.2s;">
+                        <div class="card" onclick="window.showHangoutDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                 <div style="background: #FFF3E0; color: #FF9800; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold;">
                                     ${catIcon} ${catLabel}
@@ -404,15 +404,15 @@ export const renderTravel = () => {
                                 </div>
                             </div>
                             
-                            <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
+                            <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--text-primary);">${p.title}</h3>
                             <div style="font-size: 0.95rem; color: #1976D2; font-weight: bold; margin-bottom: 15px;">📍 ${p.destination}</div>
 
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; color: #666;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary);">
                                 <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
-                                <span>${t('common.host', '發起人', 'Host')}: <strong>${p.host_name}</strong> (${p.host_dept})</span>
+                                <span>${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})</span>
                             </div>
 
-                            <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #555; margin-bottom: 15px; display: grid; grid-template-columns: 1fr; gap: 5px;">
+                            <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: grid; grid-template-columns: 1fr; gap: 5px;">
                                 <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                                 <div><strong>🤝 ${isZH ? '身分' : 'Meet'}:</strong> ${p.meeting_location}</div>
                             </div>
@@ -451,7 +451,7 @@ export const renderTravel = () => {
                         <h2 style="margin: 0; color: #FF9800; font-size: 1.3rem;">${txtTitle}</h2>
                     </div>
                     
-                    <button id="btn-ho-filter" style="background: #eee; border: 1px solid #ccc; padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
+                    <button id="btn-ho-filter" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; position: relative;">
                         🔍 ${isZH ? '篩選' : 'Filter'}
                         ${activeFilterCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #F44336; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${activeFilterCount}</span>` : ''}
                     </button>
@@ -459,7 +459,7 @@ export const renderTravel = () => {
 
                 <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
                     <div style="flex: 1; position: relative;">
-                        <input type="text" id="hoSearchInput" placeholder="${isZH ? '搜尋活動標題或目的地...' : 'Search titles or destinations...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid #ddd; outline: none; padding-right: 40px; font-size: 0.95rem;">
+                        <input type="text" id="hoSearchInput" placeholder="${isZH ? '搜尋活動標題或目的地...' : 'Search titles or destinations...'}" value="${activeFilters.searchQuery}" style="width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); outline: none; padding-right: 40px; font-size: 0.95rem;">
                         <span id="btn-ho-search" style="position: absolute; right: 15px; top: 12px; cursor: pointer;">🔍</span>
                     </div>
                 </div>
@@ -519,8 +519,8 @@ export const renderTravel = () => {
             if (pendingApps.length > 0) {
                 appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>`;
                 appsHtml += pendingApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
+                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
                         <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${p.title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'hangout', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
                     </div>
                 `).join('');
@@ -529,8 +529,8 @@ export const renderTravel = () => {
             if (acceptedApps.length > 0) {
                 appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>`;
                 appsHtml += acceptedApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
+                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
                         <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已加入' : 'Joined'}</span>
                     </div>
                 `).join('');
@@ -557,18 +557,18 @@ export const renderTravel = () => {
                     <button onclick="window.updateHangoutStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✗ ${t('common.cancel', '取消', 'Cancel')}</button>
                 `;
             }
-            actionButtonsHtml += `<button onclick="window.deletePost('${p.id}', 'hangout')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
+            actionButtonsHtml += `<button onclick="window.deletePost('${p.id}', 'hangout')" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
 
             return `
-                <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-card); padding: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${p.title}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr} | 📍 ${p.destination}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;">🗓️ ${dateStr} | 📍 ${p.destination}</div>
                     
-                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Members'} (${participantCount}/${p.people_needed})</div>
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Members'} (${participantCount}/${p.people_needed})</div>
                         ${appsHtml}
                     </div>
 
@@ -734,11 +734,11 @@ export const renderTravel = () => {
 
         const formHtml = `
             <div id="join-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
-                <div style="background: white; width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: scaleIn 0.2s ease-out;">
-                    <h3 style="margin: 0 0 1rem 0; color: #333;">${msgConfirm}</h3>
-                    <p style="color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
+                <div style="background: var(--bg-card); width: 85%; max-width: 350px; border-radius: 16px; padding: 2rem; text-align: center; box-shadow: var(--shadow-lg); animation: scaleIn 0.2s ease-out; border: 1px solid var(--border-color);">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--text-primary);">${msgConfirm}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">${msgDesc}</p>
                     <div style="display: flex; gap: 1rem;">
-                        <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: #eee; color: #555; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
+                        <button onclick="document.getElementById('join-overlay').remove()" class="btn" style="flex: 1; padding: 0.8rem; background: var(--bg-secondary); color: var(--text-secondary); border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
                             ${t('common.cancel', '取消', 'Cancel')}
                         </button>
                         <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: linear-gradient(135deg, #FFB300, #FF9800); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
