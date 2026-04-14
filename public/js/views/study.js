@@ -336,38 +336,38 @@ export const renderStudy = () => {
                     const hostAvatar = hostData?.profile_pic || hostData?.profilePic || hostData?.avatar || hostData?.picture || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
                     return `
-                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
+                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card); color: var(--text-primary);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                                <div style="background: #FFF3E0; color: #FF9800; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold;">
+                                <div style="background: var(--bg-secondary); color: var(--accent-color); padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--border-color);">
                                     ${p.event_type}
                                 </div>
-                                <div style="font-size: 0.8rem; color: #999;">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
                                     📅 ${new Date(p.deadline).toLocaleDateString()}
                                 </div>
                             </div>
                             
                             <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--text-primary);">${p.title}</h3>
-                            <div style="font-size: 0.95rem; color: #1976D2; font-weight: bold; margin-bottom: 15px;">📚 ${p.subject}</div>
+                            <div style="font-size: 0.95rem; color: var(--primary-dark); font-weight: bold; margin-bottom: 15px;">📚 ${p.subject}</div>
 
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary);">
-                                <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                                <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
                                 <span>${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})</span>
                             </div>
 
-                            <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
-                                <div><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> <br>${p.location}</div>
+                            <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border: 1px solid var(--border-color);">
+                                <div><strong style="color: var(--text-primary);">🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
+                                <div><strong style="color: var(--text-primary);">📍 ${isZH ? '地點' : 'Location'}:</strong> <br>${p.location}</div>
                             </div>
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <span style="font-size: 0.85rem; color: #666;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:#FF9800; font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
-                                ${isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${t('common.full', '額滿', 'Full')}</span>` : ''}
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
+                                ${isFull ? `<span style="font-size: 0.8rem; color: var(--accent-color); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--border-color);">${t('common.full', '額滿', 'Full')}</span>` : ''}
                             </div>
 
                             ${isHost ? `
                             <button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 進入聊天室</button>
                             ` : !isFull ? `
-                            <button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FFB300, #FF9800); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>
+                            <button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>
                             ` : ''}
                         </div>
                     `;
@@ -838,26 +838,26 @@ export const renderStudy = () => {
                 : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
             const modalHtml = `
-                <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
-                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                        <button onclick="document.getElementById('study-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
+                    <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
+                        <button onclick="document.getElementById('study-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--text-secondary);">✕</button>
                         
-                        <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">
+                        <div style="display: inline-block; padding: 5px 12px; background: var(--bg-secondary); color: var(--accent-color); border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; border: 1px solid var(--border-color);">
                             ${p.event_type}
                         </div>
                         
-                        <h2 style="margin: 0 0 5px 0; color: #333; font-size: 1.4rem;">${p.title}</h2>
-                        <div style="font-size: 1.1rem; color: #1976D2; font-weight: bold; margin-bottom: 20px;">📚 ${p.subject}</div>
+                        <h2 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 1.4rem; font-weight: 700;">${p.title}</h2>
+                        <div style="font-size: 1.1rem; color: var(--primary-dark); font-weight: bold; margin-bottom: 20px;">📚 ${p.subject}</div>
                         
-                        <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-bottom: 20px;">
-                            <div style="margin-bottom: 10px;"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> ${p.location}</div>
-                            <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
-                            <div><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:#FF9800; font-weight:bold;">${p.people_needed}</span></div>
+                        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; color: var(--text-main);">
+                            <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> <span style="color: var(--text-primary);">${p.location}</span></div>
+                            <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <span style="color: var(--text-primary);">${timeStr}</span></div>
+                            <div style="color: var(--text-secondary);"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${p.people_needed}</span></div>
                         </div>
 
-                        <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '備註說明' : 'Notes'}</div>
-                            <div style="color: #444; line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '備註說明' : 'Notes'}</div>
+                            <div style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;">${p.description || (isZH ? '無' : 'None')}</div>
                         </div>
                     </div>
                 </div>

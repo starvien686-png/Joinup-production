@@ -719,37 +719,37 @@ export const renderHome = () => {
             const timeStr = `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`;
 
             const modalHtml = `
-                <div id="univ-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
-                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                <div id="univ-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
+                    <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
+                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--text-secondary);">✕</button>
                         
-                        <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">
+                        <div style="display: inline-block; padding: 5px 12px; background: var(--bg-secondary); color: var(--accent-color); border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">
                             ${p.category === 'groupbuy' ? 'housing' : p.category.toUpperCase()}
                         </div>
                         
-                        <h2 style="margin: 0 0 15px 0; color: #333; font-size: 1.4rem;">${p.title}</h2>
+                        <h2 style="margin: 0 0 15px 0; color: var(--text-primary); font-size: 1.4rem; font-weight: 700;">${p.title}</h2>
                         
-                        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; font-size: 0.9rem; color: #666; background: #f3f9f3; padding: 12px; border-radius: 10px;">
-                            <img src="${hostAvatar}" alt="avatar" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #81C784;">
+                        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-secondary); background: var(--bg-secondary); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <img src="${hostAvatar}" alt="avatar" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
                             <div style="flex: 1;">
-                                <div style="color: #2E7D32; font-weight: bold; font-size: 1rem; margin-bottom: 4px;">${hostFinalNm}</div>
+                                <div style="color: var(--text-primary); font-weight: bold; font-size: 1rem; margin-bottom: 4px;">${hostFinalNm}</div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    ${hostFinalDp ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">🎓 ${hostFinalDp}</span>` : ''}
-                                    ${studyYear ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">📅 ${studyYear}</span>` : ''}
-                                    ${hostHobby ? `<span style="background: #E8F5E9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">⭐ ${hostHobby}</span>` : ''}
+                                    ${hostFinalDp ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">🎓 ${hostFinalDp}</span>` : ''}
+                                    ${studyYear ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">📅 ${studyYear}</span>` : ''}
+                                    ${hostHobby ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">⭐ ${hostHobby}</span>` : ''}
                                 </div>
                             </div>
                         </div>
 
-                        <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-bottom: 20px;">
+                        <div style="background: var(--bg-card); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; color: var(--text-primary);">
                             ${specificDetails}
-                            <div style="margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
+                            <div style="margin-top: 5px; border-top: 1px dashed var(--border-color); padding-top: 5px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                         </div>
 
-                        <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '詳細說明' : 'Details'}</div>
-                            <div style="color: #444; line-height: 1.5; white-space: pre-wrap;">${desc || (isZH ? '無' : 'None')}</div>
-                            ${hostBio ? `<div style="margin-top: 10px; border-top: 1px solid #FFE0B2; padding-top: 10px; font-size: 0.85rem; color: #555;"><strong>Host Bio:</strong> ${hostBio}</div>` : ''}
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '詳細說明' : 'Details'}</div>
+                            <div style="color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem;">${desc || (isZH ? '無' : 'None')}</div>
+                            ${hostBio ? `<div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; font-size: 0.85rem; color: var(--text-secondary);"><strong>Host Bio:</strong> ${hostBio}</div>` : ''}
                         </div>
                     </div>
                 </div>

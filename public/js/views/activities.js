@@ -269,20 +269,20 @@ export const renderActivities = async () => {
 
             const modalHtml = `
                 <div id="univ-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.3s;">
-                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 24px 24px 0 0; padding: 30px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: #64748b;">✕</button>
+                    <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 24px 24px 0 0; padding: 30px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
+                        <button onclick="document.getElementById('univ-detail-overlay').remove()" style="position: absolute; top: 20px; right: 20px; background: var(--bg-secondary); border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--text-secondary);">✕</button>
                         
                         <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                            <span style="padding: 4px 12px; background: #f1f5f9; color: #64748b; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">${p.category}</span>
+                            <span style="padding: 4px 12px; background: var(--bg-secondary); color: var(--text-secondary); border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">${p.category}</span>
                         </div>
                         
-                        <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 1.5rem; font-weight: 700; line-height: 1.3;">${p.title}</h2>
+                        <h2 style="margin: 0 0 20px 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 700; line-height: 1.3;">${p.title}</h2>
                         
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 16px; border: 1px solid #f1f5f9;">
-                            <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 15px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
+                            <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-card); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                             <div style="flex: 1;">
-                                <div style="color: #1e293b; font-weight: 700; font-size: 1.1rem; margin-bottom: 2px;">${p.hostName}</div>
-                                <div style="font-size: 0.85rem; color: #64748b;">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
+                                <div style="color: var(--text-primary); font-weight: 700; font-size: 1.1rem; margin-bottom: 2px;">${p.hostName}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                             </div>
                             <div style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                                 ✨ ${p.credit_points !== undefined ? p.credit_points : 0} pts
@@ -290,20 +290,20 @@ export const renderActivities = async () => {
                         </div>
 
                         <div style="display: grid; gap: 15px; margin-bottom: 25px;">
-                            <div style="padding: 15px; background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                                <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">📍 ${isZH ? '活動地點' : 'Location'}</div>
-                                <div style="font-size: 1rem; color: #1e293b; font-weight: 500;">${p.location || 'NCNU'}</div>
+                            <div style="padding: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">📍 ${isZH ? '活動地點' : 'Location'}</div>
+                                <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">${p.location || 'NCNU'}</div>
                                 ${makeMap(p.location)}
                             </div>
-                            <div style="padding: 15px; background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                                <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">🕒 ${isZH ? '活動時間' : 'Time'}</div>
-                                <div style="font-size: 1rem; color: #1e293b; font-weight: 500;">${timeStr}</div>
+                            <div style="padding: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">🕒 ${isZH ? '活動時間' : 'Time'}</div>
+                                <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">${timeStr}</div>
                             </div>
                         </div>
 
                         <div style="margin-bottom: 30px;">
-                            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 12px; text-transform: uppercase;">📝 ${isZH ? '詳細說明' : 'About'}</div>
-                            <div style="color: #334155; line-height: 1.6; font-size: 1rem; white-space: pre-wrap;">${p.description || (isZH ? '暫無說明' : 'No description provided.')}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold; margin-bottom: 12px; text-transform: uppercase;">📝 ${isZH ? '詳細說明' : 'About'}</div>
+                            <div style="color: var(--text-primary); line-height: 1.6; font-size: 1rem; white-space: pre-wrap;">${p.description || (isZH ? '暫無說明' : 'No description provided.')}</div>
                         </div>
                     </div>
                 </div>`;

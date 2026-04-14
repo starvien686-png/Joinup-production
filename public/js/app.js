@@ -746,37 +746,37 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     const displayTeamName = teamName || (isZH ? '活動' : 'Event');
 
     const modalHtml = `
-        <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px);">
-            <div style="background: white; width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+        <div id="${overlayId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); animation: fadeIn 0.2s ease-out;">
+            <div style="background: var(--bg-card); width: 92%; max-width: 380px; border-radius: 24px; padding: 2rem; text-align: center; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: #FFF3E0; padding: 4px 12px; border-radius: 12px; text-transform: uppercase;">${category || 'Activity'}</span>
-                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">×</button>
+                    <span style="font-size: 0.75rem; font-weight: bold; color: #FF9800; background: rgba(255, 152, 0, 0.1); padding: 4px 12px; border-radius: 12px; text-transform: uppercase; border: 1px solid rgba(255, 152, 0, 0.2);">${category || 'Activity'}</span>
+                    <button onclick="document.getElementById('${overlayId}').remove()" style="background: var(--bg-secondary); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center;">✕</button>
                 </div>
 
-                <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 15px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                <img src="${avatar}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid var(--bg-card); box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 15px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
 
-                <h4 style="margin: 0; font-size: 1.4rem; color: #1a1a1a;">${applicantName}</h4>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                <h4 style="margin: 0; font-size: 1.4rem; color: var(--text-primary);">${applicantName}</h4>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">
                     🎓 ${applicantDept} ${studyYear ? `| ${studyYear}` : ''}
                 </div>
 
-                <div style="background: #fafafa; padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left;">
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 16px; margin-bottom: 1.5rem; text-align: left; border: 1px solid var(--border-color);">
                     <div style="margin-bottom: 10px;">
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase;">${txtHobbyLabel}</label>
-                        <div style="font-size: 0.9rem; color: #333;">${hobby}</div>
+                        <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold; text-transform: uppercase;">${txtHobbyLabel}</label>
+                        <div style="font-size: 0.9rem; color: var(--text-primary);">${hobby}</div>
                     </div>
                     <div>
-                        <label style="font-size: 0.7rem; color: #999; font-weight: bold; text-transform: uppercase;">${txtBioLabel}</label>
-                        <div style="font-size: 0.9rem; color: #444; font-style: italic;">"${bio}"</div>
+                        <label style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold; text-transform: uppercase;">${txtBioLabel}</label>
+                        <div style="font-size: 0.9rem; color: var(--text-primary); font-style: italic;">"${bio}"</div>
                     </div>
                 </div>
 
-                <div style="font-size: 0.85rem; color: #666; margin-bottom: 1.5rem; padding: 10px; background: #f0f7ff; border-radius: 12px;">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; padding: 10px; background: rgba(25, 118, 210, 0.1); border-radius: 12px; border: 1px solid rgba(25, 118, 210, 0.2);">
                     ${txtApplyFor} <strong style="color: #1976D2;">${displayTeamName}</strong>
                 </div>
 
                 <div style="display: flex; gap: 1rem;">
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #fff; color: #F44336; border: 2px solid #F44336; border-radius: 14px; cursor: pointer; font-weight: bold;">Reject</button>
+                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: var(--bg-card); color: #F44336; border: 2px solid #F44336; border-radius: 14px; cursor: pointer; font-weight: bold;">Reject</button>
                     <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 1rem; background: #4CAF50; color: white; border: none; border-radius: 14px; cursor: pointer; font-weight: bold;">Accept</button>
                 </div>
             </div>
@@ -1106,33 +1106,33 @@ window.showEventDetail = async (activityId) => {
 
         overlay.innerHTML = `
 
-            <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; box-shadow: 0 -5px 15px rgba(0,0,0,0.2); position: relative; animation: slideUp 0.3s ease;">
+            <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; box-shadow: var(--shadow-lg); position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
 
-                <button onclick="document.getElementById('event-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555; z-index: 10;">X</button>
+                <button onclick="document.getElementById('event-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; z-index: 10;">✕</button>
 
                
 
-                <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #E65100; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">
+                <div style="display: inline-block; padding: 5px 12px; background: rgba(255, 152, 0, 0.1); color: #E65100; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; border: 1px solid rgba(255, 152, 0, 0.2);">
 
                     ${data.category || 'Event'}
 
                 </div>
 
-                <h2 style="margin: 0 0 20px 0; color: #333; font-size: 1.5rem;">${data.title}</h2>
+                <h2 style="margin: 0 0 20px 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 700;">${data.title}</h2>
 
                
 
-                <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; margin-bottom: 20px;">
+                <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
 
-                    <img src="${hostAvatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                    <img src="${hostAvatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-card); box-shadow: var(--shadow-sm);">
 
                     <div>
 
-                        <div style="font-weight: bold; font-size: 1.1rem; color: #333;">${data.host_name || 'Host'}</div>
+                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${data.host_name || 'Host'}</div>
 
-                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">🎓 ${data.host_dept || '-'} (Year ${data.study_year || '-'})</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">🎓 ${data.host_dept || '-'} (Year ${data.study_year || '-'})</div>
 
-                        ${data.hobby ? `<div style="font-size: 0.8rem; color: #007BFF; margin-top: 4px;">🎯 ${txtHobby}: ${data.hobby}</div>` : ''}
+                        ${data.hobby ? `<div style="font-size: 0.8rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobby}: ${data.hobby}</div>` : ''}
 
                     </div>
 
@@ -1140,7 +1140,7 @@ window.showEventDetail = async (activityId) => {
 
 
 
-                <div style="background: white; border: 1px solid #ddd; border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 0.95rem; color: #444; line-height: 1.6;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 0.95rem; color: var(--text-primary); line-height: 1.6;">
 
                     ${translatedSportType ? `<div style="margin-bottom: 8px;"><strong>🏷️ ${txtType}:</strong> ${translatedSportType}</div>` : ''}
 
@@ -1156,9 +1156,9 @@ window.showEventDetail = async (activityId) => {
 
                 <div style="margin-bottom: 20px;">
 
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">📍 ${txtLocation}: ${translatedLocation || data.location}</h3>
+                    <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-primary);">📍 ${txtLocation}: ${translatedLocation || data.location}</h3>
 
-                    <div style="width: 100%; height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid #ddd; background: #eee;">
+                    <div style="width: 100%; height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-secondary);">
 
                         <iframe width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen src="${mapsUrl}"></iframe>
 
@@ -1334,9 +1334,9 @@ window.showKickMemberModal = async (roomId) => {
 
     overlay.innerHTML = `
 
-        <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <div style="background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); animation: scaleIn 0.2s ease-out;">
 
-            <h3 style="margin: 0 0 15px 0; color: #333; text-align: center;">🛡️ ${txtTitle}</h3>
+            <h3 style="margin: 0 0 15px 0; color: var(--text-primary); text-align: center;">🛡️ ${txtTitle}</h3>
 
             <div style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
 
@@ -1344,7 +1344,7 @@ window.showKickMemberModal = async (roomId) => {
 
             </div>
 
-            <button onclick="document.getElementById('kick-member-overlay').remove()" style="width: 100%; padding: 12px; background: #eee; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">${txtClose}</button>
+            <button onclick="document.getElementById('kick-member-overlay').remove()" style="width: 100%; padding: 12px; background: var(--bg-secondary); color: var(--text-primary); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">${txtClose}</button>
 
         </div>
 

@@ -966,30 +966,30 @@ export const renderTravel = () => {
             const mapRouteUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(p.meeting_location)}&daddr=${encodeURIComponent(p.destination)}&output=embed`;
 
             const modalHtml = `
-                <div id="ho-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s;">
-                    <div style="background: white; width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease;">
-                        <button onclick="document.getElementById('ho-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: #555;">X</button>
+                <div id="ho-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
+                    <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
+                        <button onclick="document.getElementById('ho-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center;">✕</button>
                         
-                        <div style="display: inline-block; padding: 5px 12px; background: #FFF3E0; color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px;">
+                        <div style="display: inline-block; padding: 5px 12px; background: rgba(255, 152, 0, 0.1); color: #FF9800; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; border: 1px solid rgba(255, 152, 0, 0.2);">
                             ${catIcon} ${catLabel}
                         </div>
                         
-                        <h2 style="margin: 0 0 5px 0; color: #333; font-size: 1.4rem;">${p.title}</h2>
+                        <h2 style="margin: 0 0 15px 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 700;">${p.title}</h2>
                         
-                        <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px solid #eee; margin-top: 15px; margin-bottom: 20px;">
+                        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-top: 15px; margin-bottom: 20px; color: var(--text-primary);">
                             <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                             <div style="margin-bottom: 10px;"><strong>🤝 ${isZH ? '身分' : 'Meeting'}:</strong> <span style="color:#2196F3; font-weight:bold;">${p.meeting_location}</span></div>
                             <div style="margin-bottom: 10px;"><strong>📍 ${isZH ? '目的地' : 'Destination'}:</strong> <span style="color:#E65100; font-weight:bold;">${p.destination}</span></div>
                             <div><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:#FF9800; font-weight:bold;">${p.people_needed}</span></div>
                         </div>
 
-                        <div style="width: 100%; height: 200px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; background: #eee; margin-bottom: 20px;">
+                        <div style="width: 100%; height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-secondary); margin-bottom: 20px;">
                             <iframe width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen src="${mapRouteUrl}"></iframe>
                         </div>
 
-                        <div style="background: #FFF9C4; border: 1px solid #FFE0B2; border-radius: 12px; padding: 15px;">
-                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${isZH ? '詳細說明' : 'Notes'}</div>
-                            <div style="color: #444; line-height: 1.5;">${p.description || (isZH ? '無' : 'None')}</div>
+                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; box-shadow: var(--shadow-sm);">
+                            <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">📝 ${isZH ? '詳細說明' : 'Notes'}</div>
+                            <div style="color: var(--text-primary); line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">${p.description || (isZH ? '無' : 'None')}</div>
                         </div>
                     </div>
                 </div>
