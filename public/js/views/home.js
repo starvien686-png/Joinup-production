@@ -96,17 +96,14 @@ export const renderHome = () => {
                         <p id="location-text" style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #999;" data-i18n="loc.ncnu">${I18n.t('loc.ncnu')}</p>
                     </div>
                     
-                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 220px;">
-                        <div id="header-user-avatar" class="${!user?.profile_pic ? 'skeleton skeleton-circle' : ''}" style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #eee; overflow: hidden; font-size: 1.5rem; border: 2px solid white; box-shadow: var(--shadow-sm);">
-                            ${user?.profile_pic ? `<img src="${user.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">` : '👤'}
-                        </div>
+                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 250px;">
                         <!-- Language Selector Container -->
                         <div id="header-lang-selector"></div>
                         
                         <!-- Theme Toggle Container -->
                         <div id="header-theme-toggle"></div>
                         
-                        <div style="display: flex; gap: 0.8rem;">
+                        <div style="display: flex; align-items: center; gap: 0.8rem;">
                             <!-- Elegant Refresh Button -->
                             <button id="btn-refresh-home" style="background: var(--bg-card); border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: var(--shadow-sm); transition: var(--transition-fast);" title="Refresh">
                                 🔄
@@ -116,6 +113,11 @@ export const renderHome = () => {
                                 🔔
                                 <span class="notification-badge-dot"></span>
                             </button>
+
+                            <!-- Primary User Avatar (Far Right) -->
+                            <div id="header-user-avatar" class="${!user?.profile_pic ? 'skeleton skeleton-circle' : ''}" style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #eee; overflow: hidden; font-size: 1.5rem; border: 2px solid white; box-shadow: var(--shadow-sm); cursor: pointer;" onclick="window.navigateTo('profile')">
+                                ${user?.profile_pic ? `<img src="${user.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">` : '👤'}
+                            </div>
                         </div>
                     </div>
                 </header>
