@@ -568,3 +568,27 @@ h2 {
     height: 60px;
     border-radius: 50% !important;
 }
+
+/* ============================================
+   Global Header UI Fixes (Overlap & Redundancy)
+   ============================================ */
+/* 1. Remove redundant/overlapping avatar marked for removal */
+.avatar, .header-avatar-legacy {
+    display: none !important;
+}
+
+/* 2. Fix Dropdown Overlap (Z-Index) */
+.lang-selector-dropdown {
+    position: relative;
+    z-index: 1001; /* Above other header elements */
+}
+
+/* 3. Polishing Spacing & Alignment */
+header #header-user-avatar {
+    margin-right: 4px;
+}
+
+/* Ensure flex containers in header have consistent gap */
+header div {
+    gap: 0.8rem;
+}

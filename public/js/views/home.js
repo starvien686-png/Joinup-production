@@ -116,9 +116,6 @@ export const renderHome = () => {
                                 🔔
                                 <span class="notification-badge-dot"></span>
                             </button>
-                            <div class="avatar" style="background: var(--primary-light); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; ${user.photoURL ? `background-image: url('${user.photoURL}'); background-size: cover; background-position: center; color: transparent;` : ''}">
-                                ${user.photoURL ? '' : username[0].toUpperCase()}
-                            </div>
                         </div>
                     </div>
                 </header>
