@@ -3,6 +3,7 @@ import { I18n } from '../services/i18n.js';
 import { LanguageSelector } from '../components/LanguageSelector.js';
 import { ThemeToggle } from '../components/ThemeToggle.js';
 import api from '../utils/api.js';
+import { PullToRefresh } from '../utils/PullToRefresh.js';
 
 export const renderHome = () => {
     const app = document.getElementById('app');
@@ -775,5 +776,11 @@ export const renderHome = () => {
             module.checkPendingFeedback(user);
         });
     }, 1000); // 1s delay to let UI load
+
+    // Initialize Pull-to-Refresh (Premium Gesture UX)
+    new PullToRefresh({
+        container: app.querySelector('.container'),
+        onRefresh: () => loadHomeActivities(true)
+    });
 
 };

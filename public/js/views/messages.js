@@ -1,6 +1,7 @@
 import { I18n } from '../services/i18n.js';
 import { formatTime, formatListDate } from '../utils/dateFormatter.js';
 import { openRatingModal } from './rating.js?v=4';
+import { PullToRefresh } from '../utils/PullToRefresh.js';
 
 // No longer using local chatInterval, we use window.activeViewInterval managed in app.js
 
@@ -934,12 +935,17 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     };
 
     loadMessages(true);
-    if (window.activeViewInterval) clearInterval(window.activeViewInterval);
     window.activeViewInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
             loadMessages(false);
         }
     }, 60000); // Poll every 60s to save DB quota
+
+    // Initialize Pull-to-Refresh for Chat
+    new PullToRefresh({
+        container: appElement.querySelector('.chat-container'),
+        onRefresh: () => loadMessages(true)
+    });
 };
 
 // ==========================================
@@ -1207,4 +1213,10 @@ export const renderMessages = (roomId = null, prefill = null) => {
             loadInbox();
         }
     }, 60000); // Poll every 60s to save DB quota
+
+    // Initialize Pull-to-Refresh for Inbox
+    new PullToRefresh({
+        container: app.querySelector('.container'),
+        onRefresh: () => loadInbox()
+    });
 };
