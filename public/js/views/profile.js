@@ -42,7 +42,7 @@ export const renderProfile = () => {
                     
                     <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                         <div style="padding: 0.5rem 1rem; background: #E8F5E9; color: #2E7D32; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                            ✨ ${I18n.t('profile.credit_points')}：<span id="profile-credit-points">${userData.credit_points || 0}</span>
+                            ✨ ${I18n.t('profile.credit_points')}：<span id="profile-credit-points">${userData.creditPoints || 0}</span>
                         </div>
                         <div style="padding: 0.5rem 1rem; background: #FFEBEE; color: #C62828; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
                             🚫 ${I18n.t('profile.violation_count')}：<span id="profile-violation-count">${userData.violationCount || 0}</span>
@@ -106,7 +106,7 @@ export const renderProfile = () => {
         const avatarEl = document.getElementById('profile-avatar-display');
 
         if (nameEl) nameEl.innerText = freshUser.username || freshUser.displayName || '';
-        if (cpEl) cpEl.innerText = freshUser.credit_points || 0;
+        if (cpEl) cpEl.innerText = freshUser.creditPoints || 0;
         if (vcEl) vcEl.innerText = freshUser.violationCount || 0;
         if (avatarEl) {
             if (freshUser.profile_pic) {

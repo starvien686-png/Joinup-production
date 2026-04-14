@@ -285,7 +285,7 @@ export const renderActivities = async () => {
                                 <div style="font-size: 0.85rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                             </div>
                             <div style="background: #E8F5E9; color: #2E7D32; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                                ✨ ${p.credit_points !== undefined ? p.credit_points : 0} pts
+                                ✨ ${p.creditPoints !== undefined ? p.creditPoints : 0} pts
                             </div>
                         </div>
 

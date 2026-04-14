@@ -179,7 +179,10 @@ const checkAuth = async (req, res, next) => {
 // --- GET CURRENT USER PROFILE (GLOBAL HYDRATION) ---
 app.get('/api/v1/users/me', checkAuth, (req, res) => {
     const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    
     res.json({
+        success: true,
         username: user.username,
         email: user.email,
         major: user.major,
@@ -188,7 +191,8 @@ app.get('/api/v1/users/me', checkAuth, (req, res) => {
         bio: user.bio,
         hobby: user.hobby,
         profile_pic: user.profile_pic,
-        credit_points: user.credit_points
+        creditPoints: user.credit_points || 0,
+        violationCount: user.violation_count || 0
     });
 });
 
@@ -277,8 +281,8 @@ app.post('/login', async (req, res) => {
                 bio: user.bio,
                 hobby: user.hobby,
                 profile_pic: user.profile_pic,
-                credit_points: user.credit_points,
-                violation_count: user.violation_count || 0
+                creditPoints: user.credit_points || 0,
+                violationCount: user.violation_count || 0
             }
         });
 
@@ -287,27 +291,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// --- GET CURRENT USER SESSION ---
-app.get('/api/v1/users/me', checkAuth, (req, res) => {
-    // req.user is attached by checkAuth middleware
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    
-    res.json({
-        success: true,
-        user: {
-            username: req.user.username,
-            email: req.user.email,
-            major: req.user.major,
-            study_year: req.user.study_year,
-            role: req.user.role,
-            bio: req.user.bio,
-            hobby: req.user.hobby,
-            profile_pic: req.user.profile_pic,
-            credit_points: req.user.credit_points,
-            violation_count: req.user.violation_count || 0
-        }
-    });
-});
+// --- DELETE DUPLICATE ROUTE (Merged into line 180) ---
 
 app.post('/update-profile', async (req, res) => {
     try {
@@ -471,9 +455,22 @@ async function awardPoints(email, points) {
         const [result] = await sequelize.query('UPDATE users SET credit_points = credit_points + ? WHERE email IN (?)', {
             replacements: [points, emails]
         });
-        console.log(`[Points] Awarded ${points} points to ${email}. Affected rows: ${result.affectedRows}`);
+        console.log(`[Points] Awarded ${points} points to ${email}.`);
     } catch (error) {
         console.log(`[Points] Failed to award ${points} points to ${email}:`, error);
+    }
+}
+
+async function recordViolation(email) {
+    if (!email) return;
+    try {
+        const emails = getEmailVariations(email);
+        await sequelize.query('UPDATE users SET violation_count = violation_count + 1 WHERE email IN (?)', {
+            replacements: [emails]
+        });
+        console.log(`[Violation] Recorded violation for ${email}.`);
+    } catch (error) {
+        console.log(`[Violation] Failed to record violation for ${email}:`, error);
     }
 }
 
@@ -547,9 +544,10 @@ async function handleCancellation(activityId, category) {
 
         if (shouldDeduct) {
             await awardPoints(hostEmail, -2);
-            console.log(`[Points] Deducted 2 points from ${hostEmail} for cancelling/deleting event ${activityId}`);
+            await recordViolation(hostEmail); // Increment violations for bad cancellations
+            console.log(`[Points] Deducted 2 pts & +1 violation for ${hostEmail} (Event: ${activityId})`);
         } else {
-            console.log(`[Points] No deduction for ${hostEmail} (Cancel allowed without penalty).`);
+            console.log(`[Points] No penalty for ${hostEmail} (Cancel within grace period).`);
         }
 
         // 4. Send cancellation notifications to accepted participants
@@ -714,7 +712,7 @@ app.post('/create-activity', async (req, res) => {
 app.get('/activities', async (req, res) => {
     try {
         const query = `
-            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
+            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_count as violationCount
             FROM activities a
             JOIN users u ON a.host_email = u.email
             WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
@@ -878,7 +876,8 @@ app.get('/activity/:id', async (req, res) => {
                    u.profile_pic, 
                    u.bio, 
                    u.hobby,
-                   u.credit_points
+                   u.credit_points as creditPoints,
+                   u.violation_count as violationCount
             FROM activities a
             JOIN users u ON a.host_email = u.email
             WHERE a.id = ?
@@ -972,7 +971,7 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 app.get('/carpools', async (req, res) => {
     try {
         const query = `
-            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
+            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_count as violationCount
             FROM carpools c
             JOIN users u ON c.host_email = u.email
             WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
@@ -1072,7 +1071,7 @@ app.get('/carpool/:id', async (req, res) => {
 app.get('/studies', async (req, res) => {
     try {
         const query = `
-            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
+            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_count as violationCount
             FROM studies s
             JOIN users u ON s.host_email = u.email
             WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
@@ -1184,7 +1183,7 @@ app.get('/study/:id', async (req, res) => {
 app.get('/hangouts', async (req, res) => {
     try {
         const query = `
-            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
+            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_count as violationCount
             FROM hangouts h
             JOIN users u ON h.host_email = u.email
             WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
@@ -1383,7 +1382,7 @@ app.post('/create-housing', async (req, res) => {
 app.get('/housing', async (req, res) => {
     try {
         const query = `
-            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points
+            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_count as violationCount
             FROM housing ho
             JOIN users u ON ho.host_email = u.email
             WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
@@ -1470,8 +1469,8 @@ app.get('/profile/:email', async (req, res) => {
                 bio: user.bio,
                 hobby: user.hobby,
                 profile_pic: user.profile_pic,
-                credit_points: user.credit_points,
-                violation_count: user.violation_count || 0
+                creditPoints: user.credit_points || 0,
+                violationCount: user.violation_count || 0
             });
         } else {
             res.status(404).json({ error: 'User not found!' });
