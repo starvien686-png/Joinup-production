@@ -176,6 +176,22 @@ const checkAuth = async (req, res, next) => {
     }
 };
 
+// --- GET CURRENT USER PROFILE (GLOBAL HYDRATION) ---
+app.get('/api/v1/users/me', checkAuth, (req, res) => {
+    const user = req.user;
+    res.json({
+        username: user.username,
+        email: user.email,
+        major: user.major,
+        study_year: user.study_year,
+        role: user.role,
+        bio: user.bio,
+        hobby: user.hobby,
+        profile_pic: user.profile_pic,
+        credit_points: user.credit_points
+    });
+});
+
 // --- MULTER ERROR HANDLING MIDDLEWARE ---
 const handleMulterError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {

@@ -206,32 +206,48 @@ window.navigateTo = (viewName) => {
 
 };
 
+window.updateGlobalUI = (user) => {
+    if (!user) return;
+
+    // 1. Update Global Header (Home View)
+    const nameEl = document.getElementById('header-user-name');
+    const deptEl = document.getElementById('header-user-dept');
+    const avatarEl = document.getElementById('header-user-avatar');
+
+    if (nameEl) {
+        nameEl.innerText = user.username || user.displayName || '';
+        nameEl.classList.remove('skeleton', 'skeleton-text');
+    }
+    if (deptEl) {
+        const deptDisplay = user.major || user.department || '';
+        deptEl.innerHTML = deptDisplay ? `<span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: normal; margin-left: 0.5rem;">(${deptDisplay})</span>` : '';
+        deptEl.classList.remove('skeleton', 'skeleton-text');
+    }
+    if (avatarEl) {
+        avatarEl.classList.remove('skeleton', 'skeleton-circle');
+        avatarEl.innerHTML = user.profile_pic 
+            ? `<img src="${user.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">`
+            : '👤';
+    }
+
+    // 2. Dispatch event for other views (like Profile) to self-update
+    window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: user }));
+};
+
 window.refreshUserProfile = async () => {
-    const userEmail = localStorage.getItem('userEmail');
-    if (!userEmail) return;
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn) return;
+
     try {
-        const response = await fetch(`/api/v1/profile-user?email=${userEmail}`);
-        if (response.ok) {
-            const data = await response.json();
-            if (data && data.length > 0) {
-                const user = data[0];
-                const updatedProfile = {
-                    username: user.username,
-                    email: user.email,
-                    major: user.major,
-                    study_year: user.study_year,
-                    role: user.role,
-                    bio: user.bio,
-                    hobby: user.hobby,
-                    profile_pic: user.profile_pic,
-                    credit_points: user.credit_points
-                };
-                localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-                window.dispatchEvent(new CustomEvent('userProfileUpdated', { detail: updatedProfile }));
-            }
+        // Use the new secure session-based endpoint
+        const response = await api.fetch('/api/v1/users/me', { idempotency: false });
+        if (response && !response.error) {
+            const user = response;
+            localStorage.setItem('userProfile', JSON.stringify(user));
+            window.updateGlobalUI(user);
         }
     } catch (e) {
-        console.error('Failed to refresh profile:', e);
+        console.error('[Hydration] Failed to refresh profile:', e);
     }
 };
 
@@ -1413,7 +1429,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
 
         render();
-
+        // Trigger Global Hydration after initial render
+        window.refreshUserProfile();
     }
 
 });

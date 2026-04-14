@@ -21,8 +21,9 @@ export const renderHome = () => {
     }
 
     // Use I18n for default name if generic? Or keep simple.
-    const username = user.displayName || '同學';
-    const deptInfo = user.department ? `<span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: normal; margin-left: 0.5rem;">(${user.department})</span>` : '';
+    const username = user?.username || user?.displayName || '';
+    const deptDisplay = user?.department || user?.major || '';
+    const deptInfo = deptDisplay ? `<span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: normal; margin-left: 0.5rem;">(${deptDisplay})</span>` : '';
 
     // --- Dynamic Greeting Logic ---
     const getGreeting = () => {
@@ -86,14 +87,19 @@ export const renderHome = () => {
                 <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <h2 style="margin:0; font-size: 1.2rem; color: var(--text-secondary);" id="greeting-text">${getGreeting()}！</h2>
-                        <h1 style="margin:0; font-size: 1.8rem;">
+                        <h1 id="header-user-name" style="margin:0; font-size: 1.8rem; min-width: 120px;" class="${!username ? 'skeleton skeleton-text' : ''}">
                             ${username} 
-                            ${deptInfo}
                         </h1>
+                        <div id="header-user-dept" style="min-width: 80px;" class="${!username ? 'skeleton skeleton-text' : ''}">
+                            ${deptInfo}
+                        </div>
                         <p id="location-text" style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #999;" data-i18n="loc.ncnu">${I18n.t('loc.ncnu')}</p>
                     </div>
                     
                     <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-end; max-width: 220px;">
+                        <div id="header-user-avatar" class="${!user?.profile_pic ? 'skeleton skeleton-circle' : ''}" style="width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #eee; overflow: hidden; font-size: 1.5rem; border: 2px solid white; box-shadow: var(--shadow-sm);">
+                            ${user?.profile_pic ? `<img src="${user.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">` : '👤'}
+                        </div>
                         <!-- Language Selector Container -->
                         <div id="header-lang-selector"></div>
                         

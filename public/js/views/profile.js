@@ -5,26 +5,24 @@ export const renderProfile = () => {
     const userEmail = localStorage.getItem('userEmail');
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
-    // 1. ROUTE GUARD: Redirect to login if no session
+    // 1. ROUTE GUARD
     if (!userEmail || !isLoggedIn) {
         console.warn('[Profile] No session found, redirecting to login...');
-        window.location.hash = '#login'; // Using hash for SPA navigation if applicable
-        // Or if it's a full page reload app:
-        // window.location.href = 'index.html';
+        window.location.hash = '#login';
         return;
     }
 
-    // 2. PRE-RENDER WITH FALLBACK (LOCAL STORAGE)
+    // 2. INITIAL DATA (LOCAL STORAGE)
     const userProfileStr = localStorage.getItem('userProfile');
-    let user = userProfileStr ? JSON.parse(userProfileStr) : {
-        displayName: '...',
-        email: userEmail,
-        department: '...',
-        credit_points: 0,
-        violation_count: 0
-    };
+    const user = userProfileStr ? JSON.parse(userProfileStr) : null;
 
     const renderContent = (userData) => {
+        if (!userData) {
+            // Skeleton state if somehow localStorage is empty
+            app.innerHTML = `<div class="container fade-in"><div class="card skeleton" style="height: 200px; margin-top: 2rem;"></div></div>`;
+            return;
+        }
+
         const avatarStyle = userData.profile_pic || userData.photoURL
             ? `background-image: url('${userData.profile_pic || userData.photoURL}'); background-size: cover; background-position: center; color: transparent;`
             : `background: #E3F2FD; color: #333;`;
@@ -40,14 +38,14 @@ export const renderProfile = () => {
                         ${(userData.profile_pic || userData.photoURL) ? '' : '👤'}
                     </div>
                     <h2 id="profile-username" style="margin: 0; color: var(--text-main);">${userData.username || userData.displayName || '...'}</h2>
-                    <p style="color: #666; margin: 5px 0 0;">${userData.email}</p>
+                    <p id="profile-email-display" style="color: #666; margin: 5px 0 0;">${userData.email}</p>
                     
                     <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                         <div style="padding: 0.5rem 1rem; background: #E8F5E9; color: #2E7D32; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
                             ✨ ${I18n.t('profile.credit_points')}：<span id="profile-credit-points">${userData.credit_points || 0}</span>
                         </div>
                         <div style="padding: 0.5rem 1rem; background: #FFEBEE; color: #C62828; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                            🚫 ${I18n.t('profile.violation_count')}：<span id="profile-violation-count">${userData.violation_count || 0}</span>
+                            🚫 ${I18n.t('profile.violation_count')}：<span id="profile-violation-count">${userData.violationCount || 0}</span>
                         </div>
                     </div>
                 </div>
@@ -95,47 +93,44 @@ export const renderProfile = () => {
         `;
     };
 
-    // Initial render with cached data
     renderContent(user);
 
-    // 3. FETCH LATEST DATA FROM SERVER
-    fetch('/api/v1/users/me', {
-        headers: {
-            'x-user-email': userEmail
-        }
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Session invalid');
-        return res.json();
-    })
-    .then(data => {
-        if (data.success && data.user) {
-            const freshUser = data.user;
-            // Update UI components directly to avoid full innerHTML flash if possible,
-            // but for simplicity here we re-render or update specific IDs
-            document.getElementById('profile-username').innerText = freshUser.username;
-            document.getElementById('profile-credit-points').innerText = freshUser.credit_points || 0;
-            document.getElementById('profile-violation-count').innerText = freshUser.violation_count || 0;
-            
-            if (freshUser.profile_pic) {
-                const avatar = document.getElementById('profile-avatar-display');
-                avatar.style.backgroundImage = `url('${freshUser.profile_pic}')`;
-                avatar.style.backgroundSize = 'cover';
-                avatar.style.backgroundPosition = 'center';
-                avatar.style.color = 'transparent';
-                avatar.innerText = '';
-            }
+    // 3. LISTEN FOR GLOBAL UPDATES
+    const handleProfileUpdate = (e) => {
+        const freshUser = e.detail;
+        if (!freshUser) return;
+        
+        const nameEl = document.getElementById('profile-username');
+        const cpEl = document.getElementById('profile-credit-points');
+        const vcEl = document.getElementById('profile-violation-count');
+        const avatarEl = document.getElementById('profile-avatar-display');
 
-            // Sync back to localStorage
-            localStorage.setItem('userProfile', JSON.stringify(freshUser));
+        if (nameEl) nameEl.innerText = freshUser.username || freshUser.displayName || '';
+        if (cpEl) cpEl.innerText = freshUser.credit_points || 0;
+        if (vcEl) vcEl.innerText = freshUser.violationCount || 0;
+        if (avatarEl) {
+            if (freshUser.profile_pic) {
+                avatarEl.style.backgroundImage = `url('${freshUser.profile_pic}')`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+                avatarEl.style.color = 'transparent';
+                avatarEl.innerText = '';
+            }
         }
-    })
-    .catch(err => {
-        console.error('[Profile] Error syncing session:', err);
-        // If 401, we might want to logout
-        if (err.message === 'Session invalid') {
-            localStorage.clear();
-            window.location.reload();
-        }
-    });
+    };
+
+    window.addEventListener('userProfileUpdated', handleProfileUpdate);
+    
+    // Cleanup listener when navigating away (simple SPA strategy)
+    const originalNavigate = window.navigateTo;
+    window.navigateTo = function() {
+        window.removeEventListener('userProfileUpdated', handleProfileUpdate);
+        window.navigateTo = originalNavigate; 
+        return originalNavigate.apply(this, arguments);
+    };
+
+    // Trigger a refresh if data is old or missing
+    if (!user || !user.username) {
+        window.refreshUserProfile();
+    }
 };
