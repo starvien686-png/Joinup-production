@@ -2,7 +2,7 @@ import { I18n } from '../services/i18n.js';
 import { formatTime, formatListDate } from '../utils/dateFormatter.js';
 import { openRatingModal } from './rating.js?v=4';
 
-let chatInterval = null;
+// No longer using local chatInterval, we use window.activeViewInterval managed in app.js
 
 const playNotificationSound = () => {
     try {
@@ -96,6 +96,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 8px; position: relative;">
+                    <!-- Elegant Chat Refresh Button -->
+                    <button id="btn-refresh-chat" class="btn-icon" title="Refresh Messages">🔄</button>
+
                     ${isHost && activityStatus !== 'success' ? `
                     <button id="btn-complete-activity" style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         ✅ ${I18n.t('chat.action.complete') || 'Completed'}
@@ -212,8 +215,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     };
 
     const loadMessages = async (isInitial = false) => {
+        if (document.hidden) return; // 🛑 Don't fetch if tab is hidden
         try {
-            // SEMUA FITUR SEKARANG BACA DARI JALUR BARU
             const res = await fetch(`/room-messages/${roomId}`);
             const dbMsgs = await res.json();
 
@@ -453,6 +456,18 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             alert('Koneksi terputus: ' + err.message);
         }
     };
+
+    // Manual Refresh Event for Chat
+    const refreshChatBtn = document.getElementById('btn-refresh-chat');
+    if (refreshChatBtn) {
+        refreshChatBtn.onclick = () => {
+            refreshChatBtn.style.transform = 'rotate(360deg)';
+            refreshChatBtn.style.transition = 'transform 0.5s ease';
+            loadMessages(true).finally(() => {
+                setTimeout(() => { refreshChatBtn.style.transform = 'rotate(0deg)'; refreshChatBtn.style.transition = 'none'; }, 500);
+            });
+        };
+    }
 
     let pressTimer;
     const startPress = (e) => {
@@ -919,14 +934,19 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     };
 
     loadMessages(true);
-    chatInterval = setInterval(() => loadMessages(false), 3000);
+    if (window.activeViewInterval) clearInterval(window.activeViewInterval);
+    window.activeViewInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            loadMessages(false);
+        }
+    }, 60000); // Poll every 60s to save DB quota
 };
 
 // ==========================================
 // --- RENDER HALAMAN INBOX (DAFTAR CHAT) ---
 // ==========================================
 export const renderMessages = (roomId = null, prefill = null) => {
-    if (chatInterval) clearInterval(chatInterval);
+    if (window.activeViewInterval) clearInterval(window.activeViewInterval);
 
     const app = document.getElementById('app');
     const userProfileStr = localStorage.getItem('userProfile');
@@ -1085,6 +1105,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
             <header style="padding: 15px 20px; background: var(--bg-body); display: flex; align-items: center; gap: 15px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border-color);">
                 <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #4285F4; padding: 0; display: flex; align-items: center;">⬅️</button>
                 <h1 style="margin: 0; font-size: 1.5rem; color: #f39c12; font-weight: bold;">${I18n.t('messages.title') || 'Messages'}</h1>
+                <button id="btn-refresh-inbox" style="margin-left: auto; background: none; border: none; font-size: 1.5rem; cursor: pointer; filter: grayscale(1); transition: transform 0.3s;" title="Refresh">🔄</button>
             </header>
             
             <div id="inbox-list" style="flex: 1; overflow-y: auto; padding: 15px 20px; background: var(--bg-body);">
@@ -1102,36 +1123,26 @@ export const renderMessages = (roomId = null, prefill = null) => {
     `;
 
     const loadInbox = async () => {
+        if (document.hidden) return; // 🛑 Skip background fetch
         try {
             const inboxContainer = document.getElementById('inbox-list');
             if (!inboxContainer) return;
 
-            let inboxData = [];
-
-            // SEMUA FITUR SEKARANG TERPUSAT DI SINI
-            try {
-                const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
-                if (myRoomsRes.ok) {
-                    const myRooms = await myRoomsRes.json();
-                    for (let room of myRooms) {
-                        try {
-                            const chatRes = await fetch(`/room-messages/${room.id}`);
-                            if (chatRes.ok) {
-                                const chats = await chatRes.json();
-                                if (Array.isArray(chats) && chats.length > 0) {
-                                    const lastChat = chats[chats.length - 1];
-                                    inboxData.push({
-                                        roomId: room.id, title: room.teamName,
-                                        lastMessage: lastChat.message || '', senderName: lastChat.sender_name,
-                                        timestamp: new Date(lastChat.created_at).getTime(),
-                                        isMyMsg: lastChat.sender_email === user.email
-                                    });
-                                }
-                            }
-                        } catch (err) { }
-                    }
-                }
-            } catch (e) { }
+            // 🚀 OPTIMIZED: Fetching all room metadata + last messages in ONE call!
+            const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
+            if (!myRoomsRes.ok) throw new Error("Failed to load rooms");
+            
+            const inboxDataRaw = await myRoomsRes.json();
+            
+            // Format and sort by timestamp
+            const inboxData = inboxDataRaw.map(r => ({
+                roomId: r.id, 
+                title: r.teamName,
+                lastMessage: r.lastMessage || '', 
+                senderName: r.senderName,
+                timestamp: r.timestamp ? new Date(r.timestamp).getTime() : 0,
+                isMyMsg: r.senderEmail === user.email
+            })).sort((a, b) => b.timestamp - a.timestamp);
 
             inboxData.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -1178,5 +1189,22 @@ export const renderMessages = (roomId = null, prefill = null) => {
     };
 
     loadInbox();
-    chatInterval = setInterval(loadInbox, 5000);
+    
+    // Manual Refresh Event
+    const refreshBtn = document.getElementById('btn-refresh-inbox');
+    if (refreshBtn) {
+        refreshBtn.onclick = () => {
+            refreshBtn.style.transform = 'rotate(360deg)';
+            loadInbox().finally(() => {
+                setTimeout(() => { refreshBtn.style.transform = 'rotate(0deg)'; }, 500);
+            });
+        };
+    }
+
+    if (window.activeViewInterval) clearInterval(window.activeViewInterval);
+    window.activeViewInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            loadInbox();
+        }
+    }, 60000); // Poll every 60s to save DB quota
 };

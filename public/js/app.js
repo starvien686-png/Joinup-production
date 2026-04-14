@@ -42,6 +42,16 @@ OneSignal.push(function() {
 
 
 const app = document.getElementById('app');
+window.activeViewInterval = null; // Global tracker for page-level polling (messages, home, etc.)
+
+// --- Tab Visibility Optimization ---
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        console.log('[System] Tab is hidden. Background polling paused to save quota.');
+    } else {
+        console.log('[System] Tab is visible. Resuming active view pollers.');
+    }
+});
 
 
 
@@ -114,6 +124,12 @@ const render = () => {
 
 
 window.navigateTo = (viewName) => {
+    // 🛑 STOP: Clear any existing page-level intervals before navigating to a new view
+    if (window.activeViewInterval) {
+        clearInterval(window.activeViewInterval);
+        window.activeViewInterval = null;
+        console.log('[System] Cleared active view interval to prevent zombie poller.');
+    }
 
     if (viewName === 'home') {
 
@@ -1489,9 +1505,7 @@ async function syncNotifications() {
                 });
             }
 
-            if (window.currentView === 'home' && window.refreshHome) {
-                window.refreshHome();
-            }
+            // Auto-refresh disabled to save DB quota
         }
     } catch (e) {
         console.warn("[Resilience] Syncing paused:", e);
@@ -1499,19 +1513,23 @@ async function syncNotifications() {
 }
 
 let notificationPollInterval;
-const POLL_RATE = 12000; // 12s polling for active sessions
+const POLL_RATE = 60000; // Increased to 60s to save DB quota (Usage Quota Exhausted fix)
 
 function startGlobalPolling() {
     if (notificationPollInterval) clearInterval(notificationPollInterval);
-    notificationPollInterval = setInterval(syncNotifications, POLL_RATE);
+    notificationPollInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            syncNotifications();
+        }
+    }, POLL_RATE);
 }
 
-// BluePrint Item 1: Client Consistency Rule (Focus Re-fetch)
+// BluePrint Item 1: Client Consistency Rule (Manual/Focus Sync)
 window.addEventListener('focus', () => {
-    console.log("[Resilience] Window Focused: Triggering reconciliation...");
-    syncNotifications();
-    if (window.currentView === 'home' && window.refreshHome) {
-        window.refreshHome();
+    if (document.visibilityState === 'visible') {
+        console.log("[Resilience] Window Focused: Triggering reconciliation...");
+        syncNotifications();
+        // Removed automatic window.refreshHome() to save quota. User must refresh manually.
     }
 });
 
@@ -1521,6 +1539,7 @@ document.addEventListener('visibilitychange', () => {
         startGlobalPolling();
     } else {
         if (notificationPollInterval) clearInterval(notificationPollInterval);
+        console.log('[System] Tab is hidden. Background polling stopped.');
     }
 });
 

@@ -100,6 +100,11 @@ export const renderHome = () => {
                         <div id="header-theme-toggle"></div>
                         
                         <div style="display: flex; gap: 0.8rem;">
+                            <!-- Elegant Refresh Button -->
+                            <button id="btn-refresh-home" style="background: var(--bg-card); border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: var(--shadow-sm); transition: var(--transition-fast);" title="Refresh">
+                                🔄
+                            </button>
+                            
                             <button onclick="window.showAnnouncements()" style="position: relative; background: var(--bg-card); border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: var(--shadow-sm); transition: var(--transition-fast);" title="最新公告">
                                 🔔
                                 <span class="notification-badge-dot"></span>
@@ -265,9 +270,18 @@ export const renderHome = () => {
     initCarousel();
 
     // Fetch live activities from Supabase dynamically (Now from MySQL 🚀)
-    const loadHomeActivities = async () => {
+    let isRefreshing = false;
+    const loadHomeActivities = async (isManual = false) => {
+        if (isRefreshing) return;
+        
+        // Strict Visibility Check: Skip if hidden unless manual
+        if (document.hidden && !isManual) return;
+        
         const scrollContainer = document.getElementById('home-upcoming-scroll');
         if (!scrollContainer) return;
+
+        isRefreshing = true;
+        if (isManual) scrollContainer.innerHTML = '<div style="text-align:center;width:100%;color:#999;padding: 1rem;">Refreshing...</div>';
 
         let posts = [];
         let myStatuses = {};
@@ -372,6 +386,8 @@ export const renderHome = () => {
             window._cachedHomePosts = posts;
         } catch (error) {
             console.error("Gagal load Home:", error);
+        } finally {
+            isRefreshing = false;
         }
 
         if (!Array.isArray(posts)) return;
@@ -736,6 +752,20 @@ export const renderHome = () => {
         };
     }
 
+    // Manual Refresh Event
+    document.getElementById('btn-refresh-home')?.addEventListener('click', function() {
+        const btn = this;
+        btn.style.transform = 'rotate(360deg)';
+        btn.style.transition = 'transform 0.6s ease';
+        
+        loadHomeActivities(true); // Force refresh
+        
+        setTimeout(() => { btn.style.transform = 'rotate(0deg)'; btn.style.transition = 'none'; }, 600);
+    });
+
+    // Handle initial and global refresh hooks
+    window.refreshHome = () => loadHomeActivities(true);
+    
     loadHomeActivities();
 
     // --- Feedback Trigger (Time Check) ---

@@ -1262,12 +1262,20 @@ app.post('/setup-chat-room', async (req, res) => {
     }
 });
 
-// 2. Ambil Daftar Chat Room milik seorang User
+// 2. Ambil Daftar Chat Room milik seorang User (Optimized to prevent N+1 leak)
 app.get('/my-chat-rooms/:email', async (req, res) => {
     try {
         const emails = getEmailVariations(req.params.email);
         const query = `
-            SELECT r.room_id as id, r.post_id, r.room_type as roomType, r.team_name as teamName 
+            SELECT 
+                r.room_id as id, 
+                r.post_id, 
+                r.room_type as roomType, 
+                r.team_name as teamName,
+                (SELECT message FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as lastMessage,
+                (SELECT sender_name FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as senderName,
+                (SELECT sender_email FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as senderEmail,
+                (SELECT created_at FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as timestamp
             FROM chat_rooms r
             JOIN chat_participants p ON r.room_id = p.room_id
             WHERE p.user_email IN (?)
