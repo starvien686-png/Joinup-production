@@ -202,8 +202,10 @@ app.get('/api/v1/users/me', checkAuth, (req, res) => {
         bio: user.bio,
         hobby: user.hobby,
         profile_pic: user.profile_pic,
+        credit_points: user.credit_points || 0,
+        violation_points: user.violation_points || 0,
         creditPoints: user.credit_points || 0,
-        violationCount: user.violation_count || 0
+        violationCount: user.violation_points || 0
     });
 });
 
@@ -292,8 +294,10 @@ app.post('/login', async (req, res) => {
                 bio: user.bio,
                 hobby: user.hobby,
                 profile_pic: user.profile_pic,
+                credit_points: user.credit_points || 0,
+                violation_points: user.violation_points || 0,
                 creditPoints: user.credit_points || 0,
-                violationCount: user.violation_count || 0
+                violationCount: user.violation_points || 0
             }
         });
 

@@ -49,6 +49,10 @@ const User = sequelize.define('user', {
     violation_count: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    violation_points: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     tableName: 'users',
