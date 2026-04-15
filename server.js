@@ -723,12 +723,12 @@ app.post('/create-activity', async (req, res) => {
     }
 });
 
-app.get('/activities', async (req, res) => {
+app.get(['/activities', '/api/v1/activities'], async (req, res) => {
     try {
         const query = `
             SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
-            JOIN users u ON a.host_email = u.email
+            LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
             ORDER BY a.created_at DESC
         `;
@@ -739,9 +739,10 @@ app.get('/activities', async (req, res) => {
     }
 });
 
-app.get('/my-activities/:email', async (req, res) => {
+app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const normalizedParam = (req.params.email || '').toLowerCase().trim();
+        const emails = getEmailVariations(normalizedParam);
         const query = `
             SELECT * FROM activities 
             WHERE host_email IN (?) 
@@ -879,7 +880,7 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-app.get('/activity/:id', async (req, res) => {
+app.get(['/activity/:id', '/api/v1/activity/:id'], async (req, res) => {
     try {
         const activityId = req.params.id;
         const query = `
@@ -893,7 +894,7 @@ app.get('/activity/:id', async (req, res) => {
                    u.credit_points as creditPoints,
                    u.violation_points as violationCount
             FROM activities a
-            JOIN users u ON a.host_email = u.email
+            LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.id = ?
         `;
         const [results] = await sequelize.query(query, { replacements: [activityId] });
@@ -982,12 +983,12 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 // ==========================================
 
 // 1. Mengambil semua data tebengan
-app.get('/carpools', async (req, res) => {
+app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
     try {
         const query = `
             SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM carpools c
-            JOIN users u ON c.host_email = u.email
+            LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
             WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
             ORDER BY c.created_at DESC
         `;
@@ -1089,12 +1090,12 @@ app.get('/carpool/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Study yang masih open (Untuk Halaman Depan)
-app.get('/studies', async (req, res) => {
+app.get(['/studies', '/api/v1/studies'], async (req, res) => {
     try {
         const query = `
             SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM studies s
-            JOIN users u ON s.host_email = u.email
+            LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
             WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
             ORDER BY s.created_at DESC
         `;
@@ -1208,12 +1209,12 @@ app.get('/study/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Hang Out yang masih open (Untuk Halaman List)
-app.get('/hangouts', async (req, res) => {
+app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
     try {
         const query = `
             SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM hangouts h
-            JOIN users u ON h.host_email = u.email
+            LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
             WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
             ORDER BY h.created_at DESC
         `;
@@ -1421,12 +1422,12 @@ app.post('/create-housing', async (req, res) => {
 });
 
 // 2. API GET ALL HOUSING (Untuk List)
-app.get('/housing', async (req, res) => {
+app.get(['/housing', '/api/v1/housing'], async (req, res) => {
     try {
         const query = `
             SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM housing ho
-            JOIN users u ON ho.host_email = u.email
+            LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
             WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
             ORDER BY ho.created_at DESC
         `;

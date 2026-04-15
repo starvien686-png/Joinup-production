@@ -236,11 +236,15 @@ window.updateGlobalUI = (user) => {
 
 window.refreshUserProfile = async () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) return;
+    const userEmail = localStorage.getItem('userEmail');
+    if (!isLoggedIn || !userEmail) return;
 
     try {
-        // Use the new secure session-based endpoint
-        const response = await api.fetch('/api/v1/users/me', { idempotency: false });
+        // Use the new secure session-based endpoint with authentication header
+        const response = await api.fetch('/api/v1/users/me', { 
+            idempotency: false,
+            headers: { 'x-user-email': userEmail }
+        });
         if (response && !response.error) {
             const user = response;
             localStorage.setItem('userProfile', JSON.stringify(user));
