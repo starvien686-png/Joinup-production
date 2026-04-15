@@ -723,10 +723,15 @@ app.post('/create-activity', async (req, res) => {
     }
 });
 
-app.get(['/activities', '/api/v1/activities'], async (req, res) => {
+// 1. Unified Handler for Activities List
+const handleGetActivities = async (req, res) => {
     try {
         const query = `
-            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT 
+                a.id, a.host_email, a.category, a.title, a.sport_type, a.location, 
+                a.people_needed, a.event_time, a.deadline, a.description, a.status, a.created_at,
+                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
+                u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
@@ -735,16 +740,20 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
+        console.error("GET Activities Error:", error);
         res.status(500).json({ error: 'Failed to get activities: ' + error.message });
     }
-});
+};
+app.get('/activities', handleGetActivities);
+app.get('/api/v1/activities', handleGetActivities);
 
-app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, res) => {
+const handleGetMyActivities = async (req, res) => {
     try {
         const normalizedParam = (req.params.email || '').toLowerCase().trim();
         const emails = getEmailVariations(normalizedParam);
         const query = `
-            SELECT * FROM activities 
+            SELECT id, host_email, category, title, sport_type, location, people_needed, event_time, deadline, description, status, created_at
+            FROM activities 
             WHERE host_email IN (?) 
             ORDER BY created_at DESC
         `;
@@ -753,9 +762,12 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         });
         res.json(results);
     } catch (error) {
+        console.error("GET My Activities Error:", error);
         res.status(500).json({ error: 'Failed to get manage activities: ' + error.message });
     }
-});
+};
+app.get('/my-activities/:email', handleGetMyActivities);
+app.get('/api/v1/my-activities/:email', handleGetMyActivities);
 
 app.put('/update-activity-status/:id', async (req, res) => {
     try {
@@ -880,19 +892,13 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-app.get(['/activity/:id', '/api/v1/activity/:id'], async (req, res) => {
+const handleGetActivityDetail = async (req, res) => {
     try {
         const activityId = req.params.id;
         const query = `
-            SELECT a.*, 
-                   u.username as host_name, 
-                   u.major as host_dept, 
-                   u.study_year,
-                   u.profile_pic, 
-                   u.bio, 
-                   u.hobby,
-                   u.credit_points as creditPoints,
-                   u.violation_points as violationCount
+            SELECT a.id, a.host_email, a.category, a.title, a.sport_type, a.location, a.people_needed, a.event_time, a.deadline, a.description, a.status, a.created_at,
+                   u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.bio, u.hobby,
+                   u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.id = ?
@@ -905,9 +911,12 @@ app.get(['/activity/:id', '/api/v1/activity/:id'], async (req, res) => {
             res.status(404).json({ error: 'Event not found!' });
         }
     } catch (error) {
+        console.error("GET Activity Detail Error:", error);
         res.status(500).json({ error: 'Failed to fetch event details: ' + error.message });
     }
-});
+};
+app.get('/activity/:id', handleGetActivityDetail);
+app.get('/api/v1/activity/:id', handleGetActivityDetail);
 
 app.post('/activity/:id/close', async (req, res) => {
     try {
@@ -983,10 +992,14 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 // ==========================================
 
 // 1. Mengambil semua data tebengan
-app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
+const handleGetCarpools = async (req, res) => {
     try {
         const query = `
-            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT 
+                c.id, c.host_email, c.title, c.departure_loc, c.destination_loc, c.departure_time, c.deadline, 
+                c.available_seats, c.price, c.vehicle_type, c.description, c.status, c.created_at,
+                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
+                u.credit_points as creditPoints, u.violation_points as violationCount
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
             WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
@@ -995,10 +1008,12 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("Error fetching carpools:", error);
-        res.status(500).json({ error: "Failed to fetch carpools" });
+        console.error("GET Carpools Error:", error);
+        res.status(500).json({ error: "Failed to fetch carpools: " + error.message });
     }
-});
+};
+app.get('/carpools', handleGetCarpools);
+app.get('/api/v1/carpools', handleGetCarpools);
 
 // 2. Membuat tebengan baru
 app.post('/create-carpool', async (req, res) => {
@@ -1090,10 +1105,14 @@ app.get('/carpool/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Study yang masih open (Untuk Halaman Depan)
-app.get(['/studies', '/api/v1/studies'], async (req, res) => {
+const handleGetStudies = async (req, res) => {
     try {
         const query = `
-            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT 
+                s.id, s.host_email, s.title, s.event_type, s.subject, s.location, s.people_needed, 
+                s.event_time, s.deadline, s.description, s.status, s.created_at,
+                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
+                u.credit_points as creditPoints, u.violation_points as violationCount
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
             WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
@@ -1102,10 +1121,12 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("Error fetching studies:", error);
-        res.status(500).json({ error: "Failed to fetch studies" });
+        console.error("GET Studies Error:", error);
+        res.status(500).json({ error: "Failed to fetch studies: " + error.message });
     }
-});
+};
+app.get('/studies', handleGetStudies);
+app.get('/api/v1/studies', handleGetStudies);
 
 // 2. Membuat event Study baru (Dari form kuning)
 app.post('/create-study', async (req, res) => {
@@ -1209,10 +1230,14 @@ app.get('/study/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Hang Out yang masih open (Untuk Halaman List)
-app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
+const handleGetHangouts = async (req, res) => {
     try {
         const query = `
-            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT 
+                h.id, h.host_email, h.title, h.category, h.people_needed, h.event_time, h.deadline, 
+                h.meeting_location, h.destination, h.description, h.status, h.created_at,
+                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
+                u.credit_points as creditPoints, u.violation_points as violationCount
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
             WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
@@ -1221,10 +1246,12 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("Error fetching hangouts:", error);
-        res.status(500).json({ error: "Failed to fetch hangouts" });
+        console.error("GET Hangouts Error:", error);
+        res.status(500).json({ error: "Failed to fetch hangouts: " + error.message });
     }
-});
+};
+app.get('/hangouts', handleGetHangouts);
+app.get('/api/v1/hangouts', handleGetHangouts);
 
 // 2. Membuat event Hang Out baru (Dari Form)
 app.post('/create-hangout', async (req, res) => {
@@ -1422,10 +1449,15 @@ app.post('/create-housing', async (req, res) => {
 });
 
 // 2. API GET ALL HOUSING (Untuk List)
-app.get(['/housing', '/api/v1/housing'], async (req, res) => {
+const handleGetHousing = async (req, res) => {
     try {
         const query = `
-            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT 
+                ho.id, ho.host_email, ho.housing_type, ho.title, ho.location, ho.room_number, ho.rent_amount, ho.deposit, 
+                ho.people_needed, ho.gender_req, ho.schedule_tags, ho.deadline, ho.rental_period, ho.facilities, 
+                ho.habits, ho.description, ho.status, ho.created_at,
+                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
+                u.credit_points as creditPoints, u.violation_points as violationCount
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
             WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
@@ -1434,9 +1466,12 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("GET Housing Error:", error);
+        res.status(500).json({ error: "Failed to fetch housing: " + error.message });
     }
-});
+};
+app.get('/housing', handleGetHousing);
+app.get('/api/v1/housing', handleGetHousing);
 
 // 3. API GET MY HOUSING (Untuk Manage)
 app.get('/my-housing/:email', async (req, res) => {
