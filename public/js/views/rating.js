@@ -145,9 +145,13 @@ export const openRatingModal = (post, onSubmitted) => {
         try {
             const response = await fetch('/submit-feedback', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-user-email': user.email || '' // Protocol: Authentication Header
+                },
                 body: JSON.stringify(feedbackData)
             });
+
 
             if (response.ok) {
                 alert('🎉 ' + (I18n.t('common.feedback_thanks') || 'Thanks for your feedback!'));
@@ -158,7 +162,8 @@ export const openRatingModal = (post, onSubmitted) => {
                 alert('Database Error: ' + (errData.error || 'Server menolak data.'));
                 btn.innerText = "Submit"; btn.disabled = false;
             }
-        } catch (error) {
+        } catch (err) {
+            console.error('[API] CRITICAL ERROR in /submit-feedback:', err);
             alert('Connection failed!');
             btn.innerText = "Submit"; btn.disabled = false;
         }

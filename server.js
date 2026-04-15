@@ -1590,8 +1590,10 @@ app.post('/submit-feedback', checkAuth, async (req, res) => {
         console.log(`[Points] Awarded +1 Credit Point to ${user_email} for Feedback on "${event_title}"`);
         res.json({ success: true, message: 'Feedback submitted and 1 Credit Point awarded!' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[API] CRITICAL ERROR in /submit-feedback:', err);
+        res.status(500).json({ error: 'Failed to record feedback. Please check console logs.' });
     }
+
 });
 
 
