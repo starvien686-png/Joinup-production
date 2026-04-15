@@ -4,6 +4,8 @@ const sequelize = require('../database');
 const crypto = require('crypto');
 const winston = require('winston');
 const pushService = require('./push_service');
+const { awardViolationPoint } = require('./points_service');
+
 
 const logger = winston.createLogger({
     level: 'info',
@@ -265,15 +267,41 @@ router.post('/join/cancel', async (req, res) => {
         if (parts.length === 0) throw { status: 404, message: 'No request exists' };
 
         if (parts[0].status === 'approved') {
+            // --- DROPPING FROM APPROVED EVENT ---
+            const approvalTime = parts[0].updated_at;
+            const now = new Date();
+            const minsSinceApproval = (now - new Date(approvalTime)) / 60000;
+
+            if (minsSinceApproval > 10) {
+                // PENALTY: Award Violation Points for dropping late
+                await awardViolationPoint(user_email, 2, `Dropped from event ${event_type}:${event_id} outside 10m grace period.`);
+                console.log(`[Points] Participant ${user_email} dropped LATE. Penalty applied.`);
+            } else {
+                console.log(`[Points] Participant ${user_email} dropped within grace period. No penalty.`);
+            }
+
+            await sequelize.query(
+                "UPDATE event_participants SET status = 'cancelled', version = version + 1, updated_at = NOW() WHERE id = ?",
+                { replacements: [parts[0].id], transaction: t }
+            );
+
+            await sequelize.query(
+                `INSERT INTO audit_logs (id, actor_id, event_id, action, previous_state, new_state, request_id, timestamp) 
+                 VALUES (UUID(), ?, ?, 'JOIN_DROP', 'approved', 'cancelled', ?, NOW())`,
+                { replacements: [user_id, event_id, req.requestId], transaction: t }
+            );
+
             await t.commit();
-            return res.status(200).json({ success: true, message: 'Already approved', data: { status: 'approved' } });
+            return res.status(200).json({ success: true, message: 'Dropped from event', data: { status: 'cancelled' } });
         }
-        if (parts[0].status !== 'pending') throw { status: 400, message: 'Can only cancel pending requests' };
+        
+        if (parts[0].status !== 'pending') throw { status: 400, message: 'Can only cancel pending or approved requests' };
 
         await sequelize.query(
             "UPDATE event_participants SET status = 'cancelled', version = version + 1, updated_at = NOW() WHERE id = ?",
             { replacements: [parts[0].id], transaction: t }
         );
+
 
         await sequelize.query(
             `INSERT INTO audit_logs (id, actor_id, event_id, action, previous_state, new_state, request_id, timestamp) 

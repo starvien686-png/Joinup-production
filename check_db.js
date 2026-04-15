@@ -1,16 +1,18 @@
 const sequelize = require('./database');
-const fs = require('fs');
 
 async function check() {
     try {
-        const [schema] = await sequelize.query("DESCRIBE chat_messages");
-        const [msgs] = await sequelize.query("SELECT * FROM chat_messages ORDER BY created_at DESC LIMIT 5");
+        console.log('--- Checking Database Tables ---');
         
-        fs.writeFileSync('db_result.json', JSON.stringify({ schema, msgs }, null, 2));
-        console.log("Written to db_result.json");
+        const [usersCols] = await sequelize.query("SHOW COLUMNS FROM users");
+        console.log('Users table columns:', usersCols.map(c => c.Field).join(', '));
+
+        const [logCols] = await sequelize.query("SHOW COLUMNS FROM violation_logs");
+        console.log('Violation_logs table columns:', logCols.map(c => c.Field).join(', '));
+
         process.exit(0);
-    } catch (err) {
-        fs.writeFileSync('db_result.json', JSON.stringify({ error: err.message }, null, 2));
+    } catch (error) {
+        console.error('Check failed:', error);
         process.exit(1);
     }
 }
