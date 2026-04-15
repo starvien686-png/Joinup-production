@@ -65,7 +65,7 @@ export const Translations = {
         'common.open_map': 'Open Google Maps',
         'common.confirm_join': 'Confirm Join',
         'common.err.quota': '', // Unlimited mode: Warning disabled
-        'common.safety_notice': 'ⓘ JoinUp! is created by NCNU students, for the NCNU community. While we facilitate connections, all activities are the sole responsibility of the participants. For your safety, we recommend meeting in public campus locations. Stay safe and enjoy your connections!',
+        'common.safety_notice': 'ⓘ JoinUp! is created by NCNU students, for the NCNU community. While we facilitate connections, all activities are the sole responsibility of the participants. We do not participate in any financial transactions. For your safety, we recommend meeting in public campus locations. Stay safe and enjoy your connections!',
         'common.system': 'System',
         'common.search': 'Search',
         'common.financial_disclaimer': 'This platform is not responsible for any financial issues',
