@@ -81,6 +81,27 @@ function nowTaipei() {
     return dayjs().tz(APP_TIMEZONE);
 }
 
+/**
+ * Standardized helper to validate required fields in request body.
+ * Returns true if all fields are present, otherwise sends 400 response and returns false.
+ */
+function validateRequiredFields(req, res, requiredFields) {
+    const missingFields = requiredFields.filter(field => {
+        const val = req.body[field];
+        return val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+    });
+
+    if (missingFields.length > 0) {
+        logger.warn(`[Validation] Missing required fields in ${req.path}: ${missingFields.join(', ')}`);
+        res.status(400).json({ 
+            error: "Missing required fields", 
+            fields: missingFields 
+        });
+        return false;
+    }
+    return true;
+}
+
 // Force IPv4 first for environments like Render that don't support outbound IPv6
 dns.setDefaultResultOrder('ipv4first');
 
@@ -828,11 +849,20 @@ app.get('/api/v1/admin/chat/:roomId', async (req, res) => {
 
 
 app.post('/create-activity', async (req, res) => {
+    const required = ['host_email', 'category', 'title', 'sport_type', 'people_needed', 'event_time', 'deadline', 'location'];
+    if (!validateRequiredFields(req, res, required)) return;
+
     try {
         const {
             host_email, category, title, sport_type,
-            people_needed, event_time, deadline, location, description
+            people_needed, event_time, deadline, location, description,
+            host_name, host_dept
         } = req.body;
+
+        // Protocols: Zero 500 Error + Snapshot metadata
+        // Note: host_name/host_dept might be missing in older sports.js, so we provide defaults if frontend hasn't updated yet.
+        const finalHostName = host_name || "Host";
+        const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
 
         const query = `
             INSERT INTO activities 
@@ -841,7 +871,11 @@ app.post('/create-activity', async (req, res) => {
         `;
 
         const [result] = await sequelize.query(query, {
-            replacements: [host_email, category, title, sport_type, people_needed, toTaipei(event_time), toTaipei(deadline), location, description]
+            replacements: [
+                host_email, category, title, sport_type, 
+                people_needed, toTaipei(event_time), toTaipei(deadline), 
+                location, description || ''
+            ]
         });
 
         const insertId = result.insertId || result;
@@ -851,17 +885,27 @@ app.post('/create-activity', async (req, res) => {
         try {
             await awardCreditPoint(normalizedEmail, 1);
         } catch (pointErr) {
-            console.error("[Points] Failed to award credit point:", pointErr);
+            logger.error("[Points] Failed to award credit point:", pointErr);
         }
 
-        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
-        // await notifySubscribers('sports', title, insertId, 'sports', normalizedEmail);
+        // 🔔 Global Broadcast Notification
+        try {
+            const pushTitle = `🏀 New Sport Event: ${title}`;
+            const pushBody = `Pesan baru dari ${finalHostName}: Ayo join ${title}! / New activity created by ${finalHostName}.`;
+            await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#sports?id=${insertId}`);
+        } catch (pushErr) {
+            logger.error("[OneSignal] Broadcast failed:", pushErr);
+        }
 
-        res.status(201).json({ message: 'Yeay! Post created successfully! 🏀', id: insertId });
+        res.status(201).json({ 
+            success: true,
+            message: 'Yeay! Post created successfully! 🏀', 
+            id: insertId 
+        });
 
     } catch (error) {
-        console.error("Failed to create post:", error);
-        res.status(500).json({ error: 'Failed to create post: ' + error.message });
+        logger.error("[CreateActivity] Critical Error:", error);
+        res.status(500).json({ error: 'Database Error: ' + error.message });
     }
 });
 
@@ -1144,12 +1188,18 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
 
 // 2. Membuat tebengan baru
 app.post('/create-carpool', async (req, res) => {
+    const required = ['host_email', 'title', 'departure_loc', 'destination_loc', 'departure_time', 'deadline', 'available_seats', 'price', 'vehicle_type'];
+    if (!validateRequiredFields(req, res, required)) return;
+
     try {
         const {
             host_email, host_name, host_dept, title,
             departure_loc, destination_loc, departure_time, deadline,
             available_seats, price, vehicle_type, description
         } = req.body;
+
+        const finalHostName = host_name || "Host";
+        const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
 
         const query = `
             INSERT INTO carpools 
@@ -1159,9 +1209,9 @@ app.post('/create-carpool', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, host_name, host_dept, title,
-                departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline),
-                available_seats, price, vehicle_type, description
+                host_email, finalHostName, finalHostDept, title, 
+                departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline), 
+                available_seats, price, vehicle_type, description || ''
             ]
         });
 
@@ -1172,16 +1222,27 @@ app.post('/create-carpool', async (req, res) => {
         try {
             await awardCreditPoint(normalizedEmail, 1);
         } catch (pointErr) {
-            console.error("[Points] Failed to award credit point:", pointErr);
+            logger.error("[Points] Failed to award credit point:", pointErr);
         }
 
-        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
-        // await notifySubscribers('carpool', title, insertId, 'carpool', normalizedEmail);
+        // 🔔 Global Broadcast Notification
+        try {
+            const pushTitle = `🚗 New Carpool: ${departure_loc} ➔ ${destination_loc}`;
+            const pushBody = `Pesan baru dari ${finalHostName}: Ayo tebeng ke ${destination_loc}! / New ride offered by ${finalHostName}.`;
+            await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#carpool?id=${insertId}`);
+        } catch (pushErr) {
+            logger.error("[OneSignal] Broadcast failed:", pushErr);
+        }
 
-        res.status(201).json({ message: "Carpool created successfully!", id: insertId });
+        res.status(201).json({ 
+            success: true,
+            message: 'Yeay! Carpool created successfully! 🚗', 
+            id: insertId 
+        });
+
     } catch (error) {
-        console.error("Error creating carpool:", error);
-        res.status(500).json({ error: "Failed to create carpool: " + error.message });
+        logger.error("[CreateCarpool] Critical Error:", error);
+        res.status(500).json({ error: 'Database Error: ' + error.message });
     }
 });
 
@@ -1251,12 +1312,18 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
 
 // 2. Membuat event Study baru (Dari form kuning)
 app.post('/create-study', async (req, res) => {
+    const required = ['host_email', 'title', 'event_type', 'subject', 'location', 'people_needed', 'event_time', 'deadline'];
+    if (!validateRequiredFields(req, res, required)) return;
+
     try {
         const {
             host_email, host_name, host_dept,
             title, event_type, subject, location,
             people_needed, event_time, deadline, description
         } = req.body;
+
+        const finalHostName = host_name || "Host";
+        const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
 
         const query = `
             INSERT INTO studies 
@@ -1266,9 +1333,9 @@ app.post('/create-study', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, host_name, host_dept,
-                title, event_type, subject, location,
-                people_needed, toTaipei(event_time), toTaipei(deadline), description
+                host_email, finalHostName, finalHostDept, 
+                title, event_type, subject, location, 
+                people_needed, toTaipei(event_time), toTaipei(deadline), description || ''
             ]
         });
 
@@ -1279,16 +1346,27 @@ app.post('/create-study', async (req, res) => {
         try {
             await awardCreditPoint(normalizedEmail, 1);
         } catch (pointErr) {
-            console.error("[Points] Failed to award credit point:", pointErr);
+            logger.error("[Points] Failed to award credit point:", pointErr);
         }
 
-        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
-        // await notifySubscribers('study', title, insertId, 'study', normalizedEmail);
+        // 🔔 Global Broadcast Notification
+        try {
+            const pushTitle = `📚 New Study Group: ${title}`;
+            const pushBody = `Pesan baru dari ${finalHostName}: Ayo belajar bareng ${subject}! / New study event created by ${finalHostName}.`;
+            await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#study?id=${insertId}`);
+        } catch (pushErr) {
+            logger.error("[OneSignal] Broadcast failed:", pushErr);
+        }
 
-        res.status(201).json({ message: "Study event created successfully!", id: insertId });
+        res.status(201).json({ 
+            success: true,
+            message: 'Yeay! Study session created successfully! 📚', 
+            id: insertId 
+        });
+
     } catch (error) {
-        console.error("Error creating study:", error);
-        res.status(500).json({ error: "Failed to create study: " + error.message });
+        logger.error("[CreateStudy] Critical Error:", error);
+        res.status(500).json({ error: 'Database Error: ' + error.message });
     }
 });
 
@@ -1370,12 +1448,18 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
 
 // 2. Membuat event Hang Out baru (Dari Form)
 app.post('/create-hangout', async (req, res) => {
+    const required = ['host_email', 'title', 'category', 'people_needed', 'event_time', 'deadline', 'meeting_location', 'destination'];
+    if (!validateRequiredFields(req, res, required)) return;
+
     try {
         const {
             host_email, title, category, host_name, host_dept,
             people_needed, event_time, deadline,
             meeting_location, destination, description
         } = req.body;
+
+        const finalHostName = host_name || "Host";
+        const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
 
         const query = `
             INSERT INTO hangouts 
@@ -1385,9 +1469,9 @@ app.post('/create-hangout', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, title, category, host_name, host_dept,
-                people_needed, toTaipei(event_time), toTaipei(deadline),
-                meeting_location, destination, description
+                host_email, title, category, finalHostName, finalHostDept, 
+                people_needed, toTaipei(event_time), toTaipei(deadline), 
+                meeting_location, destination, description || ''
             ]
         });
 
@@ -1398,16 +1482,26 @@ app.post('/create-hangout', async (req, res) => {
         try {
             await awardCreditPoint(normalizedEmail, 1);
         } catch (pointErr) {
-            console.error("[Points] Failed to award credit point:", pointErr);
+            logger.error("[Points] Failed to award credit point:", pointErr);
         }
 
-        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
-        // await notifySubscribers('hangout', title, insertId, 'hangout', normalizedEmail);
+        // 🔔 Global Broadcast Notification
+        try {
+            const pushTitle = `🎉 New Hangout: ${title}`;
+            const pushBody = `Pesan baru dari ${finalHostName}: Ayo jalan-jalan ke ${destination}! / New hangout created by ${finalHostName}.`;
+            await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#travel?id=${insertId}`);
+        } catch (pushErr) {
+            logger.error("[OneSignal] Broadcast failed:", pushErr);
+        }
 
-        res.status(201).json({ message: "Hangout event created successfully!", id: insertId });
+        res.status(201).json({ 
+            success: true,
+            message: "Hangout event created successfully! 🎉", 
+            id: insertId 
+        });
     } catch (error) {
-        console.error("Error creating hangout:", error);
-        res.status(500).json({ error: "Failed to create hangout: " + error.message });
+        logger.error("[CreateHangout] Critical Error:", error);
+        res.status(500).json({ error: "Database Error: " + error.message });
     }
 });
 
@@ -1530,8 +1624,18 @@ app.post('/send-message', async (req, res) => {
 
 // 1. API CREATE HOUSING
 app.post('/create-housing', async (req, res) => {
+    const required = ['host_email', 'housing_type', 'title', 'location', 'people_needed', 'gender_req', 'deadline', 'rental_period'];
+    if (!validateRequiredFields(req, res, required)) return;
+
     try {
-        const { host_email, host_name, host_dept, housing_type, title, location, room_number, rent_amount, deposit, people_needed, gender_req, schedule_tags, deadline, rental_period, facilities, habits, description } = req.body;
+        const { 
+            host_email, host_name, host_dept, housing_type, title, location, 
+            room_number, rent_amount, deposit, people_needed, gender_req, 
+            schedule_tags, deadline, rental_period, facilities, habits, description 
+        } = req.body;
+
+        const finalHostName = host_name || "Host";
+        const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
 
         const query = `
             INSERT INTO housing 
@@ -1540,7 +1644,12 @@ app.post('/create-housing', async (req, res) => {
         `;
 
         const [result] = await sequelize.query(query, {
-            replacements: [host_email, host_name, host_dept, housing_type, title, location, room_number || null, rent_amount || null, deposit || null, people_needed, gender_req, schedule_tags || '', toTaipei(deadline), rental_period, facilities || '', habits || '', description || '']
+            replacements: [
+                host_email, finalHostName, finalHostDept, housing_type, title, location, 
+                room_number || null, rent_amount || null, deposit || null, 
+                people_needed, gender_req, schedule_tags || '', toTaipei(deadline), 
+                rental_period, facilities || '', habits || '', description || ''
+            ]
         });
 
         const insertId = result.insertId || result;
@@ -1550,16 +1659,26 @@ app.post('/create-housing', async (req, res) => {
         try {
             await awardCreditPoint(normalizedEmail, 1);
         } catch (pointErr) {
-            console.error("[Points] Failed to award credit point:", pointErr);
+            logger.error("[Points] Failed to award credit point:", pointErr);
         }
 
-        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
-        // await notifySubscribers('housing', title, insertId, 'housing', normalizedEmail);
+        // 🔔 Global Broadcast Notification
+        try {
+            const pushTitle = `🏠 Housing / Group Buy: ${title}`;
+            const pushBody = `Pesan baru dari ${finalHostName}: Mencari teman seruangan / teman beli ${title}! / New housing post by ${finalHostName}.`;
+            await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#groupbuy?id=${insertId}`);
+        } catch (pushErr) {
+            logger.error("[OneSignal] Broadcast failed:", pushErr);
+        }
 
-        res.status(201).json({ success: true, id: insertId });
+        res.status(201).json({ 
+            success: true,
+            message: "Housing event created successfully! 🏠", 
+            id: insertId 
+        });
     } catch (error) {
-        console.error("Failed to create housing:", error);
-        res.status(500).json({ error: 'Failed to create housing: ' + error.message });
+        logger.error("[CreateHousing] Critical Error:", error);
+        res.status(500).json({ error: "Database Error: " + error.message });
     }
 });
 

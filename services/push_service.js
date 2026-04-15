@@ -66,7 +66,56 @@ const sendPushNotification = async (emails, title, message, url) => {
     });
 };
 
+/**
+ * Sends a broadcast push notification to ALL users via OneSignal segments.
+ */
+const broadcastPushNotification = async (title, message, url) => {
+    if (!ONESIGNAL_REST_API_KEY) {
+        console.warn("[OneSignal] Skip broadcast: REST_API_KEY is missing.");
+        return;
+    }
+
+    const data = JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ["Total Subscriptions"],
+        contents: { en: message, zh: message },
+        headings: { en: title, zh: title },
+        url: url || "https://joinup-production.onrender.com/"
+    });
+
+    const options = {
+        hostname: 'onesignal.com',
+        port: 443,
+        path: '/api/v1/notifications',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
+        }
+    };
+
+    return new Promise((resolve) => {
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (d) => body += d);
+            res.on('end', () => {
+                console.log(`[OneSignal] Broadcast sent. Response: ${body}`);
+                resolve();
+            });
+        });
+
+        req.on('error', (e) => {
+            console.error(`[OneSignal] Broadcast request error: ${e.message}`);
+            resolve();
+        });
+
+        req.write(data);
+        req.end();
+    });
+};
+
 module.exports = {
     normalizeEmailForOneSignal,
-    sendPushNotification
+    sendPushNotification,
+    broadcastPushNotification
 };

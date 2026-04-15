@@ -692,7 +692,7 @@ export const renderCarpool = () => {
                     body: JSON.stringify({
                         host_email: user.email || 'unknown@email.com',
                         host_name: user.displayName || user.name || 'Host',
-                        host_dept: user.department || user.major || 'Student',
+                        host_dept: user.department || user.major || 'N/A',
                         title: document.getElementById('cpTitle').value || 'Carpool Trip',
                         departure_loc: finalDepart,
                         destination_loc: document.getElementById('cpDest').value,
@@ -713,10 +713,11 @@ export const renderCarpool = () => {
                     currentState = 'manage';
                     updateView();
                 } else {
-                    alert(t('cp.alert.err1', "資料庫錯誤：", "Database error: ") + (result.error || "Unknown"));
+                    const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
+                    alert("⚠️ " + t('cp.alert.err1', "資料庫錯誤：", "Database error: ") + (errorMsg || "Unknown"));
                 }
             } catch (err) {
-                alert(t('cp.alert.err2', "連線失敗！請檢查伺服器是否運行。", "Connection failed! Make sure the server is running."));
+                alert("❌ " + t('cp.alert.err2', "連線失敗！請檢查伺服器是否運行。", "Connection failed!") + ": " + err.message);
             }
             finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
         });

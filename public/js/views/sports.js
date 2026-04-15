@@ -786,6 +786,8 @@ export const renderSports = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         host_email: userProfile.email,
+                        host_name: userProfile.displayName || userProfile.name || 'User',
+                        host_dept: userProfile.department || userProfile.major || 'N/A',
                         category: CATEGORY_ID,
                         title: document.getElementById('teamName').value,
                         sport_type: sportType,
@@ -806,11 +808,12 @@ export const renderSports = () => {
                     currentState = 'manage';
                     updateView();
                 } else {
-                    alert("Failed to save to database: " + result.error);
+                    const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
+                    alert("⚠️ " + (I18n.t('common.error') || "Error") + ": " + (errorMsg || "Unknown error"));
                 }
 
             } catch (error) {
-                alert("Connection error: " + error.message);
+                alert("❌ " + (I18n.t('common.error') || "Connection Error") + ": " + error.message);
             } finally {
                 btnSubmit.innerText = originalText;
                 btnSubmit.disabled = false;

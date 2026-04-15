@@ -1795,8 +1795,8 @@ export const renderGroupBuy = () => {
 
                 const postData = {
                     host_email: user.email,
-                    host_name: authorNameInput ? authorNameInput.value : user.username,
-                    host_dept: authorDeptInput ? authorDeptInput.value : (user.major || ''),
+                    host_name: authorNameInput ? authorNameInput.value : (user.username || user.displayName || user.name || 'User'),
+                    host_dept: authorDeptInput ? authorDeptInput.value : (user.major || user.department || 'N/A'),
                     housing_type: postType,
                     title: title,
                     location: addressInput ? addressInput.value : '',
@@ -1824,6 +1824,9 @@ export const renderGroupBuy = () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(postData)
                     });
+                    
+                    const result = await response.json();
+
                     if (response.ok) {
                         if (window.refreshUserProfile) await window.refreshUserProfile();
                         alert(I18n.t('housing.alert.post_created') || 'Post created successfully!');
@@ -1831,12 +1834,11 @@ export const renderGroupBuy = () => {
                         updateView();
                         bindListeners();
                     } else {
-                        const err = await response.json();
-                        alert('Error: ' + (err.error || 'Failed to save to database.'));
+                        const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
+                        alert("⚠️ Error: " + (errorMsg || "Unknown"));
                     }
-                } catch (e) {
-                    console.error('Failed to create housing:', e);
-                    alert('Failed to connect to server.');
+                } catch (err) {
+                    alert("❌ Connection failed: " + err.message);
                 } finally {
                     btnSubmit.innerText = originalText;
                     btnSubmit.disabled = false;

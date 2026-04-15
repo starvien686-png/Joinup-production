@@ -637,6 +637,7 @@ export const renderTravel = () => {
 
             const isZH = isAppZH();
             try {
+                const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
                 const rawTime = document.getElementById('hoTime').value;
                 const formattedTime = rawTime ? rawTime.replace('T', ' ') + ':00' : null;
 
@@ -650,11 +651,11 @@ export const renderTravel = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        host_email: user.email,
+                        host_email: userProfile.email || user.email,
                         title: document.getElementById('hoTitle').value,
                         category: document.getElementById('hoCategory').value,
-                        host_name: document.getElementById('hoName').value,
-                        host_dept: document.getElementById('hoDept').value,
+                        host_name: userProfile.displayName || userProfile.name || document.getElementById('hoName')?.value || 'User',
+                        host_dept: userProfile.department || userProfile.major || document.getElementById('hoDept')?.value || 'N/A',
                         people_needed: parseInt(document.getElementById('hoPeople').value),
                         event_time: formattedTime,
                         deadline: formattedDeadline,
@@ -664,13 +665,20 @@ export const renderTravel = () => {
                     })
                 });
 
+                const result = await response.json();
+
                 if (response.ok) {
                     if (window.refreshUserProfile) await window.refreshUserProfile();
                     alert(isZH ? "發佈成功！ 🎉" : "Success! 🎉");
                     currentState = 'manage';
                     updateView();
-                } else { alert("Database Error."); }
-            } catch (err) { alert("Connection failed."); }
+                } else { 
+                    const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
+                    alert("⚠️ " + (isZH ? "資料庫錯誤：" : "Database Error: ") + (errorMsg || "Unknown"));
+                }
+            } catch (err) { 
+                alert("❌ " + (isZH ? "連線失敗！" : "Connection failed!") + ": " + err.message); 
+            }
             finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
         });
     };

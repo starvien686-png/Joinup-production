@@ -567,8 +567,8 @@ export const renderStudy = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         host_email: user.email,
-                        host_name: user.displayName || user.name,
-                        host_dept: user.department || user.major || 'Student',
+                        host_name: user.displayName || user.name || 'User',
+                        host_dept: user.department || user.major || 'N/A',
                         title: document.getElementById('stTitle').value,
                         event_type: document.getElementById('stType').value,
                         subject: document.getElementById('stSubject').value,
@@ -580,13 +580,20 @@ export const renderStudy = () => {
                     })
                 });
 
+                const result = await response.json();
+
                 if (response.ok) {
                     if (window.refreshUserProfile) await window.refreshUserProfile();
                     alert(isZH ? "發佈成功！ 🎉" : "Success! 🎉");
                     currentState = 'manage';
                     updateView();
-                } else { alert("Database Error."); }
-            } catch (err) { alert("Connection failed."); }
+                } else { 
+                    const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
+                    alert("⚠️ " + (isZH ? "資料庫錯誤：" : "Database Error: ") + (errorMsg || "Unknown"));
+                }
+            } catch (err) { 
+                alert("❌ " + (isZH ? "連線失敗！" : "Connection failed!") + ": " + err.message); 
+            }
             finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
         });
     };
