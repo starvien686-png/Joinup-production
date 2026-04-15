@@ -442,7 +442,8 @@ window.viewReportDetails = (reportId) => {
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
                 <div style="background: #fdfdfd; padding: 1.5rem; border-radius: 8px; border: 1px solid #eee;">
-                    <h4 style="margin-top: 0; border-bottom: 2px solid #D32F2F; padding-bottom: 8px; color: #555;">👤 ${I18n.t('profile.violation_count')}</h4>
+                    <h4 style="margin-top: 0; border-bottom: 2px solid #D32F2F; padding-bottom: 8px; color: #555;">👤 ${I18n.t('profile.violation_points')}</h4>
+
                     <div style="margin-top: 15px; line-height: 1.6;">
                         <div style="margin-bottom: 5px;"><strong>${I18n.t('admin.email_label')}:</strong> ${report.targetId}</div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">

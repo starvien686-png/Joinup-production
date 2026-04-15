@@ -46,10 +46,7 @@ const User = sequelize.define('user', {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     },
-    violation_count: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
-    },
+
     violation_points: {
         type: DataTypes.INTEGER,
         defaultValue: 0

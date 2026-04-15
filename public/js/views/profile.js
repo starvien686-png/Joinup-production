@@ -45,8 +45,9 @@ export const renderProfile = () => {
                             ✨ ${I18n.t('profile.credit_points')}：<span id="profile-credit-points">${userData.credit_points || 0}</span>
                         </div>
                         <div style="padding: 0.5rem 1rem; background: #FFEBEE; color: #C62828; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                            🚫 ${I18n.t('profile.violation_count')}：<span id="profile-violation-count">${userData.violation_points || 0}</span>
+                            🚫 ${I18n.t('profile.violation_points')}：<span id="profile-violation-count">${userData.violation_points || 0}</span>
                         </div>
+
                     </div>
                 </div>
 
