@@ -3,6 +3,8 @@ const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const dns = require('dns');
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const sequelize = require('./database');
 const User = require('./User');
@@ -111,6 +113,108 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
+
+// --- SOCKET.IO INITIALIZATION ---
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: [
+            "https://joinup-production.onrender.com",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    transports: ['websocket', 'polling']
+});
+
+// --- SOCKET.IO EVENT HANDLERS ---
+io.on('connection', (socket) => {
+    logger.info(`[Socket] User connected: ${socket.id}`);
+
+    socket.on('join_room', (roomId) => {
+        socket.join(String(roomId));
+        logger.info(`[Socket] Client ${socket.id} joined room: ${roomId}`);
+    });
+
+    socket.on('send_message', async (data) => {
+        try {
+            const { room_id, sender_email, sender_name, message } = data;
+            
+            // --- PROTOCOL ZERO 500 ERROR: DB Persistence ---
+            const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
+            await sequelize.query(query, { replacements: [room_id, sender_email, sender_name, message] });
+
+            // Broadcast to everyone in the room (including sender if they rely on it)
+            io.to(String(room_id)).emit('receive_message', {
+                id: Date.now(), // Temporary ID until reload
+                room_id,
+                sender_email,
+                sender_name,
+                message,
+                created_at: new Date().toISOString()
+            });
+
+            // --- Async Push Notification ---
+            handleChatNotification(room_id, sender_email, sender_name, message).catch(err => 
+                logger.error(`[Socket] Push Notification error: ${err.message}`)
+            );
+
+        } catch (error) {
+            logger.error(`[Socket] send_message database error: ${error.message}`);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        logger.info(`[Socket] User disconnected: ${socket.id}`);
+    });
+});
+
+/**
+ * Helper to notify other group members via OneSignal when a new message arrives.
+ */
+async function handleChatNotification(roomId, senderEmail, senderName, message) {
+    try {
+        const parts = String(roomId).split('_');
+        if (parts.length < 2) return;
+        const eventType = parts[0];
+        const eventId = parts[1];
+
+        // 1. Get Participants
+        const [participants] = await sequelize.query(
+            `SELECT DISTINCT u.email 
+             FROM event_participants ep
+             JOIN users u ON ep.user_id = u.id
+             WHERE ep.event_type = ? AND ep.event_id = ? AND ep.status IN ('approved', 'accepted')`,
+            { replacements: [eventType, eventId] }
+        );
+
+        // 2. Get Host
+        const mapping = { 'sports': 'activities', 'carpool': 'carpools', 'study': 'studies', 'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' };
+        const tableName = mapping[eventType] || 'activities';
+        const [hostData] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [eventId] });
+
+        let allEmails = participants.map(p => p.email);
+        if (hostData.length > 0) allEmails.push(hostData[0].host_email);
+
+        // 3. Exclude sender and de-duplicate
+        const senderVariants = getEmailVariations(senderEmail).map(e => e.toLowerCase().trim());
+        const targetEmails = [...new Set(allEmails)]
+            .filter(email => email && !senderVariants.includes(email.toLowerCase().trim()));
+
+        if (targetEmails.length > 0) {
+            const pushTitle = `💬 Pesan baru dari ${senderName}`;
+            const snippet = message.length > 60 ? message.substring(0, 60) + "..." : message;
+            const pushBody = snippet;
+            const url = `https://joinup-production.onrender.com/#messages/${roomId}`;
+            
+            await pushService.sendPushNotification(targetEmails, pushTitle, pushBody, url);
+        }
+    } catch (err) {
+        console.error("[OneSignal] Background notification failure:", err);
+    }
+}
 
 // --- MOUNT JOIN_SERVICE API ---
 app.use('/api/v1', joinService);
@@ -2079,7 +2183,7 @@ cron.schedule('0 12,19 * * *', async () => {
     timezone: "Asia/Taipei"
 });
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
     await syncAll();
     startEventRetirementWorker();

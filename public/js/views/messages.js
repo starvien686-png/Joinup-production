@@ -3,7 +3,8 @@ import { formatTime, formatListDate } from '../utils/dateFormatter.js';
 import { openRatingModal } from './rating.js?v=4';
 import { PullToRefresh } from '../utils/PullToRefresh.js';
 
-// No longer using local chatInterval, we use window.activeViewInterval managed in app.js
+// No longer using local chatInterval, we use Socket.io for real-time updates
+const socket = io(); 
 
 const playNotificationSound = () => {
     try {
@@ -141,8 +142,25 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 <input type="text" id="chat-input-msg" class="chat-input-box" placeholder="${I18n.t('messages.input.placeholder') || 'Type a message...'}" value="${prefill || ''}">
                 <button id="btn-send-msg" class="btn-send">➤</button>
             </div>
+            </div>
         </div>
     `;
+
+    // --- SOCKET.IO ROOM JOIN ---
+    socket.emit('join_room', String(roomId));
+
+    // Listen for incoming messages
+    const handleSocketMessage = (msg) => {
+        if (String(msg.room_id) === String(roomId)) {
+            // Re-render message area with the new message
+            appendSingleMessage(msg);
+            playNotificationSound();
+        }
+    };
+    
+    // Clean up previous listeners to avoid duplicates
+    socket.off('receive_message');
+    socket.on('receive_message', handleSocketMessage);
 
     const messageArea = document.getElementById('chat-messages-area');
     const inputField = document.getElementById('chat-input-msg');
@@ -213,6 +231,47 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             el.style.backgroundColor = '#ffeaa7';
             setTimeout(() => { el.style.backgroundColor = originalBg || ''; }, 1500);
         }
+    };
+
+    const appendSingleMessage = (msg) => {
+        const isMine = msg.sender_email === user.email;
+        const date = new Date(msg.created_at);
+        const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        const crownIcon = msg.role === 'host' ? '👑 ' : '';
+        const uniqueId = msg.id || date.getTime();
+
+        let contentHtml = msg.message || msg.content || '';
+        let message_type = msg.message_type || (contentHtml.startsWith('!') ? 'announcement' : 'text');
+
+        // Reuse parsing logic if needed or simplify for real-time
+        // We will call renderAttachment logic if it's JSON
+        let attachmentData = null;
+        try {
+            if (contentHtml && contentHtml.trim().startsWith('{')) {
+                attachmentData = JSON.parse(contentHtml);
+            }
+        } catch (e) { attachmentData = null; }
+
+        if (attachmentData) {
+            contentHtml = renderAttachment(attachmentData, isMine);
+        }
+
+        const html = `
+            <div id="msg-${uniqueId}" class="chat-bubble ${isMine ? 'chat-mine' : 'chat-other'}" data-type="${message_type}">
+                ${!isMine ? `
+                <div class="chat-sender-info">
+                    <span style="color: ${msg.role === 'host' ? '#e67e22' : '#3498db'}">${crownIcon}${msg.sender_name}</span>
+                </div>` : ''}
+                <div>${contentHtml}</div>
+                <div class="chat-time">${timeStr}</div>
+            </div>
+        `;
+        messageArea.insertAdjacentHTML('beforeend', html);
+        messageArea.scrollTop = messageArea.scrollHeight;
+        // Don't increment lastMsgCount here because we want manual refresh to fetch everything since last full load
+        // Actually, if we use socket, we are already up to date. 
+        // But for consistency with loadMessages:
+        lastMsgCount++; 
     };
 
     const loadMessages = async (isInitial = false) => {
@@ -434,24 +493,15 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
         }
 
         try {
-            // SEMUA PESAN SEKARANG DIKIRIM KE JALUR BARU
+            // --- SOCKET.IO EMISSION ---
             const finalMessage = finalType === 'announcement' ? `! ${content}` : content;
-            const sendRes = await fetch('/send-message', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    room_id: String(roomId),
-                    sender_email: user.email,
-                    sender_name: user.displayName || user.name || 'User',
-                    message: finalMessage
-                })
+            socket.emit('send_message', {
+                room_id: String(roomId),
+                sender_email: user.email,
+                sender_name: user.displayName || user.name || 'User',
+                message: finalMessage
             });
 
-            if (!sendRes.ok) {
-                alert("Gagal kirim dari Server! Pastikan Node.js nyala.");
-                return;
-            }
-
-            loadMessages();
             setTimeout(() => { messageArea.scrollTop = messageArea.scrollHeight; }, 100);
         } catch (err) {
             alert('Koneksi terputus: ' + err.message);
@@ -1093,7 +1143,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
     const hash = window.location.hash || '';
     let parsedRoomId = roomId;
     if (!parsedRoomId && hash.includes('room=')) {
-        parsedRoomId = decodeURIComponent(hash.split('room=').split('&'));
+        parsedRoomId = hash.split('room=')[1].split('&')[0];
     }
 
     if (parsedRoomId) {
@@ -1208,11 +1258,8 @@ export const renderMessages = (roomId = null, prefill = null) => {
     }
 
     if (window.activeViewInterval) clearInterval(window.activeViewInterval);
-    window.activeViewInterval = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            loadInbox();
-        }
-    }, 60000); // Poll every 60s to save DB quota
+    // 🛑 MANUAL POLLING REMOVED: Replaced by Socket.io and Pull-to-Refresh to save DB Quota
+    // window.activeViewInterval = setInterval(() => { ... }, 60000); 
 
     // Initialize Pull-to-Refresh for Inbox
     new PullToRefresh({
