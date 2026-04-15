@@ -765,7 +765,7 @@ export const Translations = {
         'common.open_map': '開啟 Google Maps',
         'common.confirm_join': '確認加入',
         'common.err.quota': '', // Unlimited 模式：停用警告
-        'common.safety_notice': 'ⓘ JoinUp!是由暨大學生發起，專為暨大人打造的平台。我們僅提供媒合服務，不介入任何活動。為了您的安全，建議兩人以上同行並約在公共場合。祝您有個愉快的交流與結伴體驗！',
+        'common.safety_notice': 'ⓘ JoinUp!是由暨大學生發起，專為暨大人打造的平台。我們僅提供媒合服務，不介入任何金流交易。為了您的安全，建議兩人以上同行並約在公共場合。祝您有個愉快的交流與結伴體驗！',
         'common.system': '系統',
         'common.search': '搜尋',
         'common.financial_disclaimer': '此平台不負責任何金錢問題',
