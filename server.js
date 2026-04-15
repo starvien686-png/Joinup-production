@@ -703,12 +703,19 @@ app.post('/create-activity', async (req, res) => {
         });
 
         const insertId = result.insertId || result;
-        await awardCreditPoint(host_email, 1); // +1 Point for creating event!
+        const normalizedEmail = (host_email || '').toLowerCase().trim();
 
-        // 🔔 Notify Instant!
-        await notifySubscribers('sports', title, insertId, 'sports', host_email);
+        // 🏆 Award Points (Isolated)
+        try {
+            await awardCreditPoint(normalizedEmail, 1);
+        } catch (pointErr) {
+            console.error("[Points] Failed to award credit point:", pointErr);
+        }
 
-        res.status(201).json({ message: 'Yeay! Post created successfully! 🏀' });
+        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
+        // await notifySubscribers('sports', title, insertId, 'sports', normalizedEmail);
+
+        res.status(201).json({ message: 'Yeay! Post created successfully! 🏀', id: insertId });
 
     } catch (error) {
         console.error("Failed to create post:", error);
@@ -1016,12 +1023,19 @@ app.post('/create-carpool', async (req, res) => {
         });
 
         const insertId = result.insertId || result;
-        await awardCreditPoint(host_email, 1); // +1 Point for creating carpool!
+        const normalizedEmail = (host_email || '').toLowerCase().trim();
 
-        // 🔔 Notify Instant!
-        await notifySubscribers('carpool', title, insertId, 'carpool', host_email);
+        // 🏆 Award Points (Isolated)
+        try {
+            await awardCreditPoint(normalizedEmail, 1);
+        } catch (pointErr) {
+            console.error("[Points] Failed to award credit point:", pointErr);
+        }
 
-        res.status(201).json({ message: "Carpool created successfully!" });
+        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
+        // await notifySubscribers('carpool', title, insertId, 'carpool', normalizedEmail);
+
+        res.status(201).json({ message: "Carpool created successfully!", id: insertId });
     } catch (error) {
         console.error("Error creating carpool:", error);
         res.status(500).json({ error: "Failed to create carpool: " + error.message });
@@ -1116,12 +1130,19 @@ app.post('/create-study', async (req, res) => {
         });
 
         const insertId = result.insertId || result;
-        await awardCreditPoint(host_email, 1); // +1 Point for creating study!
+        const normalizedEmail = (host_email || '').toLowerCase().trim();
 
-        // 🔔 Notify Instant!
-        await notifySubscribers('study', title, insertId, 'study', host_email);
+        // 🏆 Award Points (Isolated)
+        try {
+            await awardCreditPoint(normalizedEmail, 1);
+        } catch (pointErr) {
+            console.error("[Points] Failed to award credit point:", pointErr);
+        }
 
-        res.status(201).json({ message: "Study event created successfully!" });
+        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
+        // await notifySubscribers('study', title, insertId, 'study', normalizedEmail);
+
+        res.status(201).json({ message: "Study event created successfully!", id: insertId });
     } catch (error) {
         console.error("Error creating study:", error);
         res.status(500).json({ error: "Failed to create study: " + error.message });
@@ -1228,12 +1249,19 @@ app.post('/create-hangout', async (req, res) => {
         });
 
         const insertId = result.insertId || result;
-        await awardCreditPoint(host_email, 1); // +1 Point for creating hangout!
+        const normalizedEmail = (host_email || '').toLowerCase().trim();
 
-        // 🔔 Notify Instant!
-        await notifySubscribers('hangout', title, insertId, 'hangout', host_email);
+        // 🏆 Award Points (Isolated)
+        try {
+            await awardCreditPoint(normalizedEmail, 1);
+        } catch (pointErr) {
+            console.error("[Points] Failed to award credit point:", pointErr);
+        }
 
-        res.status(201).json({ message: "Hangout event created successfully!" });
+        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
+        // await notifySubscribers('hangout', title, insertId, 'hangout', normalizedEmail);
+
+        res.status(201).json({ message: "Hangout event created successfully!", id: insertId });
     } catch (error) {
         console.error("Error creating hangout:", error);
         res.status(500).json({ error: "Failed to create hangout: " + error.message });
@@ -1373,10 +1401,17 @@ app.post('/create-housing', async (req, res) => {
         });
 
         const insertId = result.insertId || result;
-        await awardCreditPoint(host_email, 1); // +1 Point for creating housing!
+        const normalizedEmail = (host_email || '').toLowerCase().trim();
 
-        // 🔔 Notify Instant!
-        await notifySubscribers('housing', title, insertId, 'housing', host_email);
+        // 🏆 Award Points (Isolated)
+        try {
+            await awardCreditPoint(normalizedEmail, 1);
+        } catch (pointErr) {
+            console.error("[Points] Failed to award credit point:", pointErr);
+        }
+
+        // 🔔 Notify Instant! (DISABLED - missing user_subscriptions table)
+        // await notifySubscribers('housing', title, insertId, 'housing', normalizedEmail);
 
         res.status(201).json({ success: true, id: insertId });
     } catch (error) {
