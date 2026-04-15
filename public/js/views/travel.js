@@ -582,7 +582,8 @@ export const renderTravel = () => {
         return `
             <div class="container fade-in" style="padding-bottom: 80px;">
                 <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <button class="btn-back" onclick="currentState='landing'; updateView();" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
+                    <button class="btn-back" onclick="window.setTravelState('landing')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
+
                     <h2>⚙️ ${txtManageTitle}</h2>
                 </header>
 
@@ -596,6 +597,13 @@ export const renderTravel = () => {
         else if (currentState === 'create') { app.innerHTML = renderCreateForm(); bindCreateListeners(); }
         else if (currentState === 'list') { app.innerHTML = await renderList(); bindListListeners(); }
         else if (currentState === 'manage') { app.innerHTML = await renderManage(); bindManageListeners(); }
+    };
+    
+    // --- EXPOSE TO WINDOW (FOR INLINE ONCLICK) ---
+    window.updateView = updateView;
+    window.setTravelState = (state) => {
+        currentState = state;
+        updateView();
     };
 
     const bindLandingListeners = () => {

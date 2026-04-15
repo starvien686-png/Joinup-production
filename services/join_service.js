@@ -514,10 +514,27 @@ router.get('/join/my-statuses', async (req, res) => {
 // 7. GET /api/v1/host/participants
 router.get('/host/participants', async (req, res) => {
     const { event_type, event_id, host_email, status, limit = 20, cursor_at, cursor_id } = req.query;
+    
     try {
+        if (!event_type || !event_id || !host_email) {
+            return res.status(400).json({ success: false, message: 'Missing required parameters (event_type, event_id, host_email)' });
+        }
+
         const tableName = getTableName(event_type);
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
-        if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
+        
+        if (events.length === 0) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        // --- CASE-INSENSITIVE EMAIL CHECK (PROTOCOL ZERO 500 ERROR) ---
+        const eventHostEmail = (events[0].host_email || '').toLowerCase().trim();
+        const requestHostEmail = (host_email || '').toLowerCase().trim();
+
+        if (eventHostEmail !== requestHostEmail) {
+            console.warn(`[Auth] Unauthorized host access attempt. Event Host: ${eventHostEmail}, Request Host: ${requestHostEmail}`);
+            return res.status(403).json({ success: false, message: 'Unauthorized. You are not the host of this event.' });
+        }
 
         let queryStr = `
             SELECT ep.id, ep.user_id, u.email as user_email, ep.status, 
@@ -527,17 +544,32 @@ router.get('/host/participants', async (req, res) => {
             JOIN users u ON ep.user_id = u.id
             WHERE ep.event_type = ? AND ep.event_id = ?`;
         const replacements = [event_type, event_id];
-        if (status) { queryStr += ` AND status = ?`; replacements.push(status); }
-        if (cursor_at && cursor_id) { queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); }
+        
+        if (status) { 
+            queryStr += ` AND status = ?`; 
+            replacements.push(status); 
+        }
+        
+        if (cursor_at && cursor_id) { 
+            queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; 
+            replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); 
+        }
+        
         queryStr += ` ORDER BY created_at DESC, id DESC LIMIT ?`;
         replacements.push(parseInt(limit));
 
-        const [results] = await sequelize.query(queryStr, { replacements });
+        const results = await sequelize.query(queryStr, { 
+            replacements,
+            type: sequelize.QueryTypes.SELECT 
+        });
+
         res.json({ success: true, data: results });
     } catch (err) {
-        res.status(err.status || 500).json({ success: false, message: err.message });
+        console.error('[API] Error in /host/participants:', err);
+        res.status(500).json({ success: false, message: 'Internal server error while fetching participants: ' + err.message });
     }
 });
+
 
 // Endpoint untuk mengambil profil user dari database MySQL
 router.get('/profile-user', async (req, res) => {

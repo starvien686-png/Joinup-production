@@ -11,6 +11,13 @@ const sequelize = new Sequelize(
         dialect: 'mysql',
         timezone: '+08:00',
         logging: false,
+        pool: {
+            max: 10,
+            min: 2,
+            acquire: 30000,
+            idle: 10000,
+            handleDisconnects: true
+        },
         dialectOptions: {
             ssl: {
                 rejectUnauthorized: false
@@ -22,9 +29,13 @@ const sequelize = new Sequelize(
                 }
                 return next();
             }
+        },
+        retry: {
+            max: 3
         }
     }
 );
+
 
 async function testConnection() {
     try {

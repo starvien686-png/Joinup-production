@@ -19,6 +19,26 @@ const joinService = require('./services/join_service');
 const workerService = require('./services/worker_service');
 const pushService = require('./services/push_service');
 const { awardCreditPoint, awardViolationPoint } = require('./services/points_service');
+const { Op } = require('sequelize');
+
+// --- PROTOCOL ZERO 500 ERROR: ENVIRONMENT VALIDATION ---
+const REQUIRED_ENV_VARS = [
+    'DB_HOST', 'DB_USER', 'DB_PASS', 'DB_NAME',
+    'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS',
+    'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'
+];
+
+function validateEnv() {
+    const missing = REQUIRED_ENV_VARS.filter(key => !process.env[key]);
+    if (missing.length > 0) {
+        console.error('\x1b[31m%s\x1b[0m', 'CRITICAL ERROR: Missing environment variables:');
+        missing.forEach(m => console.error(` - ${m}`));
+        console.error('\x1b[31m%s\x1b[0m', 'Server process terminated to prevent runtime crashes.');
+        process.exit(1);
+    }
+    console.log('\x1b[32m%s\x1b[0m', 'Environment variables validated successfully.');
+}
+validateEnv();
 
 
 // --- CLOUDINARY CONFIGURATION ---
@@ -165,11 +185,23 @@ const otpRateLimiter = rateLimit({
 // --- AUTHENTICATION MIDDLEWARE ---
 const checkAuth = async (req, res, next) => {
     const userEmail = req.headers['x-user-email'] || req.body.sender_email || req.body.email || req.query.email;
-    if (!userEmail) return res.status(401).json({ error: 'Authentication required. Please login first.' });
+    if (!userEmail) {
+        console.warn('[Auth] Missing authentication headers/body.');
+        return res.status(401).json({ error: 'Authentication required. Please login first.' });
+    }
     
     try {
-        const user = await User.findOne({ where: { email: userEmail } });
-        if (!user) return res.status(403).json({ error: 'Access denied. Invalid user session.' });
+        const emails = getEmailVariations(userEmail.toLowerCase().trim());
+        const user = await User.findOne({ 
+            where: { 
+                email: { [Op.in]: emails } 
+            } 
+        });
+
+        if (!user) {
+            console.warn(`[Auth] User not found for email(s): ${emails.join(', ')}`);
+            return res.status(403).json({ error: 'Access denied. Invalid user session.' });
+        }
         
         // --- AUTO-BAN PROTECTION ---
         if (user.status === 'suspended' || user.status === 'banned') {
@@ -182,31 +214,37 @@ const checkAuth = async (req, res, next) => {
         req.user = user;
         next();
     } catch (err) {
-        res.status(500).json({ error: 'Authentication check failed: ' + err.message });
+        console.error('[Auth] CRITICAL ERROR:', err);
+        res.status(500).json({ error: 'Internal Authentication Error: ' + err.message });
     }
 };
 
 
 // --- GET CURRENT USER PROFILE (GLOBAL HYDRATION) ---
 app.get('/api/v1/users/me', checkAuth, (req, res) => {
-    const user = req.user;
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    
-    res.json({
-        success: true,
-        username: user.username,
-        email: user.email,
-        major: user.major,
-        study_year: user.study_year,
-        role: user.role,
-        bio: user.bio,
-        hobby: user.hobby,
-        profile_pic: user.profile_pic,
-        credit_points: user.credit_points || 0,
-        violation_points: user.violation_points || 0,
-        creditPoints: user.credit_points || 0,
-        violationCount: user.violation_points || 0
-    });
+    try {
+        const user = req.user;
+        if (!user) return res.status(401).json({ error: 'Unauthorized' });
+        
+        res.json({
+            success: true,
+            username: user.username,
+            email: user.email,
+            major: user.major,
+            study_year: user.study_year,
+            role: user.role,
+            bio: user.bio,
+            hobby: user.hobby,
+            profile_pic: user.profile_pic,
+            credit_points: user.credit_points || 0,
+            violation_points: user.violation_points || 0,
+            creditPoints: user.credit_points || 0,
+            violationCount: user.violation_points || 0
+        });
+    } catch (err) {
+        console.error('[API] Error in /api/v1/users/me:', err);
+        res.status(500).json({ error: 'Database connection failed or user data corrupted.' });
+    }
 });
 
 // --- MULTER ERROR HANDLING MIDDLEWARE ---
@@ -723,15 +761,10 @@ app.post('/create-activity', async (req, res) => {
     }
 });
 
-// 1. Unified Handler for Activities List
-const handleGetActivities = async (req, res) => {
+app.get(['/activities', '/api/v1/activities'], async (req, res) => {
     try {
         const query = `
-            SELECT 
-                a.id, a.host_email, a.category, a.title, a.sport_type, a.location, 
-                a.people_needed, a.event_time, a.deadline, a.description, a.status, a.created_at,
-                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
-                u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
@@ -740,20 +773,16 @@ const handleGetActivities = async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("GET Activities Error:", error);
         res.status(500).json({ error: 'Failed to get activities: ' + error.message });
     }
-};
-app.get('/activities', handleGetActivities);
-app.get('/api/v1/activities', handleGetActivities);
+});
 
-const handleGetMyActivities = async (req, res) => {
+app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, res) => {
     try {
         const normalizedParam = (req.params.email || '').toLowerCase().trim();
         const emails = getEmailVariations(normalizedParam);
         const query = `
-            SELECT id, host_email, category, title, sport_type, location, people_needed, event_time, deadline, description, status, created_at
-            FROM activities 
+            SELECT * FROM activities 
             WHERE host_email IN (?) 
             ORDER BY created_at DESC
         `;
@@ -762,12 +791,9 @@ const handleGetMyActivities = async (req, res) => {
         });
         res.json(results);
     } catch (error) {
-        console.error("GET My Activities Error:", error);
         res.status(500).json({ error: 'Failed to get manage activities: ' + error.message });
     }
-};
-app.get('/my-activities/:email', handleGetMyActivities);
-app.get('/api/v1/my-activities/:email', handleGetMyActivities);
+});
 
 app.put('/update-activity-status/:id', async (req, res) => {
     try {
@@ -892,13 +918,19 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-const handleGetActivityDetail = async (req, res) => {
+app.get(['/activity/:id', '/api/v1/activity/:id'], async (req, res) => {
     try {
         const activityId = req.params.id;
         const query = `
-            SELECT a.id, a.host_email, a.category, a.title, a.sport_type, a.location, a.people_needed, a.event_time, a.deadline, a.description, a.status, a.created_at,
-                   u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.bio, u.hobby,
-                   u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT a.*, 
+                   u.username as host_name, 
+                   u.major as host_dept, 
+                   u.study_year,
+                   u.profile_pic, 
+                   u.bio, 
+                   u.hobby,
+                   u.credit_points as creditPoints,
+                   u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE a.id = ?
@@ -911,12 +943,9 @@ const handleGetActivityDetail = async (req, res) => {
             res.status(404).json({ error: 'Event not found!' });
         }
     } catch (error) {
-        console.error("GET Activity Detail Error:", error);
         res.status(500).json({ error: 'Failed to fetch event details: ' + error.message });
     }
-};
-app.get('/activity/:id', handleGetActivityDetail);
-app.get('/api/v1/activity/:id', handleGetActivityDetail);
+});
 
 app.post('/activity/:id/close', async (req, res) => {
     try {
@@ -992,14 +1021,10 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 // ==========================================
 
 // 1. Mengambil semua data tebengan
-const handleGetCarpools = async (req, res) => {
+app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
     try {
         const query = `
-            SELECT 
-                c.id, c.host_email, c.title, c.departure_loc, c.destination_loc, c.departure_time, c.deadline, 
-                c.available_seats, c.price, c.vehicle_type, c.description, c.status, c.created_at,
-                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
-                u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
             WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
@@ -1008,12 +1033,10 @@ const handleGetCarpools = async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("GET Carpools Error:", error);
-        res.status(500).json({ error: "Failed to fetch carpools: " + error.message });
+        console.error("Error fetching carpools:", error);
+        res.status(500).json({ error: "Failed to fetch carpools" });
     }
-};
-app.get('/carpools', handleGetCarpools);
-app.get('/api/v1/carpools', handleGetCarpools);
+});
 
 // 2. Membuat tebengan baru
 app.post('/create-carpool', async (req, res) => {
@@ -1105,14 +1128,10 @@ app.get('/carpool/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Study yang masih open (Untuk Halaman Depan)
-const handleGetStudies = async (req, res) => {
+app.get(['/studies', '/api/v1/studies'], async (req, res) => {
     try {
         const query = `
-            SELECT 
-                s.id, s.host_email, s.title, s.event_type, s.subject, s.location, s.people_needed, 
-                s.event_time, s.deadline, s.description, s.status, s.created_at,
-                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
-                u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
             WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
@@ -1121,12 +1140,10 @@ const handleGetStudies = async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("GET Studies Error:", error);
-        res.status(500).json({ error: "Failed to fetch studies: " + error.message });
+        console.error("Error fetching studies:", error);
+        res.status(500).json({ error: "Failed to fetch studies" });
     }
-};
-app.get('/studies', handleGetStudies);
-app.get('/api/v1/studies', handleGetStudies);
+});
 
 // 2. Membuat event Study baru (Dari form kuning)
 app.post('/create-study', async (req, res) => {
@@ -1230,14 +1247,10 @@ app.get('/study/:id', async (req, res) => {
 // ==========================================
 
 // 1. Mengambil semua data Hang Out yang masih open (Untuk Halaman List)
-const handleGetHangouts = async (req, res) => {
+app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
     try {
         const query = `
-            SELECT 
-                h.id, h.host_email, h.title, h.category, h.people_needed, h.event_time, h.deadline, 
-                h.meeting_location, h.destination, h.description, h.status, h.created_at,
-                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
-                u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
             WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
@@ -1246,12 +1259,10 @@ const handleGetHangouts = async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("GET Hangouts Error:", error);
-        res.status(500).json({ error: "Failed to fetch hangouts: " + error.message });
+        console.error("Error fetching hangouts:", error);
+        res.status(500).json({ error: "Failed to fetch hangouts" });
     }
-};
-app.get('/hangouts', handleGetHangouts);
-app.get('/api/v1/hangouts', handleGetHangouts);
+});
 
 // 2. Membuat event Hang Out baru (Dari Form)
 app.post('/create-hangout', async (req, res) => {
@@ -1449,15 +1460,10 @@ app.post('/create-housing', async (req, res) => {
 });
 
 // 2. API GET ALL HOUSING (Untuk List)
-const handleGetHousing = async (req, res) => {
+app.get(['/housing', '/api/v1/housing'], async (req, res) => {
     try {
         const query = `
-            SELECT 
-                ho.id, ho.host_email, ho.housing_type, ho.title, ho.location, ho.room_number, ho.rent_amount, ho.deposit, 
-                ho.people_needed, ho.gender_req, ho.schedule_tags, ho.deadline, ho.rental_period, ho.facilities, 
-                ho.habits, ho.description, ho.status, ho.created_at,
-                u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, 
-                u.credit_points as creditPoints, u.violation_points as violationCount
+            SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
             WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
@@ -1466,12 +1472,9 @@ const handleGetHousing = async (req, res) => {
         const [results] = await sequelize.query(query);
         res.json(results);
     } catch (error) {
-        console.error("GET Housing Error:", error);
-        res.status(500).json({ error: "Failed to fetch housing: " + error.message });
+        res.status(500).json({ error: error.message });
     }
-};
-app.get('/housing', handleGetHousing);
-app.get('/api/v1/housing', handleGetHousing);
+});
 
 // 3. API GET MY HOUSING (Untuk Manage)
 app.get('/my-housing/:email', async (req, res) => {
@@ -1548,8 +1551,9 @@ app.get('/profile/:email', async (req, res) => {
                 hobby: user.hobby,
                 profile_pic: user.profile_pic,
                 creditPoints: user.credit_points || 0,
-                violationCount: user.violation_count || 0
+                violationCount: user.violation_points || 0
             });
+
         } else {
             res.status(404).json({ error: 'User not found!' });
         }
