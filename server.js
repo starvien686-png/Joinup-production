@@ -848,6 +848,60 @@ app.get('/api/v1/admin/chat/:roomId', async (req, res) => {
 });
 
 
+
+/**
+ * Helper: Automatically joins the Host to their own event as an 'approved' participant
+ * and sets up the chat room roles immediately upon event creation.
+ */
+async function autoJoinHost(eventType, eventId, hostEmail, eventTitle) {
+    try {
+        const normalizedEmail = (hostEmail || '').toLowerCase().trim();
+        const emails = getEmailVariations(normalizedEmail);
+        
+        // 1. Get Host User ID
+        const user = await User.findOne({ 
+            where: { email: { [Op.in]: emails } } 
+        });
+        
+        if (!user) {
+            logger.error(`[AutoJoin] Host not found for email: ${normalizedEmail}`);
+            return;
+        }
+
+        const roomId = `${eventType}_${eventId}`;
+
+        // 2. Ensure Chat Room Exists
+        await sequelize.query(
+            `INSERT IGNORE INTO chat_rooms (room_id, post_id, room_type, team_name) VALUES (?, ?, ?, ?)`,
+            { replacements: [roomId, eventId, eventType, eventTitle] }
+        );
+
+        // 3. Add Host to event_participants table as 'approved'
+        await sequelize.query(
+            `INSERT IGNORE INTO event_participants 
+             (event_type, event_id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at) 
+             VALUES (?, ?, ?, 'approved', ?, ?, ?, NOW(), NOW())`,
+            { 
+                replacements: [
+                    eventType, eventId, user.id, 
+                    user.username, user.profile_pic, user.bio
+                ] 
+            }
+        );
+
+        // 4. Add Host to chat_participants table as 'host'
+        await sequelize.query(
+            `INSERT IGNORE INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'host')`,
+            { replacements: [roomId, user.email, user.username] }
+        );
+
+        logger.info(`[AutoJoin] Host ${normalizedEmail} successfully joined ${eventType}:${eventId}`);
+    } catch (err) {
+        logger.error(`[AutoJoin] CRITICAL ERROR for ${hostEmail}: ${err.message}`);
+    }
+}
+
+
 app.post('/create-activity', async (req, res) => {
     const required = ['host_email', 'category', 'title', 'sport_type', 'people_needed', 'event_time', 'deadline', 'location'];
     if (!validateRequiredFields(req, res, required)) return;
@@ -880,6 +934,9 @@ app.post('/create-activity', async (req, res) => {
 
         const insertId = result.insertId || result;
         const normalizedEmail = (host_email || '').toLowerCase().trim();
+
+        // 🚀 Auto-Join Host
+        await autoJoinHost('sports', insertId, normalizedEmail, title);
 
         // 🏆 Award Points (Isolated)
         try {
@@ -1218,6 +1275,9 @@ app.post('/create-carpool', async (req, res) => {
         const insertId = result.insertId || result;
         const normalizedEmail = (host_email || '').toLowerCase().trim();
 
+        // 🚀 Auto-Join Host
+        await autoJoinHost('carpool', insertId, normalizedEmail, title);
+
         // 🏆 Award Points (Isolated)
         try {
             await awardCreditPoint(normalizedEmail, 1);
@@ -1341,6 +1401,9 @@ app.post('/create-study', async (req, res) => {
 
         const insertId = result.insertId || result;
         const normalizedEmail = (host_email || '').toLowerCase().trim();
+
+        // 🚀 Auto-Join Host
+        await autoJoinHost('study', insertId, normalizedEmail, title);
 
         // 🏆 Award Points (Isolated)
         try {
@@ -1477,6 +1540,9 @@ app.post('/create-hangout', async (req, res) => {
 
         const insertId = result.insertId || result;
         const normalizedEmail = (host_email || '').toLowerCase().trim();
+
+        // 🚀 Auto-Join Host
+        await autoJoinHost('hangout', insertId, normalizedEmail, title);
 
         // 🏆 Award Points (Isolated)
         try {
@@ -1654,6 +1720,9 @@ app.post('/create-housing', async (req, res) => {
 
         const insertId = result.insertId || result;
         const normalizedEmail = (host_email || '').toLowerCase().trim();
+
+        // 🚀 Auto-Join Host
+        await autoJoinHost('housing', insertId, normalizedEmail, title);
 
         // 🏆 Award Points (Isolated)
         try {
