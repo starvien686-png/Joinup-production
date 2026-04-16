@@ -501,8 +501,17 @@ export const renderGroupBuy = () => {
             status: p.status || 'open'
         }));
 
+        let myStatuses = {};
+        if (user && user.email) {
+            try {
+                const statusRes = await fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(user.email)}`);
+                const statusData = await statusRes.json();
+                if (statusData.success) myStatuses = statusData.data || {};
+            } catch (e) { console.warn("Fail fetch statuses", e); }
+        }
+
         posts = posts.filter(p => {
-            if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
+            if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
             if (p.peopleCount !== undefined && p.peopleCount <= 0) return false;
 
             // Optional: if housing ever adds a deadline feature
@@ -583,12 +592,21 @@ export const renderGroupBuy = () => {
             const sTags = normalizeTags(p.scheduleTags);
             const hTags = normalizeTags(p.habitTags);
             const isHost = (p.host_email || p.authorId) === user.email;
+            
+            const statusKey = `housing_${p.id}`;
+            const userStatus = myStatuses[statusKey];
+            const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
             const safeTitle = (p.title || '').replace(/'/g, "\\'");
-            const btnHtml = isHost
-                ? `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`
-                : `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 申請加入 / Apply to Join</button>`;
+            let btnHtml = '';
+            if (isHost || isParticipant) {
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
+            } else if (p.status === 'full') {
+                btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed;">${I18n.t('common.full') || 'FULL'}</button>`;
+            } else {
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 申請加入 / Apply to Join</button>`;
+            }
             return `
-            <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem;">
+            <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem; ${p.status === 'full' ? 'opacity: 0.8;' : ''}">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <span class="badge ${p.type !== 'off_campus' ? 'badge-primary' : 'badge-secondary'}" style="margin-bottom: 0.5rem;">
                         ${getHousingTypeDisplay(p)}

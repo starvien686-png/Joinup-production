@@ -274,18 +274,21 @@ export const renderStudy = () => {
             const response = await fetch('/studies');
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+            
+            let myStatuses = {};
+            if (user && user.email) {
+                try {
+                    const statusRes = await fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(user.email)}`);
+                    const statusData = await statusRes.json();
+                    if (statusData.success) myStatuses = statusData.data || {};
+                } catch (e) { console.warn("Fail fetch statuses", e); }
+            }
 
             let availablePosts = dbPosts.filter(p => {
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
+                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
 
                 const dTime = new Date(p.deadline || p.event_time);
                 if (dTime < new Date()) return false;
-
-                const apps = window.StudyAppEngine.getApps(p.id) || [];
-                const acceptedApps = apps.filter(a => a.status === 'accepted');
-                if (acceptedApps.length >= p.people_needed) return false;
-
-                if (p.people_needed !== undefined && p.people_needed <= 0) return false;
 
                 return true;
             });
@@ -335,8 +338,21 @@ export const renderStudy = () => {
 
                     const hostAvatar = hostData?.profile_pic || hostData?.profilePic || hostData?.avatar || hostData?.picture || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
+                    const statusKey = `study_${p.id}`;
+                    const userStatus = myStatuses[statusKey];
+                    const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
+
+                    let actionBtn = '';
+                    if (isHost || isParticipant) {
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                    } else if (isFull || p.status === 'full') {
+                        actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;">${isZH ? '額滿' : 'Full'}</button>`;
+                    } else {
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>`;
+                    }
+
                     return `
-                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card); color: var(--text-primary);">
+                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${(isFull || p.status === 'full') ? 'opacity: 0.8;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card); color: var(--text-primary);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                 <div style="background: var(--bg-secondary); color: var(--accent-color); padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--border-color);">
                                     ${p.event_type}
@@ -361,14 +377,10 @@ export const renderStudy = () => {
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <span style="font-size: 0.85rem; color: var(--text-secondary);"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
-                                ${isFull ? `<span style="font-size: 0.8rem; color: var(--accent-color); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--border-color);">${t('common.full', '額滿', 'Full')}</span>` : ''}
+                                ${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: var(--accent-color); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--border-color);">${t('common.full', '額滿', 'Full')}</span>` : ''}
                             </div>
 
-                            ${isHost ? `
-                            <button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 進入聊天室</button>
-                            ` : !isFull ? `
-                            <button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>
-                            ` : ''}
+                            ${actionBtn}
                         </div>
                     `;
                 }).join('');

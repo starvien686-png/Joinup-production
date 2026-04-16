@@ -156,6 +156,14 @@ h2 {
     padding: 1rem;
 }
 
+.btn-full {
+    background: #9E9E9E !important;
+    color: white !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    opacity: 0.8;
+}
+
 .card {
     background: var(--bg-card);
     border-radius: 16px;

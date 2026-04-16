@@ -234,20 +234,19 @@ export const renderSports = () => {
 
     const renderList = async () => {
         let posts = [];
+        let myStatuses = {};
         try {
+            if (user && user.email) {
+                try {
+                    const statusRes = await fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(user.email)}`);
+                    const statusData = await statusRes.json();
+                    if (statusData.success) myStatuses = statusData.data || {};
+                } catch (e) { console.warn("Fail fetch statuses", e); }
+            }
             const response = await fetch('/activities');
             const dbPosts = await response.json();
             const availablePosts = dbPosts.filter(p => {
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
-
-                const dTime = new Date(p.deadline || p.event_time);
-                if (dTime < new Date()) return false;
-
-                const apps = window.AppEngine.getApps(p.id) || [];
-                const acceptedApps = apps.filter(a => a.status === 'accepted');
-                if (acceptedApps.length >= p.people_needed) return false;
-
-                if (p.people_needed !== undefined && p.people_needed <= 0) return false;
+                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
 
                 return true;
             });
@@ -324,10 +323,51 @@ export const renderSports = () => {
             const participantCount = Math.max(0, (p.participants?.length || 1) - 1);
             const isFull = participantCount >= p.maxParticipants;
             const isExpired = new Date(p.deadline) < new Date();
-            const isHost = (p.authorId === user.email) || (p.hostName === user.displayName) || (p.hostName === user.name);
+            const statusKey = `${p.category || 'sports'}_${p.id}`;
+            const userStatus = myStatuses[statusKey];
+            const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
+
+            let actionBtn = '';
+            if (isHost || isParticipant) {
+                actionBtn = `
+                <button 
+                    class="btn" 
+                    onclick="event.stopPropagation(); window.openGroupChat('${p.id}');" 
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
+                >
+                    💬 ${txtJoinChat}
+                </button>`;
+            } else if (isFull || p.status === 'full') {
+                actionBtn = `
+                <button 
+                    class="btn btn-full" 
+                    disabled 
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;"
+                >
+                    ${txtFull}
+                </button>`;
+            } else if (isExpired) {
+                actionBtn = `
+                <button 
+                    class="btn btn-full" 
+                    disabled 
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;"
+                >
+                    ${txtExpired}
+                </button>`;
+            } else {
+                actionBtn = `
+                <button 
+                    class="btn btn-primary" 
+                    onclick="event.stopPropagation(); window.openJoinForm('${p.id}', '${p.teamName}');" 
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FF7043, #E64A19); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
+                >
+                    ${txtJoin}
+                </button>`;
+            }
 
             return `
-            <div class="card" style="${isFull || isExpired ? 'opacity: 0.7;' : ''} margin-bottom: 1rem;">
+            <div class="card" style="${(isFull || p.status === 'full') || isExpired ? 'opacity: 0.8;' : ''} margin-bottom: 1rem;">
                 <div onclick="window.showEventDetail('${p.id}')" style="cursor: pointer;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.8rem; padding: 0.2rem 0.5rem; background: #FFEBEE; color: #D32F2F; border-radius: 4px;">
@@ -348,26 +388,8 @@ export const renderSports = () => {
                     <p style="color: var(--text-secondary); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${p.description}
                     </p>` : ''}
-                    <div style="margin-top: 0.5rem;">
-                    </div>
                 </div>
-                ${isHost ? `
-                <button 
-                    class="btn" 
-                    onclick="event.stopPropagation(); window.openGroupChat('${p.id}');" 
-                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
-                >
-                    💬 ${txtJoinChat}
-                </button>
-                ` : !isFull && !isExpired ? `
-                <button 
-                    class="btn btn-primary" 
-                    onclick="event.stopPropagation(); window.openJoinForm('${p.id}', '${p.teamName}');" 
-                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FF7043, #E64A19); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
-                >
-                    ${txtJoin}
-                </button>
-                ` : ''}
+                ${actionBtn}
             </div>
         `;
         }).join('') : `<p style="text-align: center; color: var(--text-secondary); margin-top: 2rem;">${I18n.t('common.no_data') || 'No items'}</p>`;

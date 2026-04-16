@@ -313,18 +313,21 @@ export const renderTravel = () => {
             const response = await fetch('/hangouts');
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+            
+            let myStatuses = {};
+            if (user && user.email) {
+                try {
+                    const statusRes = await fetch(`/api/v1/join/my-statuses?user_email=${encodeURIComponent(user.email)}`);
+                    const statusData = await statusRes.json();
+                    if (statusData.success) myStatuses = statusData.data || {};
+                } catch (e) { console.warn("Fail fetch statuses", e); }
+            }
 
             let availablePosts = dbPosts.filter(p => {
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full') return false;
+                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
 
                 const dTime = new Date(p.deadline || p.event_time);
                 if (dTime < new Date()) return false;
-
-                const apps = window.HangoutAppEngine.getApps(p.id) || [];
-                const acceptedApps = apps.filter(a => a.status === 'accepted');
-                if (acceptedApps.length >= p.people_needed) return false;
-
-                if (p.people_needed !== undefined && p.people_needed <= 0) return false;
 
                 return true;
             });
@@ -393,8 +396,21 @@ export const renderTravel = () => {
                         else if (p.category === 'Other') catLabel = '其他';
                     }
 
+                    const statusKey = `hangout_${p.id}`;
+                    const userStatus = myStatuses[statusKey];
+                    const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
+
+                    let actionBtn = '';
+                    if (isHost || isParticipant) {
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutChat('${p.id}', '${p.title}', '${p.host_email}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                    } else if (isFull || p.status === 'full') {
+                        actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;">${isZH ? '額滿' : 'Full'}</button>`;
+                    } else {
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FFB300, #FF9800); border: none; color: white; border-radius: 8px; cursor: pointer;">${isZH ? '報名參加' : 'Join Event'}</button>`;
+                    }
+
                     return `
-                        <div class="card" onclick="window.showHangoutDetail('${p.id}')" style="cursor: pointer; ${isFull ? 'opacity: 0.7;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
+                        <div class="card" onclick="window.showHangoutDetail('${p.id}')" style="cursor: pointer; ${(isFull || p.status === 'full') ? 'opacity: 0.8;' : ''} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                 <div style="background: #FFF3E0; color: #FF9800; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold;">
                                     ${catIcon} ${catLabel}
@@ -419,14 +435,10 @@ export const renderTravel = () => {
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <span style="font-size: 0.85rem; color: #666;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:#FF9800; font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
-                                ${isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${t('common.full', '額滿', 'Full')}</span>` : ''}
+                                ${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${t('common.full', '額滿', 'Full')}</span>` : ''}
                             </div>
 
-                            ${isHost ? `
-                            <button class="btn" onclick="event.stopPropagation(); window.openHangoutChat('${p.id}', '${p.title}', '${p.host_email}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>
-                            ` : !isFull ? `
-                            <button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FFB300, #FF9800); border: none; color: white; border-radius: 8px; cursor: pointer;">${isZH ? '報名參加' : 'Join Event'}</button>
-                            ` : ''}
+                            ${actionBtn}
                         </div>
                     `;
                 }).join('');

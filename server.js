@@ -915,7 +915,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
             SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-            WHERE a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
+            WHERE a.status IN ('open', 'full') AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -1175,7 +1175,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
             SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-            WHERE c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
+            WHERE c.status IN ('open', 'full') AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
             ORDER BY c.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -1299,7 +1299,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
             SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-            WHERE s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
+            WHERE s.status IN ('open', 'full') AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
             ORDER BY s.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -1435,7 +1435,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
             SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-            WHERE h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
+            WHERE h.status IN ('open', 'full') AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
             ORDER BY h.created_at DESC
         `;
         const [results] = await sequelize.query(query);
@@ -1689,7 +1689,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
             SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-            WHERE ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL)
+            WHERE ho.status IN ('open', 'full') AND (ho.deadline > NOW() OR ho.deadline IS NULL)
             ORDER BY ho.created_at DESC
         `;
         const [results] = await sequelize.query(query);
