@@ -527,6 +527,22 @@ router.get('/notifications', async (req, res) => {
     }
 });
 
+// 5.1 POST /api/v1/notifications/:id/mark-as-read
+router.post('/notifications/:id/mark-as-read', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await sequelize.query(
+            "UPDATE system_notifications SET is_read = 1 WHERE id = ?",
+            { replacements: [id] }
+        );
+        res.json({ success: true, message: 'Notification marked as read' });
+    } catch (err) {
+        console.error("Error marking notification as read:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+
 // 6. GET /api/v1/join/my-statuses
 router.get('/join/my-statuses', async (req, res) => {
     const { user_email } = req.query;

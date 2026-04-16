@@ -134,6 +134,8 @@ export class NotificationService {
     showNativeBanner(payload) {
         const banner = document.createElement('div');
         banner.className = 'native-push-banner';
+        banner.dataset.notifId = payload.notifId || payload.data?.id || ''; 
+
         banner.innerHTML = `
             <div class="push-icon-app">🚀</div>
             <div class="push-text">
@@ -141,6 +143,7 @@ export class NotificationService {
                 <div class="push-body">${payload.body}</div>
             </div>
         `;
+
 
         banner.onclick = () => {
             if (window.handleDeepLink) {
@@ -191,11 +194,23 @@ export class NotificationService {
 
     dismissNative(banner) {
         if (!banner) return;
+        
+        // --- 🚀 MARK AS READ INTEGRATION ---
+        const notifId = banner.dataset.notifId;
+        if (notifId && !banner.dataset.markedRead) {
+            banner.dataset.markedRead = 'true'; // Prevent duplicate calls
+            fetch(`/api/v1/notifications/${notifId}/mark-as-read`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => console.log(`[Notification] Marked ${notifId} as read:`, data))
+                .catch(err => console.error(`[Notification] Mark as read failed:`, err));
+        }
+
         banner.classList.remove('visible');
         setTimeout(() => {
             if (banner.parentElement) banner.parentElement.removeChild(banner);
         }, 500);
     }
+
 
     success(message, options) { return this.show(message, 'success', options); }
     error(message, options) { return this.show(message, 'error', options); }

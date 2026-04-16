@@ -74,7 +74,7 @@ if (window.socket) {
             body: data.message,
             data: {
                 type: 'join_request',
-                id: data.event_id,
+                targetId: data.event_id, // Use targetId instead of id to skip DB mark-as-read
                 metadata: {
                     event_type: data.event_type,
                     event_title: data.event_title,
@@ -83,6 +83,7 @@ if (window.socket) {
                 }
             }
         });
+
     });
 }
 
@@ -1560,8 +1561,10 @@ async function syncNotifications() {
                 notifications.showNativeBanner({
                     title: isZH ? "活動申請 / Join Request" : "Join Request",
                     body: msg,
+                    notifId: newest.id, // Explicitly pass DB ID
                     data: { ...newest, metadata: meta, action_metadata: actionMeta }
                 });
+
             }
 
             // Auto-refresh disabled to save DB quota
