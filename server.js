@@ -93,9 +93,9 @@ function validateRequiredFields(req, res, requiredFields) {
 
     if (missingFields.length > 0) {
         logger.warn(`[Validation] Missing required fields in ${req.path}: ${missingFields.join(', ')}`);
-        res.status(400).json({ 
-            error: "Missing required fields", 
-            fields: missingFields 
+        res.status(400).json({
+            error: "Missing required fields",
+            fields: missingFields
         });
         return false;
     }
@@ -162,7 +162,7 @@ io.on('connection', (socket) => {
     socket.on('send_message', async (data) => {
         try {
             const { room_id, sender_email, sender_name, message } = data;
-            
+
             // --- PROTOCOL ZERO 500 ERROR: DB Persistence ---
             const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
             await sequelize.query(query, { replacements: [room_id, sender_email, sender_name, message] });
@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
             });
 
             // --- Async Push Notification ---
-            handleChatNotification(room_id, sender_email, sender_name, message).catch(err => 
+            handleChatNotification(room_id, sender_email, sender_name, message).catch(err =>
                 logger.error(`[Socket] Push Notification error: ${err.message}`)
             );
 
@@ -225,11 +225,11 @@ async function handleChatNotification(roomId, senderEmail, senderName, message) 
             .filter(email => email && !senderVariants.includes(email.toLowerCase().trim()));
 
         if (targetEmails.length > 0) {
-            const pushTitle = `💬 Pesan baru dari ${senderName}`;
+            const pushTitle = `💬 You got a message from ${senderName}`;
             const snippet = message.length > 60 ? message.substring(0, 60) + "..." : message;
             const pushBody = snippet;
             const url = `https://joinup-production.onrender.com/#messages/${roomId}`;
-            
+
             await pushService.sendPushNotification(targetEmails, pushTitle, pushBody, url);
         }
     } catch (err) {
@@ -314,23 +314,23 @@ const checkAuth = async (req, res, next) => {
         console.warn('[Auth] Missing authentication headers/body.');
         return res.status(401).json({ error: 'Authentication required. Please login first.' });
     }
-    
+
     try {
         const emails = getEmailVariations(userEmail.toLowerCase().trim());
-        const user = await User.findOne({ 
-            where: { 
-                email: { [Op.in]: emails } 
-            } 
+        const user = await User.findOne({
+            where: {
+                email: { [Op.in]: emails }
+            }
         });
 
         if (!user) {
             console.warn(`[Auth] User not found for email(s): ${emails.join(', ')}`);
             return res.status(403).json({ error: 'Access denied. Invalid user session.' });
         }
-        
+
         // --- AUTO-BAN PROTECTION ---
         if (user.status === 'suspended' || user.status === 'banned') {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 error: 'Your account has been SUSPENDED due to business rule violations.',
                 status: user.status
             });
@@ -350,7 +350,7 @@ app.get('/api/v1/users/me', checkAuth, (req, res) => {
     try {
         const user = req.user;
         if (!user) return res.status(401).json({ error: 'Unauthorized' });
-        
+
         res.json({
             success: true,
             username: user.username,
@@ -711,7 +711,7 @@ async function handleCancellation(activityId, category) {
                     }
                 );
             }
-            
+
             const participantEmails = parts.map(p => p.email);
             const pushTitle = `⚠️ Event Cancelled / 活動取消通知`;
             const pushBody = `The event "${eventTitle}" has been cancelled by the host. / 您參加的活動 "${eventTitle}" 已被主辦人取消。`;
@@ -816,9 +816,9 @@ app.post('/api/v1/admin/penalize', async (req, res) => {
 
         await awardViolationPoint(email, points, reason || 'Manual Admin Penalty', adminEmail);
 
-        res.json({ 
-            success: true, 
-            message: `Successfully penalized ${email} with ${points} violation points. Status checked for auto-ban.` 
+        res.json({
+            success: true,
+            message: `Successfully penalized ${email} with ${points} violation points. Status checked for auto-ban.`
         });
     } catch (error) {
         console.error("Admin penalize error:", error);
@@ -872,8 +872,8 @@ app.post('/create-activity', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, category, title, sport_type, 
-                people_needed, toTaipei(event_time), toTaipei(deadline), 
+                host_email, category, title, sport_type,
+                people_needed, toTaipei(event_time), toTaipei(deadline),
                 location, description || ''
             ]
         });
@@ -891,16 +891,16 @@ app.post('/create-activity', async (req, res) => {
         // 🔔 Global Broadcast Notification
         try {
             const pushTitle = `🏀 New Sport Event: ${title}`;
-            const pushBody = `Pesan baru dari ${finalHostName}: Ayo join ${title}! / New activity created by ${finalHostName}.`;
+            const pushBody = `You got a new sport event from ${finalHostName}: Let's play ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#sports?id=${insertId}`);
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: 'Yeay! Post created successfully! 🏀', 
-            id: insertId 
+            message: 'Yeay! Post created successfully! 🏀',
+            id: insertId
         });
 
     } catch (error) {
@@ -1109,7 +1109,7 @@ app.post('/activity/:id/close', async (req, res) => {
 
 // --- MULTER CONFIGURATION (Memory Storage for Cloudinary Stream) ---
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: { fileSize: 50 * 1024 * 1024 } // Strict 50MB limit
 });
@@ -1117,7 +1117,7 @@ const upload = multer({
 // Original local upload route (Deprecated - Kept for compatibility but converted to handle memory)
 app.post('/upload', checkAuth, upload.single('file'), handleMulterError, (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    
+
     // Default to a warning since local storage is disabled on Render
     res.status(410).json({ error: 'Legacy /upload is deprecated. Please use /api/chat/upload for Cloudinary storage.' });
 });
@@ -1129,8 +1129,8 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
     try {
         // Implementation of upload_stream to push buffer to Cloudinary
         const stream = cloudinary.uploader.upload_stream(
-            { 
-                resource_type: 'auto', 
+            {
+                resource_type: 'auto',
                 folder: 'joinup_chat',
                 public_id: `chat_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9]/g, '_')}`,
                 // Eager transformation: optimize SAAT UPLOAD (backend), bukan on-the-fly (frontend)
@@ -1144,7 +1144,7 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
                     console.error("Cloudinary upload failed:", error);
                     return res.status(500).json({ error: 'Cloudinary storage failed: ' + error.message });
                 }
-                
+
                 // Success: return optimized JSON for frontend rendering
                 res.status(200).json({
                     url: result.secure_url,
@@ -1209,8 +1209,8 @@ app.post('/create-carpool', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, finalHostName, finalHostDept, title, 
-                departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline), 
+                host_email, finalHostName, finalHostDept, title,
+                departure_loc, destination_loc, toTaipei(departure_time), toTaipei(deadline),
                 available_seats, price, vehicle_type, description || ''
             ]
         });
@@ -1228,16 +1228,16 @@ app.post('/create-carpool', async (req, res) => {
         // 🔔 Global Broadcast Notification
         try {
             const pushTitle = `🚗 New Carpool: ${departure_loc} ➔ ${destination_loc}`;
-            const pushBody = `Pesan baru dari ${finalHostName}: Ayo tebeng ke ${destination_loc}! / New ride offered by ${finalHostName}.`;
+            const pushBody = `You got a new carpool from ${finalHostName}: Let's ride to ${destination_loc}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#carpool?id=${insertId}`);
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: 'Yeay! Carpool created successfully! 🚗', 
-            id: insertId 
+            message: 'Yeay! Carpool created successfully! 🚗',
+            id: insertId
         });
 
     } catch (error) {
@@ -1333,8 +1333,8 @@ app.post('/create-study', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, finalHostName, finalHostDept, 
-                title, event_type, subject, location, 
+                host_email, finalHostName, finalHostDept,
+                title, event_type, subject, location,
                 people_needed, toTaipei(event_time), toTaipei(deadline), description || ''
             ]
         });
@@ -1352,16 +1352,16 @@ app.post('/create-study', async (req, res) => {
         // 🔔 Global Broadcast Notification
         try {
             const pushTitle = `📚 New Study Group: ${title}`;
-            const pushBody = `Pesan baru dari ${finalHostName}: Ayo belajar bareng ${subject}! / New study event created by ${finalHostName}.`;
+            const pushBody = `You got a new study group from ${finalHostName}: Let's study ${subject}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#study?id=${insertId}`);
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: 'Yeay! Study session created successfully! 📚', 
-            id: insertId 
+            message: 'Yeay! Study session created successfully! 📚',
+            id: insertId
         });
 
     } catch (error) {
@@ -1469,8 +1469,8 @@ app.post('/create-hangout', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, title, category, finalHostName, finalHostDept, 
-                people_needed, toTaipei(event_time), toTaipei(deadline), 
+                host_email, title, category, finalHostName, finalHostDept,
+                people_needed, toTaipei(event_time), toTaipei(deadline),
                 meeting_location, destination, description || ''
             ]
         });
@@ -1488,16 +1488,16 @@ app.post('/create-hangout', async (req, res) => {
         // 🔔 Global Broadcast Notification
         try {
             const pushTitle = `🎉 New Hangout: ${title}`;
-            const pushBody = `Pesan baru dari ${finalHostName}: Ayo jalan-jalan ke ${destination}! / New hangout created by ${finalHostName}.`;
+            const pushBody = `You got a new hangout from ${finalHostName}: Let's hang out to ${destination}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#travel?id=${insertId}`);
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: "Hangout event created successfully! 🎉", 
-            id: insertId 
+            message: "Hangout event created successfully! 🎉",
+            id: insertId
         });
     } catch (error) {
         logger.error("[CreateHangout] Critical Error:", error);
@@ -1610,7 +1610,7 @@ app.get('/room-messages/:roomId', async (req, res) => {
     }
 });
 
-// 4. Kirim Pesan Baru
+// 4. Send Message
 app.post('/send-message', async (req, res) => {
     try {
         const { room_id, sender_email, sender_name, message } = req.body;
@@ -1628,10 +1628,10 @@ app.post('/create-housing', async (req, res) => {
     if (!validateRequiredFields(req, res, required)) return;
 
     try {
-        const { 
-            host_email, host_name, host_dept, housing_type, title, location, 
-            room_number, rent_amount, deposit, people_needed, gender_req, 
-            schedule_tags, deadline, rental_period, facilities, habits, description 
+        const {
+            host_email, host_name, host_dept, housing_type, title, location,
+            room_number, rent_amount, deposit, people_needed, gender_req,
+            schedule_tags, deadline, rental_period, facilities, habits, description
         } = req.body;
 
         const finalHostName = host_name || "Host";
@@ -1645,9 +1645,9 @@ app.post('/create-housing', async (req, res) => {
 
         const [result] = await sequelize.query(query, {
             replacements: [
-                host_email, finalHostName, finalHostDept, housing_type, title, location, 
-                room_number || null, rent_amount || null, deposit || null, 
-                people_needed, gender_req, schedule_tags || '', toTaipei(deadline), 
+                host_email, finalHostName, finalHostDept, housing_type, title, location,
+                room_number || null, rent_amount || null, deposit || null,
+                people_needed, gender_req, schedule_tags || '', toTaipei(deadline),
                 rental_period, facilities || '', habits || '', description || ''
             ]
         });
@@ -1665,16 +1665,16 @@ app.post('/create-housing', async (req, res) => {
         // 🔔 Global Broadcast Notification
         try {
             const pushTitle = `🏠 Housing / Group Buy: ${title}`;
-            const pushBody = `Pesan baru dari ${finalHostName}: Mencari teman seruangan / teman beli ${title}! / New housing post by ${finalHostName}.`;
+            const pushBody = `You got a new housing from ${finalHostName}: Let's find a roommate / group buy for ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#groupbuy?id=${insertId}`);
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: "Housing event created successfully! 🏠", 
-            id: insertId 
+            message: "Housing event created successfully! 🏠",
+            id: insertId
         });
     } catch (error) {
         logger.error("[CreateHousing] Critical Error:", error);
@@ -2286,7 +2286,7 @@ cron.schedule('0 12,19 * * *', async () => {
             const pushBody = translationKey === 'notif.digest.morning'
                 ? `There are ${totalCount} new events this morning! / 今天早上有 ${totalCount} 個新活動，快來看看吧！`
                 : `There are ${totalCount} new events this afternoon! / 今天下午有 ${totalCount} 個新活動，快來看看吧！`;
-            
+
             const allUsersEmails = users.map(u => u.email).filter(e => !!e);
             await pushService.sendPushNotification(allUsersEmails, pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
 
