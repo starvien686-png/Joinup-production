@@ -220,7 +220,7 @@ export const renderGroupBuy = () => {
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
                             <label>${I18n.t('common.people_needed')} *</label>
-                            <input type="number" id="peopleCount" min="1" value="1" required>
+                            <input type="number" id="peopleCount" min="2" value="2" required>
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('housing.label.gender')} *</label>
@@ -414,7 +414,7 @@ export const renderGroupBuy = () => {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                          <div class="input-group">
                             <label>${I18n.t('common.people_needed')} *</label>
-                            <input type="number" id="peopleCount" min="1" value="1" required>
+                            <input type="number" id="peopleCount" min="2" value="2" required>
                         </div>
                         <div class="input-group">
                             <label>${I18n.t('housing.label.gender')} *</label>
@@ -476,7 +476,7 @@ export const renderGroupBuy = () => {
         // 1. KEMBALI PAKAI MOCKSTORE (Karena data Housing sangat kompleks)
         let posts = [];
         try {
-            const res = await fetch('/housing');
+            const res = await fetch(`/housing?user_email=${encodeURIComponent(user.email)}`);
             if (res.ok) {
                 posts = await res.json();
             }

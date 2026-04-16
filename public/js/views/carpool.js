@@ -157,7 +157,7 @@ export const renderCarpool = () => {
 
                     <div class="input-group">
                         <label>需要人數 * (Seats)</label>
-                        <input type="number" id="cpSeats" min="1" max="10" value="4" required>
+                        <input type="number" id="cpSeats" min="2" max="10" value="4" required>
                     </div>
 
                     <div class="input-group">
@@ -319,7 +319,7 @@ export const renderCarpool = () => {
         ].filter(Boolean).length;
 
         try {
-            const response = await fetch('/carpools');
+            const response = await fetch(`/carpools?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
             
@@ -468,7 +468,7 @@ export const renderCarpool = () => {
                             
                             <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: flex; justify-content: space-between;">
                                 <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
-                                <div style="text-align: right;"><strong>💺 ${isZH ? '空位' : 'Seats'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
+                                <div style="text-align: right;"><strong>💺 ${isZH ? '人數' : 'People'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
                             </div>
                             <div style="margin-top: 0.5rem; margin-bottom: 10px;">${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${txtFull}</span>` : ''}</div>
                             ${actionBtn}

@@ -173,7 +173,7 @@ export const renderTravel = () => {
 
                     <div class="input-group">
                         <label>${t('ho.people', '需要人數 *', 'People Needed *')}</label>
-                        <input type="number" id="hoPeople" min="1" max="50" value="4" required>
+                        <input type="number" id="hoPeople" min="2" max="50" value="4" required>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -310,7 +310,7 @@ export const renderTravel = () => {
         ].filter(Boolean).length;
 
         try {
-            const response = await fetch('/hangouts');
+            const response = await fetch(`/hangouts?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
             

@@ -577,6 +577,8 @@ app.post('/send-otp', otpRateLimiter, async (req, res) => {
     }
 });
 
+
+
 app.post('/reset-password', async (req, res) => {
     const requestId = crypto.randomUUID();
     try {
@@ -981,14 +983,20 @@ app.post('/create-activity', async (req, res) => {
 
 app.get(['/activities', '/api/v1/activities'], async (req, res) => {
     try {
+        const viewerEmail = (req.query.user_email || '').toLowerCase().trim();
         const query = `
             SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-            WHERE a.status IN ('open', 'full') AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
+            LEFT JOIN event_participants viewer_ep ON a.id = viewer_ep.event_id AND viewer_ep.event_type = 'sports' AND LOWER(viewer_ep.user_email) = ? AND viewer_ep.status IN ('approved', 'accepted')
+            WHERE a.status IN ('open', 'full') 
+              AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
+              AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR viewer_ep.id IS NOT NULL))
             ORDER BY a.created_at DESC
         `;
-        const [results] = await sequelize.query(query);
+        const [results] = await sequelize.query(query, {
+            replacements: [viewerEmail, viewerEmail]
+        });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to get activities: ' + error.message });
@@ -1002,12 +1010,13 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         const query = `
             SELECT a.* FROM activities a 
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports'
-            WHERE a.host_email IN (?) OR ep.user_email IN (?)
+            WHERE (a.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
+              AND (a.status != 'full' OR (a.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
             GROUP BY a.id
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [emails, emails]
+            replacements: [emails, emails, emails, emails]
         });
         res.json(results);
     } catch (error) {
@@ -1245,14 +1254,20 @@ app.post('/api/chat/upload', checkAuth, upload.single('file'), handleMulterError
 // 1. Mengambil semua data tebengan
 app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
     try {
+        const viewerEmail = (req.query.user_email || '').toLowerCase().trim();
         const query = `
             SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-            WHERE c.status IN ('open', 'full') AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
+            LEFT JOIN event_participants viewer_ep ON c.id = viewer_ep.event_id AND viewer_ep.event_type = 'carpool' AND LOWER(viewer_ep.user_email) = ? AND viewer_ep.status IN ('approved', 'accepted')
+            WHERE c.status IN ('open', 'full') 
+              AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
+              AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR viewer_ep.id IS NOT NULL))
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query);
+        const [results] = await sequelize.query(query, {
+            replacements: [viewerEmail, viewerEmail]
+        });
         res.json(results);
     } catch (error) {
         console.error("Error fetching carpools:", error);
@@ -1271,6 +1286,10 @@ app.post('/create-carpool', async (req, res) => {
             departure_loc, destination_loc, departure_time, deadline,
             available_seats, price, vehicle_type, description
         } = req.body;
+
+        if (parseInt(available_seats) < 2) {
+            return res.status(400).json({ error: 'Minimum capacity (available_seats) must be at least 2 (Host + 1 Participant).' });
+        }
 
         const finalHostName = host_name || "Host";
         const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
@@ -1372,11 +1391,12 @@ app.get('/my-carpools/:email', async (req, res) => {
         const query = `
             SELECT c.* FROM carpools c
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool'
-            WHERE c.host_email IN (?) OR ep.user_email IN (?)
+            WHERE (c.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
+              AND (c.status != 'full' OR (c.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
             GROUP BY c.id
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my carpools: ' + error.message });
@@ -1390,14 +1410,20 @@ app.get('/my-carpools/:email', async (req, res) => {
 // 1. Mengambil semua data Study yang masih open (Untuk Halaman Depan)
 app.get(['/studies', '/api/v1/studies'], async (req, res) => {
     try {
+        const viewerEmail = (req.query.user_email || '').toLowerCase().trim();
         const query = `
             SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-            WHERE s.status IN ('open', 'full') AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
+            LEFT JOIN event_participants viewer_ep ON s.id = viewer_ep.event_id AND viewer_ep.event_type = 'study' AND LOWER(viewer_ep.user_email) = ? AND viewer_ep.status IN ('approved', 'accepted')
+            WHERE s.status IN ('open', 'full') 
+              AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
+              AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR viewer_ep.id IS NOT NULL))
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query);
+        const [results] = await sequelize.query(query, {
+            replacements: [viewerEmail, viewerEmail]
+        });
         res.json(results);
     } catch (error) {
         console.error("Error fetching studies:", error);
@@ -1416,6 +1442,10 @@ app.post('/create-study', async (req, res) => {
             title, event_type, subject, location,
             people_needed, event_time, deadline, description
         } = req.body;
+
+        if (parseInt(people_needed) < 2) {
+            return res.status(400).json({ error: 'Minimum capacity (人数) must be at least 2 (Host + 1 Participant).' });
+        }
 
         const finalHostName = host_name || "Host";
         const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
@@ -1500,11 +1530,12 @@ app.get('/my-studies/:email', async (req, res) => {
         const query = `
             SELECT s.* FROM studies s
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study'
-            WHERE s.host_email IN (?) OR ep.user_email IN (?)
+            WHERE (s.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
+              AND (s.status != 'full' OR (s.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
             GROUP BY s.id
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my studies: ' + error.message });
@@ -1535,14 +1566,20 @@ app.get('/study/:id', async (req, res) => {
 // 1. Mengambil semua data Hang Out yang masih open (Untuk Halaman List)
 app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
     try {
+        const viewerEmail = (req.query.user_email || '').toLowerCase().trim();
         const query = `
             SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-            WHERE h.status IN ('open', 'full') AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
+            LEFT JOIN event_participants viewer_ep ON h.id = viewer_ep.event_id AND viewer_ep.event_type = 'hangout' AND LOWER(viewer_ep.user_email) = ? AND viewer_ep.status IN ('approved', 'accepted')
+            WHERE h.status IN ('open', 'full') 
+              AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
+              AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR viewer_ep.id IS NOT NULL))
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query);
+        const [results] = await sequelize.query(query, {
+            replacements: [viewerEmail, viewerEmail]
+        });
         res.json(results);
     } catch (error) {
         console.error("Error fetching hangouts:", error);
@@ -1561,6 +1598,10 @@ app.post('/create-hangout', async (req, res) => {
             people_needed, event_time, deadline,
             meeting_location, destination, description
         } = req.body;
+
+        if (parseInt(people_needed) < 2) {
+            return res.status(400).json({ error: 'Minimum capacity (人数) must be at least 2 (Host + 1 Participant).' });
+        }
 
         const finalHostName = host_name || "Host";
         const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";
@@ -1644,11 +1685,12 @@ app.get('/my-hangouts/:email', async (req, res) => {
         const query = `
             SELECT h.* FROM hangouts h
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout'
-            WHERE h.host_email IN (?) OR ep.user_email IN (?)
+            WHERE (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
+              AND (h.status != 'full' OR (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
             GROUP BY h.id
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my hangouts: ' + error.message });
@@ -1801,14 +1843,20 @@ app.post('/create-housing', async (req, res) => {
 // 2. API GET ALL HOUSING (Untuk List)
 app.get(['/housing', '/api/v1/housing'], async (req, res) => {
     try {
+        const viewerEmail = (req.query.user_email || '').toLowerCase().trim();
         const query = `
             SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-            WHERE ho.status IN ('open', 'full') AND (ho.deadline > NOW() OR ho.deadline IS NULL)
+            LEFT JOIN event_participants viewer_ep ON ho.id = viewer_ep.event_id AND (viewer_ep.event_type = 'housing' OR viewer_ep.event_type = 'groupbuy') AND LOWER(viewer_ep.user_email) = ? AND viewer_ep.status IN ('approved', 'accepted')
+            WHERE ho.status IN ('open', 'full') 
+              AND (ho.deadline > NOW() OR ho.deadline IS NULL)
+              AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR viewer_ep.id IS NOT NULL))
             ORDER BY ho.created_at DESC
         `;
-        const [results] = await sequelize.query(query);
+        const [results] = await sequelize.query(query, {
+            replacements: [viewerEmail, viewerEmail]
+        });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1822,11 +1870,12 @@ app.get('/my-housing/:email', async (req, res) => {
         const query = `
             SELECT h.* FROM housing h
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy')
-            WHERE h.host_email IN (?) OR ep.user_email IN (?)
+            WHERE (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
+              AND (h.status != 'full' OR (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
             GROUP BY h.id
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my housing/groupbuy: ' + error.message });

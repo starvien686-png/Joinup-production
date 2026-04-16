@@ -243,7 +243,7 @@ export const renderSports = () => {
                     if (statusData.success) myStatuses = statusData.data || {};
                 } catch (e) { console.warn("Fail fetch statuses", e); }
             }
-            const response = await fetch('/activities');
+            const response = await fetch(`/activities?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const availablePosts = dbPosts.filter(p => {
                 if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
