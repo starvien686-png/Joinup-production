@@ -1547,6 +1547,9 @@ async function syncNotifications() {
             // Detect NEW unread notifications to show toast
             const newest = latestNotifs[0];
             if (!newest.is_read && newest.id !== lastId) {
+                const isInitialSync = typeof window._hasInitialSyncCompleted === 'undefined';
+                window._hasInitialSyncCompleted = true;
+
                 localStorage.setItem('last_notif_id', newest.id);
 
                 const meta = typeof newest.metadata === 'string' ? JSON.parse(newest.metadata) : newest.metadata;
@@ -1579,14 +1582,19 @@ async function syncNotifications() {
                     msg = isZH ? `🔔 您有一則新通知` : `🔔 You have a new notification`;
                 }
 
-                // Show the toast banner immediately
-                notifications.showNativeBanner({
-                    title: title,
-                    body: msg,
-                    notifId: newest.id, // Explicitly pass DB ID
-                    data: { ...newest, metadata: meta, action_metadata: actionMeta }
-                });
+                // Strictly ONLY show banner for real-time join_requests. DO NOT pop up on initial load.
+                if (!isInitialSync && newest.type === 'join_request') {
+                    // Show the toast banner immediately
+                    notifications.showNativeBanner({
+                        title: title,
+                        body: msg,
+                        notifId: newest.id, // Explicitly pass DB ID
+                        data: { ...newest, metadata: meta, action_metadata: actionMeta }
+                    });
+                }
 
+                // Mark as read immediately on fetch so it doesn't haunt the user on next login
+                api.fetch(`/api/v1/notifications/${newest.id}/mark-as-read`, { method: 'POST' }).catch(console.error);
             }
 
             // Auto-refresh disabled to save DB quota
