@@ -173,16 +173,19 @@ io.on('connection', (socket) => {
         try {
             const { room_id, sender_email, sender_name, message } = data;
 
+            const [uData] = await sequelize.query(`SELECT username FROM users WHERE email = ?`, { replacements: [sender_email] });
+            const realSenderName = (uData.length > 0 && uData[0].username) ? uData[0].username : (sender_name || 'JoinUp User');
+
             // --- PROTOCOL ZERO 500 ERROR: DB Persistence ---
             const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
-            await sequelize.query(query, { replacements: [room_id, sender_email, sender_name, message] });
+            await sequelize.query(query, { replacements: [room_id, sender_email, realSenderName, message] });
 
             // Broadcast to everyone in the room (including sender if they rely on it)
             io.to(String(room_id)).emit('receive_message', {
                 id: Date.now(), // Temporary ID until reload
                 room_id,
                 sender_email,
-                sender_name,
+                sender_name: realSenderName,
                 message,
                 created_at: new Date().toISOString()
             });
@@ -997,12 +1000,14 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         const normalizedParam = (req.params.email || '').toLowerCase().trim();
         const emails = getEmailVariations(normalizedParam);
         const query = `
-            SELECT * FROM activities 
-            WHERE host_email IN (?) 
-            ORDER BY created_at DESC
+            SELECT a.* FROM activities a 
+            LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports'
+            WHERE a.host_email IN (?) OR ep.user_email IN (?)
+            GROUP BY a.id
+            ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [emails]
+            replacements: [emails, emails]
         });
         res.json(results);
     } catch (error) {
@@ -1094,13 +1099,15 @@ app.put('/update-housing-status/:id', async (req, res) => {
 // --- ROOM CHAT ROUTES (STAGE 2) ---
 // ==========================================
 
-app.get('/chat/:activityId', async (req, res) => {
+app.get(['/chat/:activityId', '/api/v1/chat/:activityId'], async (req, res) => {
     try {
         const activityId = req.params.activityId;
         const query = `
-            SELECT * FROM chat_messages 
-            WHERE room_id = ? 
-            ORDER BY created_at ASC
+            SELECT c.id, c.room_id, c.sender_email, COALESCE(NULLIF(u.username, ''), c.sender_name, 'JoinUp User') AS sender_name, c.message, c.created_at 
+            FROM chat_messages c
+            LEFT JOIN users u ON c.sender_email = u.email
+            WHERE c.room_id = ? 
+            ORDER BY c.created_at ASC
         `;
         const [results] = await sequelize.query(query, {
             replacements: [activityId]
@@ -1358,6 +1365,24 @@ app.get('/carpool/:id', async (req, res) => {
     }
 });
 
+// 5. Mengambil data Carpool milik sendiri
+app.get('/my-carpools/:email', async (req, res) => {
+    try {
+        const emails = getEmailVariations(req.params.email);
+        const query = `
+            SELECT c.* FROM carpools c
+            LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool'
+            WHERE c.host_email IN (?) OR ep.user_email IN (?)
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        `;
+        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
+        res.json(results);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch my carpools: ' + error.message });
+    }
+});
+
 // ==========================================
 // --- API UNTUK STUDY (BELAJAR BARENG) ---
 // ==========================================
@@ -1472,8 +1497,14 @@ app.put('/update-study-status/:id', async (req, res) => {
 app.get('/my-studies/:email', async (req, res) => {
     try {
         const emails = getEmailVariations(req.params.email);
-        const query = `SELECT * FROM studies WHERE host_email IN (?) ORDER BY created_at DESC`;
-        const [results] = await sequelize.query(query, { replacements: [emails] });
+        const query = `
+            SELECT s.* FROM studies s
+            LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study'
+            WHERE s.host_email IN (?) OR ep.user_email IN (?)
+            GROUP BY s.id
+            ORDER BY s.created_at DESC
+        `;
+        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my studies: ' + error.message });
@@ -1610,8 +1641,14 @@ app.put('/update-hangout-status/:id', async (req, res) => {
 app.get('/my-hangouts/:email', async (req, res) => {
     try {
         const emails = getEmailVariations(req.params.email);
-        const query = `SELECT * FROM hangouts WHERE host_email IN (?) ORDER BY created_at DESC`;
-        const [results] = await sequelize.query(query, { replacements: [emails] });
+        const query = `
+            SELECT h.* FROM hangouts h
+            LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout'
+            WHERE h.host_email IN (?) OR ep.user_email IN (?)
+            GROUP BY h.id
+            ORDER BY h.created_at DESC
+        `;
+        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my hangouts: ' + error.message });
@@ -1782,11 +1819,17 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
 app.get('/my-housing/:email', async (req, res) => {
     try {
         const emails = getEmailVariations(req.params.email);
-        const query = "SELECT * FROM housing WHERE host_email IN (?) ORDER BY created_at DESC";
-        const [results] = await sequelize.query(query, { replacements: [emails] });
+        const query = `
+            SELECT h.* FROM housing h
+            LEFT JOIN event_participants ep ON h.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy')
+            WHERE h.host_email IN (?) OR ep.user_email IN (?)
+            GROUP BY h.id
+            ORDER BY h.created_at DESC
+        `;
+        const [results] = await sequelize.query(query, { replacements: [emails, emails] });
         res.json(results);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to fetch my housing/groupbuy: ' + error.message });
     }
 });
 

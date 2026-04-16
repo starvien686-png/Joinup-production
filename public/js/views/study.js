@@ -455,7 +455,11 @@ export const renderStudy = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const participantCount = acceptedApps.length;
+            const actualParticipants = acceptedApps.filter(app => {
+                const email = app.user_email || app.user_id || app.applicantId;
+                return email !== p.host_email && email !== user.email;
+            });
+            const participantCount = actualParticipants.length + 1;
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${isZH ? '招募中' : 'Status: OK'}</span>`;

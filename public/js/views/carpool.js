@@ -529,9 +529,8 @@ export const renderCarpool = () => {
     const renderManage = async () => {
         let myPosts = [];
         try {
-            const response = await fetch('/carpools');
-            const allPosts = await response.json();
-            myPosts = allPosts.filter(p => p.host_email === user.email);
+            const response = await fetch('/my-carpools/' + user.email);
+            myPosts = await response.json();
         } catch (error) { }
 
         const isZH = isAppZH();
@@ -559,7 +558,11 @@ export const renderCarpool = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const participantCount = acceptedApps.length;
+            const actualParticipants = acceptedApps.filter(app => {
+                const email = app.user_email || app.user_id || app.applicantId;
+                return email !== p.host_email && email !== user.email;
+            });
+            const participantCount = actualParticipants.length + 1;
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${t('cp.stat.open', '狀態: 招募中', 'Status: OK')}</span>`;

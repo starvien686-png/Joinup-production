@@ -623,7 +623,11 @@ export const renderSports = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const participantCount = acceptedApps.length;
+            const actualParticipants = acceptedApps.filter(app => {
+                const email = app.user_email || app.user_id || app.applicantId;
+                return email !== p.authorId && email !== user.email;
+            });
+            const participantCount = actualParticipants.length + 1;
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 ${isZH ? '狀態: 招募中' : 'Status: OK'}</span>`;

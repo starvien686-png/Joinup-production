@@ -513,7 +513,11 @@ export const renderTravel = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const participantCount = acceptedApps.length;
+            const actualParticipants = acceptedApps.filter(app => {
+                const email = app.user_email || app.user_id || app.applicantId;
+                return email !== p.host_email && email !== user.email;
+            });
+            const participantCount = actualParticipants.length + 1;
 
             let statusColor = '#9e9e9e';
             let statusIcon = '';
