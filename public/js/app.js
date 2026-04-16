@@ -1534,7 +1534,7 @@ async function syncNotifications() {
     try {
         const u = JSON.parse(userProfileStr);
         const safeUserEmail = localStorage.getItem('userEmail') || u.email || u.id; // Jaring Pengaman!
-        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=5`, { idempotency: false });
+        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=5&unread_only=true`, { idempotency: false });
 
         if (data.success && data.data.list && data.data.list.length > 0) {
             const latestNotifs = data.data.list;
@@ -1554,12 +1554,34 @@ async function syncNotifications() {
 
                 const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
                 const eventName = meta?.event_title ? (isZH ? `「${meta.event_title}」` : ` "${meta.event_title}"`) : '';
-                const msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || '某人'} 申請加入${eventName}`
-                    : `🔔 New join request from ${meta?.snapshot_display_name || 'someone'} for${eventName}`;
+                
+                let title = "Notification";
+                let msg = "";
+
+                if (newest.type === 'join_request') {
+                    title = isZH ? "活動申請 / Join Request" : "Join Request";
+                    msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || '某人'} 申請加入${eventName}` 
+                               : `🔔 New join request received!`;
+                } else if (newest.type === 'NEW_EVENT') {
+                    title = isZH ? "新活動 / New Event" : "New Event";
+                    msg = isZH ? `🚀 我們有新的活動${eventName}，快來查看！` 
+                               : `🚀 A new event has been created!`;
+                } else if (newest.type === 'ACCEPTED') {
+                    title = isZH ? "申請通過 / Accepted" : "Accepted";
+                    msg = isZH ? `🎉 您對 ${eventName} 的加入申請已獲批准！` 
+                               : `🎉 Your join request was approved!`;
+                } else if (newest.type === 'REJECTED') {
+                    title = isZH ? "申請婉拒 / Rejected" : "Rejected";
+                    msg = isZH ? `❌ 您對 ${eventName} 的加入申請已被婉拒。` 
+                               : `❌ Your join request was declined.`;
+                } else {
+                    title = isZH ? "系統通知 / System Update" : "System Update";
+                    msg = isZH ? `🔔 您有一則新通知` : `🔔 You have a new notification`;
+                }
 
                 // Show the toast banner immediately
                 notifications.showNativeBanner({
-                    title: isZH ? "活動申請 / Join Request" : "Join Request",
+                    title: title,
                     body: msg,
                     notifId: newest.id, // Explicitly pass DB ID
                     data: { ...newest, metadata: meta, action_metadata: actionMeta }

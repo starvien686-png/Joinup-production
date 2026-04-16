@@ -478,7 +478,7 @@ router.post('/join/reject', async (req, res) => {
 
 // 5. GET /api/v1/notifications
 router.get('/notifications', async (req, res) => {
-    const { user_email, limit = 20, cursor } = req.query;
+    const { user_email, limit = 20, cursor, unread_only } = req.query;
 
     if (!user_email) {
         return res.status(400).json({ success: false, message: 'Email kosong!' });
@@ -493,6 +493,10 @@ router.get('/notifications', async (req, res) => {
             WHERE u.email = :email
         `;
         let replacements = { email: user_email };
+
+        if (unread_only === 'true') {
+            queryStr += ` AND n.is_read = 0`;
+        }
 
         if (cursor) {
             queryStr += ` AND n.created_at < :cursor`;

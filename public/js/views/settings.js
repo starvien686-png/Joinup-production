@@ -229,6 +229,7 @@ export const renderSettings = () => {
             localStorage.removeItem('userProfile');
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('userEmail');
+            localStorage.removeItem('last_notif_id');
             window.location.reload();
         }
     };

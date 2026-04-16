@@ -87,6 +87,7 @@ const departmentsData = [
 export const renderRegister = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userProfile');
+    localStorage.removeItem('last_notif_id');
 
     const app = document.getElementById('app');
     let activeTab = 'login';
