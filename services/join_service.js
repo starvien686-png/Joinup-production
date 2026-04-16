@@ -235,14 +235,31 @@ router.post('/join', async (req, res) => {
 
         await t.commit();
 
-        // 🔔 Notify Host! (Push Notification)
+        // 🔔 Notify Host! (Push & Socket)
         try {
             const hostEmail = event.host_email;
+            const normalizedHostEmail = hostEmail.toLowerCase().trim();
             const pushTitle = `🚀 New Participant Request / 新成員加入申請`;
             const pushBody = `There is a new participant request for your event ("${event_title}"). Open the app to confirm! / 叮咚！有新夥伴想加入你的活動「${event_title}」，趕快打開 App 看看吧！`;
 
-            // Send push to host via OneSignal
+            // 1. Send push to host via OneSignal (Targeted via include_external_user_ids)
             pushService.sendPushNotification([hostEmail], pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
+            
+            // 2. Real-time Socket.io Targeted Emission
+            const io = req.app.get('io');
+            if (io) {
+                const hostRoom = `user_${normalizedHostEmail}`;
+                io.to(hostRoom).emit('join_request', {
+                    event_type,
+                    event_id,
+                    event_title,
+                    applicant_name: snapshot_display_name,
+                    applicant_email: user_email,
+                    message: pushBody
+                });
+                console.log(`[Socket] Targeted join_request emitted to: ${hostRoom}`);
+            }
+
             console.log(`[Notification] Join request push sent to Host: ${hostEmail} / 成功發送加入通知給發起人: ${hostEmail}`);
         } catch (pushErr) {
             console.error(`[Notification] Failed to send push to Host: / 哎呀，發送推播給主辦人失敗：`, pushErr.message);

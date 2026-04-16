@@ -4,7 +4,7 @@ import { openRatingModal } from './rating.js?v=4';
 import { PullToRefresh } from '../utils/PullToRefresh.js';
 
 // No longer using local chatInterval, we use Socket.io for real-time updates
-const socket = io(); 
+const socket = window.socket || io(); 
 
 const playNotificationSound = () => {
     try {

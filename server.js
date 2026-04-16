@@ -149,6 +149,8 @@ const io = new Server(server, {
     },
     transports: ['websocket', 'polling']
 });
+app.set('io', io);
+
 
 // --- SOCKET.IO EVENT HANDLERS ---
 io.on('connection', (socket) => {
@@ -158,6 +160,14 @@ io.on('connection', (socket) => {
         socket.join(String(roomId));
         logger.info(`[Socket] Client ${socket.id} joined room: ${roomId}`);
     });
+
+    socket.on('register_user', (email) => {
+        if (!email) return;
+        const privateRoom = `user_${email.toLowerCase().trim()}`;
+        socket.join(privateRoom);
+        logger.info(`[Socket] User ${email} (client ${socket.id}) registered to private room: ${privateRoom}`);
+    });
+
 
     socket.on('send_message', async (data) => {
         try {

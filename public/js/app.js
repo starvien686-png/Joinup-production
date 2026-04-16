@@ -4,6 +4,8 @@ import { ThemeService } from './services/themeService.js';
 
 
 window.notifications = notifications;
+window.socket = io(); // Initialize Socket.io globally
+
 
 import { renderRegister } from './views/register.js?v=16';
 
@@ -56,20 +58,50 @@ document.addEventListener('visibilitychange', () => {
 
 
 const state = {
-
     isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
-
+    userEmail: localStorage.getItem('userEmail'),
     onLoggedIn: () => { }
-
 };
 
-// Auto-sync OneSignal if already logged in
+// --- GLOBAL REAL-TIME NOTIFICATION HANDLER ---
+if (window.socket) {
+    window.socket.on('join_request', (data) => {
+        console.log('[Socket] Received real-time join request:', data);
+        
+        // Show in-app pop-up notification
+        notifications.showNativeBanner({
+            title: `🚀 ${I18n.t('notifications.type.join_request') || 'New Join Request'}`,
+            body: data.message,
+            data: {
+                type: 'join_request',
+                id: data.event_id,
+                metadata: {
+                    event_type: data.event_type,
+                    event_title: data.event_title,
+                    user_email: data.applicant_email,
+                    snapshot_display_name: data.applicant_name
+                }
+            }
+        });
+    });
+}
+
+
+
+// Auto-sync OneSignal & Socket.io if already logged in
 if (state.isLoggedIn && state.userEmail) {
     const cleanEmail = normalizeEmail(state.userEmail);
     OneSignal.push(function() {
         OneSignal.login(cleanEmail);
     });
+
+    // 🚀 Socket.io targeted registration
+    if (window.socket) {
+        window.socket.emit('register_user', cleanEmail);
+        console.log(`[Socket] Registered targeted room for: ${cleanEmail}`);
+    }
 }
+
 
 
 
@@ -351,14 +383,20 @@ window.validLogin = (user) => {
     state.onLoggedIn(user);
     render();
 
-    // OneSignal Sync
+    // OneSignal & Socket.io Sync
     const cleanEmail = normalizeEmail(user.email);
     OneSignal.push(function() {
         OneSignal.login(cleanEmail);
         console.log(`[OneSignal] Sync external_id: ${cleanEmail}`);
     });
 
+    if (window.socket) {
+        window.socket.emit('register_user', cleanEmail);
+        console.log(`[Socket] Logged in and registered room for: ${cleanEmail}`);
+    }
+
     setTimeout(window.checkNotificationBadge, 500);
+
 };
 
 
