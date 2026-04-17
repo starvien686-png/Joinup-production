@@ -531,7 +531,8 @@ export const renderCarpool = () => {
         let myPosts = [];
         try {
             const response = await fetch('/my-carpools/' + user.email);
-            myPosts = await response.json();
+            const data = await response.json();
+            myPosts = Array.isArray(data) ? data : [];
         } catch (error) { }
 
         const isZH = isAppZH();

@@ -589,7 +589,8 @@ export const renderSports = () => {
         let myPosts = [];
         try {
             const response = await fetch('/my-activities/' + user.email);
-            const dbPosts = await response.json();
+            const data = await response.json();
+            const dbPosts = Array.isArray(data) ? data : [];
             myPosts = dbPosts.map(p => ({
                 id: p.id, category: p.category, teamName: p.title, eventType: p.sport_type, maxParticipants: p.people_needed,
                 eventTime: p.event_time, deadline: p.deadline, meetingPoint: p.location, description: p.description, status: p.status || 'open',

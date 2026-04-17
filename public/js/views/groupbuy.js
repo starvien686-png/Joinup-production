@@ -1037,7 +1037,8 @@ export const renderGroupBuy = () => {
             // Ambil data langsung dari MySQL (Supabase)
             const res = await fetch('/my-housing/' + user.email);
             if (res.ok) {
-                myPosts = await res.json();
+                const data = await res.json();
+                myPosts = Array.isArray(data) ? data : [];
             }
         } catch (e) { console.error(e); }
 

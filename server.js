@@ -1022,7 +1022,8 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT a.* FROM activities a 
-            LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND LOWER(ep.user_email) = ?
+            LEFT JOIN users u_part ON LOWER(u_part.email) = ?
+            LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
             WHERE (LOWER(a.host) = ? OR ep.id IS NOT NULL)
               AND (a.status != 'full' OR (LOWER(a.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY a.id
@@ -1420,7 +1421,8 @@ app.get('/my-carpools/:email', async (req, res) => {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT c.* FROM carpools c
-            LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND LOWER(ep.user_email) = ?
+            LEFT JOIN users u_part ON LOWER(u_part.email) = ?
+            LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
             WHERE (LOWER(c.host) = ? OR ep.id IS NOT NULL)
               AND (c.status != 'full' OR (LOWER(c.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY c.id
@@ -1576,7 +1578,8 @@ app.get('/my-studies/:email', async (req, res) => {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT s.* FROM studies s
-            LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND LOWER(ep.user_email) = ?
+            LEFT JOIN users u_part ON LOWER(u_part.email) = ?
+            LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
             WHERE (LOWER(s.host) = ? OR ep.id IS NOT NULL)
               AND (s.status != 'full' OR (LOWER(s.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY s.id
@@ -1748,7 +1751,8 @@ app.get('/my-hangouts/:email', async (req, res) => {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT h.* FROM hangouts h
-            LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND LOWER(ep.user_email) = ?
+            LEFT JOIN users u_part ON LOWER(u_part.email) = ?
+            LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
             WHERE (LOWER(h.host) = ? OR ep.id IS NOT NULL)
               AND (h.status != 'full' OR (LOWER(h.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY h.id
@@ -1951,7 +1955,8 @@ app.get('/my-housing/:email', async (req, res) => {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT ho.* FROM housing ho
-            LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND LOWER(ep.user_email) = ?
+            LEFT JOIN users u_part ON LOWER(u_part.email) = ?
+            LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.user_id = u_part.id
             WHERE (LOWER(ho.host) = ? OR ep.id IS NOT NULL)
               AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY ho.id
