@@ -674,8 +674,9 @@ export const renderSports = () => {
                         <h4 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${p.teamName}</h4>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        📅 ${new Date(p.eventTime).toLocaleDateString()}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        <span>📅 ${new Date(p.eventTime).toLocaleDateString()}</span>
+                        <span style="font-weight: bold; color: #FF9800;">👥 ${participantCount} / ${p.maxParticipants}</span>
                     </div>
 
                     ${participantsView}
