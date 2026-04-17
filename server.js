@@ -1019,18 +1019,17 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
 
 app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, res) => {
     try {
-        const normalizedParam = (req.params.email || '').toLowerCase().trim();
-        const emails = getEmailVariations(normalizedParam);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT a.* FROM activities a 
-            LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports'
-            WHERE (a.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
-              AND (a.status != 'full' OR (a.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
+            LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND LOWER(ep.user_email) = ?
+            WHERE (LOWER(a.host_email) = ? OR ep.id IS NOT NULL)
+              AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY a.id
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [emails, emails, emails, emails]
+            replacements: [userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1414,16 +1413,16 @@ app.get('/carpool/:id', async (req, res) => {
 // 5. Mengambil data Carpool milik sendiri
 app.get('/my-carpools/:email', async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT c.* FROM carpools c
-            LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool'
-            WHERE (c.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
-              AND (c.status != 'full' OR (c.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
+            LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND LOWER(ep.user_email) = ?
+            WHERE (LOWER(c.host_email) = ? OR ep.id IS NOT NULL)
+              AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY c.id
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my carpools: ' + error.message });
@@ -1566,16 +1565,16 @@ app.put('/update-study-status/:id', async (req, res) => {
 // 4. Mengambil data Study milik sendiri (Untuk Halaman Manage My Activities)
 app.get('/my-studies/:email', async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT s.* FROM studies s
-            LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study'
-            WHERE (s.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
-              AND (s.status != 'full' OR (s.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
+            LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND LOWER(ep.user_email) = ?
+            WHERE (LOWER(s.host_email) = ? OR ep.id IS NOT NULL)
+              AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY s.id
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my studies: ' + error.message });
@@ -1734,16 +1733,16 @@ app.put('/update-hangout-status/:id', async (req, res) => {
 // 4. Mengambil data Hang Out milik sendiri (Untuk Halaman Manage My Activities)
 app.get('/my-hangouts/:email', async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
             SELECT h.* FROM hangouts h
-            LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout'
-            WHERE (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
-              AND (h.status != 'full' OR (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
+            LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND LOWER(ep.user_email) = ?
+            WHERE (LOWER(h.host_email) = ? OR ep.id IS NOT NULL)
+              AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             GROUP BY h.id
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my hangouts: ' + error.message });
@@ -1933,16 +1932,16 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
 // 3. API GET MY HOUSING (Untuk Manage)
 app.get('/my-housing/:email', async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
-            SELECT h.* FROM housing h
-            LEFT JOIN event_participants ep ON h.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy')
-            WHERE (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted', 'pending')))
-              AND (h.status != 'full' OR (h.host_email IN (?) OR (ep.user_email IN (?) AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY h.id
-            ORDER BY h.created_at DESC
+            SELECT ho.* FROM housing ho
+            LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND LOWER(ep.user_email) = ?
+            WHERE (LOWER(ho.host_email) = ? OR ep.id IS NOT NULL)
+              AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            GROUP BY ho.id
+            ORDER BY ho.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [emails, emails, emails, emails] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my housing/groupbuy: ' + error.message });
