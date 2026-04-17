@@ -991,7 +991,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM activities a
-                LEFT JOIN users u ON LOWER(a.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
                 LEFT JOIN event_participants viewer_ep ON a.id = viewer_ep.event_id 
                     AND viewer_ep.event_type = 'sports' 
@@ -999,7 +999,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                     AND viewer_ep.status IN ('approved', 'accepted')
                 WHERE a.status IN ('open', 'full') 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
-                  AND (a.status != 'full' OR (LOWER(a.host) = ? OR viewer_ep.id IS NOT NULL))
+                  AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY a.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1007,7 +1007,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM activities a
-                LEFT JOIN users u ON LOWER(a.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 WHERE a.status != 'full' 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
                 ORDER BY a.created_at DESC
@@ -1032,8 +1032,8 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
             SELECT a.* FROM activities a 
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
-            WHERE (LOWER(a.host) = ? OR ep.id IS NOT NULL)
-              AND (a.status != 'full' OR (LOWER(a.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (LOWER(a.host_email) = ? OR ep.id IS NOT NULL)
+              AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
@@ -1287,7 +1287,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM carpools c
-                LEFT JOIN users u ON LOWER(c.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
                 LEFT JOIN event_participants viewer_ep ON c.id = viewer_ep.event_id 
                     AND viewer_ep.event_type = 'carpool' 
@@ -1295,7 +1295,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                     AND viewer_ep.status IN ('approved', 'accepted')
                 WHERE c.status IN ('open', 'full') 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
-                  AND (c.status != 'full' OR (LOWER(c.host) = ? OR viewer_ep.id IS NOT NULL))
+                  AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY c.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1303,7 +1303,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM carpools c
-                LEFT JOIN users u ON LOWER(c.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
                 WHERE c.status != 'full' 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
                 ORDER BY c.created_at DESC
@@ -1438,8 +1438,8 @@ app.get('/my-carpools/:email', async (req, res) => {
             SELECT c.* FROM carpools c
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
-            WHERE (LOWER(c.host) = ? OR ep.id IS NOT NULL)
-              AND (c.status != 'full' OR (LOWER(c.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (LOWER(c.host_email) = ? OR ep.id IS NOT NULL)
+              AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY c.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1468,7 +1468,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM studies s
-                LEFT JOIN users u ON LOWER(s.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
                 LEFT JOIN event_participants viewer_ep ON s.id = viewer_ep.event_id 
                     AND viewer_ep.event_type = 'study' 
@@ -1476,7 +1476,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                     AND viewer_ep.status IN ('approved', 'accepted')
                 WHERE s.status IN ('open', 'full') 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
-                  AND (s.status != 'full' OR (LOWER(s.host) = ? OR viewer_ep.id IS NOT NULL))
+                  AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY s.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1484,7 +1484,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM studies s
-                LEFT JOIN users u ON LOWER(s.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
                 WHERE s.status != 'full' 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
                 ORDER BY s.created_at DESC
@@ -1602,8 +1602,8 @@ app.get('/my-studies/:email', async (req, res) => {
             SELECT s.* FROM studies s
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
-            WHERE (LOWER(s.host) = ? OR ep.id IS NOT NULL)
-              AND (s.status != 'full' OR (LOWER(s.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (LOWER(s.host_email) = ? OR ep.id IS NOT NULL)
+              AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY s.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1649,7 +1649,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM hangouts h
-                LEFT JOIN users u ON LOWER(h.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
                 LEFT JOIN event_participants viewer_ep ON h.id = viewer_ep.event_id 
                     AND viewer_ep.event_type = 'hangout' 
@@ -1657,7 +1657,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                     AND viewer_ep.status IN ('approved', 'accepted')
                 WHERE h.status IN ('open', 'full') 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
-                  AND (h.status != 'full' OR (LOWER(h.host) = ? OR viewer_ep.id IS NOT NULL))
+                  AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY h.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1665,7 +1665,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM hangouts h
-                LEFT JOIN users u ON LOWER(h.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
                 WHERE h.status != 'full' 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
                 ORDER BY h.created_at DESC
@@ -1782,8 +1782,8 @@ app.get('/my-hangouts/:email', async (req, res) => {
             SELECT h.* FROM hangouts h
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
-            WHERE (LOWER(h.host) = ? OR ep.id IS NOT NULL)
-              AND (h.status != 'full' OR (LOWER(h.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (LOWER(h.host_email) = ? OR ep.id IS NOT NULL)
+              AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY h.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1951,7 +1951,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM housing ho
-                LEFT JOIN users u ON LOWER(ho.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
                 LEFT JOIN event_participants viewer_ep ON ho.id = viewer_ep.event_id 
                     AND (viewer_ep.event_type = 'housing' OR viewer_ep.event_type = 'groupbuy')
@@ -1959,7 +1959,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                     AND viewer_ep.status IN ('approved', 'accepted')
                 WHERE ho.status IN ('open', 'full') 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
-                  AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR viewer_ep.id IS NOT NULL))
+                  AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY ho.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1967,7 +1967,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
                 FROM housing ho
-                LEFT JOIN users u ON LOWER(ho.host) = LOWER(u.email)
+                LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
                 WHERE ho.status != 'full' 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
                 ORDER BY ho.created_at DESC
@@ -1993,8 +1993,8 @@ app.get('/my-housing/:email', async (req, res) => {
             SELECT ho.* FROM housing ho
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.user_id = u_part.id
-            WHERE (LOWER(ho.host) = ? OR ep.id IS NOT NULL)
-              AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (LOWER(ho.host_email) = ? OR ep.id IS NOT NULL)
+              AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY ho.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
