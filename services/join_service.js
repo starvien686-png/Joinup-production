@@ -369,7 +369,8 @@ router.post('/join/approve', async (req, res) => {
 
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
-        const currentCount = (event_type === 'carpool') ? (approvedCount - 1) : approvedCount;
+        // Host-Inclusive Rule: Host is already in event_participants, so approvedCount reflects (Host + Approved Participants).
+        const currentCount = approvedCount;
 
         if (currentCount >= events[0].capacity) {
             throw { status: 409, message: 'Event full' };

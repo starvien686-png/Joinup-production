@@ -924,6 +924,10 @@ app.post('/create-activity', async (req, res) => {
             host_name, host_dept
         } = req.body;
 
+        if (parseInt(people_needed) < 2) {
+            return res.status(400).json({ error: 'Minimum capacity (人數) must be at least 2 (Host + 1 Participant).' });
+        }
+
         // Protocols: Zero 500 Error + Snapshot metadata
         // Note: host_name/host_dept might be missing in older sports.js, so we provide defaults if frontend hasn't updated yet.
         const finalHostName = host_name || "Host";
@@ -1884,6 +1888,10 @@ app.post('/create-housing', async (req, res) => {
             room_number, rent_amount, deposit, people_needed, gender_req,
             schedule_tags, deadline, rental_period, facilities, habits, description
         } = req.body;
+
+        if (parseInt(people_needed) < 2) {
+            return res.status(400).json({ error: 'Minimum capacity (人數) must be at least 2 (Host + 1 Participant).' });
+        }
 
         const finalHostName = host_name || "Host";
         const finalHostDept = (host_dept && host_dept !== "undefined") ? host_dept : "N/A";

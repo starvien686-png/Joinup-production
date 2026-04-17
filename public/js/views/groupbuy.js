@@ -1128,13 +1128,22 @@ export const renderGroupBuy = () => {
             }
             if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '尚無人申請' : 'No applications yet.'}</div>`;
 
+            const actualParticipants = acceptedApps.filter(app => {
+                const email = app.user_email || app.user_id || app.applicantId;
+                return email !== p.host_email && email !== user.email;
+            });
+            const participantCount = 1 + actualParticipants.length;
+
             return `
                 <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
                         ${statusBadge}
                     </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">🗓️ ${dateStr}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                        <span>🗓️ ${dateStr}</span>
+                        <span style="font-weight: bold; color: #FF9800;">👥 ${participantCount} / ${p.peopleCount}</span>
+                    </div>
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
                         ${appsHtml}
