@@ -234,17 +234,14 @@ router.post('/join', async (req, res) => {
 
         await t.commit();
 
-        // 🔔 Notify Host! (Push & Socket)
         try {
             const hostEmail = event.host_email;
             const normalizedHostEmail = hostEmail.toLowerCase().trim();
             const pushTitle = `🚀 New Participant Request / 新成員加入申請`;
             const pushBody = `There is a new participant request for your event ("${event_title}"). Open the app to confirm! / 叮咚！有新夥伴想加入你的活動「${event_title}」，趕快打開 App 看看吧！`;
 
-            // 1. Send push to host via OneSignal (Targeted via include_external_user_ids)
             pushService.sendPushNotification([hostEmail], pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
-            
-            // 2. Real-time Socket.io Targeted Emission
+
             const io = req.app.get('io');
             if (io) {
                 const hostRoom = `user_${normalizedHostEmail}`;
@@ -317,7 +314,7 @@ router.post('/join/cancel', async (req, res) => {
             await t.commit();
             return res.status(200).json({ success: true, message: 'Dropped from event', data: { status: 'cancelled' } });
         }
-        
+
         if (parts[0].status !== 'pending') throw { status: 400, message: 'Can only cancel pending or approved requests' };
 
         await sequelize.query(
@@ -564,7 +561,7 @@ router.get('/join/my-statuses', async (req, res) => {
 // 7. GET /api/v1/host/participants
 router.get('/host/participants', async (req, res) => {
     const { event_type, event_id, host_email, status, limit = 20, cursor_at, cursor_id } = req.query;
-    
+
     try {
         if (!event_type || !event_id || !host_email) {
             return res.status(400).json({ success: false, message: 'Missing required parameters (event_type, event_id, host_email)' });
@@ -572,7 +569,7 @@ router.get('/host/participants', async (req, res) => {
 
         const tableName = getTableName(event_type);
         const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
-        
+
         if (events.length === 0) {
             return res.status(404).json({ success: false, message: 'Event not found' });
         }
@@ -594,23 +591,23 @@ router.get('/host/participants', async (req, res) => {
             JOIN users u ON ep.user_id = u.id
             WHERE ep.event_type = ? AND ep.event_id = ?`;
         const replacements = [event_type, event_id];
-        
-        if (status) { 
-            queryStr += ` AND status = ?`; 
-            replacements.push(status); 
+
+        if (status) {
+            queryStr += ` AND status = ?`;
+            replacements.push(status);
         }
-        
-        if (cursor_at && cursor_id) { 
-            queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`; 
-            replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id); 
+
+        if (cursor_at && cursor_id) {
+            queryStr += ` AND (created_at < ? OR (created_at = ? AND id < ?))`;
+            replacements.push(new Date(cursor_at), new Date(cursor_at), cursor_id);
         }
-        
+
         queryStr += ` ORDER BY created_at DESC, id DESC LIMIT ?`;
         replacements.push(parseInt(limit));
 
-        const results = await sequelize.query(queryStr, { 
+        const results = await sequelize.query(queryStr, {
             replacements,
-            type: sequelize.QueryTypes.SELECT 
+            type: sequelize.QueryTypes.SELECT
         });
 
         res.json({ success: true, data: results });
