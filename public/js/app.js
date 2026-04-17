@@ -35,7 +35,7 @@ const normalizeEmail = (email) => {
 };
 
 window.OneSignal = window.OneSignal || [];
-OneSignal.push(function() {
+OneSignal.push(function () {
     OneSignal.init({
         appId: "65d2da97-e8f8-40ed-a298-978a485ba6f9",
     });
@@ -63,18 +63,17 @@ const state = {
     onLoggedIn: () => { }
 };
 
-// --- GLOBAL REAL-TIME NOTIFICATION HANDLER ---
+
 if (window.socket) {
     window.socket.on('join_request', (data) => {
         console.log('[Socket] Received real-time join request:', data);
-        
-        // Show in-app pop-up notification
+
         notifications.showNativeBanner({
             title: `🚀 ${I18n.t('notifications.type.join_request') || 'New Join Request'}`,
             body: data.message,
             data: {
                 type: 'join_request',
-                targetId: data.event_id, // Use targetId instead of id to skip DB mark-as-read
+                targetId: data.event_id,
                 metadata: {
                     event_type: data.event_type,
                     event_title: data.event_title,
@@ -87,24 +86,17 @@ if (window.socket) {
     });
 }
 
-
-
-// Auto-sync OneSignal & Socket.io if already logged in
 if (state.isLoggedIn && state.userEmail) {
     const cleanEmail = normalizeEmail(state.userEmail);
-    OneSignal.push(function() {
+    OneSignal.push(function () {
         OneSignal.login(cleanEmail);
     });
 
-    // 🚀 Socket.io targeted registration
     if (window.socket) {
         window.socket.emit('register_user', cleanEmail);
         console.log(`[Socket] Registered targeted room for: ${cleanEmail}`);
     }
 }
-
-
-
 
 const render = () => {
 
@@ -112,17 +104,9 @@ const render = () => {
 
         const user = MockStore.getUser(state.userEmail);
 
-
-
-        // 👇 PELATUK AUTO-FEEDBACK 👇
-
         const userProfile = JSON.parse(localStorage.getItem('userProfile'));
 
         if (userProfile) checkPendingFeedback(userProfile);
-
-        // 👆 ======================= 👆
-
-
 
         if (user && user.violationCount >= 3) {
 
@@ -258,7 +242,7 @@ window.updateGlobalUI = (user) => {
     }
     if (avatarEl) {
         avatarEl.classList.remove('skeleton', 'skeleton-circle');
-        avatarEl.innerHTML = user.profile_pic 
+        avatarEl.innerHTML = user.profile_pic
             ? `<img src="${user.profile_pic}" style="width: 100%; height: 100%; object-fit: cover;">`
             : '👤';
     }
@@ -274,7 +258,7 @@ window.refreshUserProfile = async () => {
 
     try {
         // Use the new secure session-based endpoint with authentication header
-        const response = await api.fetch('/api/v1/users/me', { 
+        const response = await api.fetch('/api/v1/users/me', {
             idempotency: false,
             headers: { 'x-user-email': userEmail }
         });
@@ -386,7 +370,7 @@ window.validLogin = (user) => {
 
     // OneSignal & Socket.io Sync
     const cleanEmail = normalizeEmail(user.email);
-    OneSignal.push(function() {
+    OneSignal.push(function () {
         OneSignal.login(cleanEmail);
         console.log(`[OneSignal] Sync external_id: ${cleanEmail}`);
     });
@@ -512,22 +496,22 @@ window.showAnnouncements = async () => {
                         // Cek semua kemungkinan tempat ID acara disimpan (Sangat Fleksibel)
                         const actionMeta = typeof n.action_metadata === 'string' ? JSON.parse(n.action_metadata) : (n.action_metadata || {});
 
-                        const postId = meta.event_id || 
-                            meta.post_id || 
-                            meta.activity_id || 
-                            meta.targetId || 
-                            meta.carpool_id || 
-                            meta.study_id || 
-                            meta.hangout_id || 
+                        const postId = meta.event_id ||
+                            meta.post_id ||
+                            meta.activity_id ||
+                            meta.targetId ||
+                            meta.carpool_id ||
+                            meta.study_id ||
+                            meta.hangout_id ||
                             meta.id ||
-                            actionMeta.event_id || 
-                            actionMeta.post_id || 
-                            actionMeta.targetId || 
-                            n.aggregate_id || 
-                            n.event_id || 
-                            n.post_id || 
-                            n.activity_id || 
-                            n.target_id || 
+                            actionMeta.event_id ||
+                            actionMeta.post_id ||
+                            actionMeta.targetId ||
+                            n.aggregate_id ||
+                            n.event_id ||
+                            n.post_id ||
+                            n.activity_id ||
+                            n.target_id ||
                             '';
 
                         // Jika postId masih kosong, kita coba cek apakah category terselip di metadata
@@ -546,9 +530,9 @@ window.showAnnouncements = async () => {
                     } else if (n.type === 'NEW_EVENT') {
                         const category = meta.category || 'sports';
                         const displayCat = I18n.t(`home.cat.${category}`);
-                        msg = I18n.t('notifications.type.new_event', { 
-                            category: displayCat, 
-                            eventTitle: meta.title || meta.event_title || 'Event' 
+                        msg = I18n.t('notifications.type.new_event', {
+                            category: displayCat,
+                            eventTitle: meta.title || meta.event_title || 'Event'
                         });
                         iconType = 'success';
                         link = category;
@@ -862,8 +846,8 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
     // Validasi kritis: Harus punya ID Acara dan Email Pengaju agar bisa diproses server
     if (!payloadData.event_id || !payloadData.target_user_email) {
         console.error("Missing critical data for review!", payloadData);
-        alert(isZH 
-            ? `舊通知數據不完整 (ID: ${payloadData.event_id || '?'}), 請忽略此通知。` 
+        alert(isZH
+            ? `舊通知數據不完整 (ID: ${payloadData.event_id || '?'}), 請忽略此通知。`
             : `Old notification data is missing details (ID: ${payloadData.event_id || '?'}). Please ignore it.`);
         document.getElementById('review-app-overlay')?.remove();
         return;
@@ -1557,26 +1541,26 @@ async function syncNotifications() {
 
                 const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
                 const eventName = meta?.event_title ? (isZH ? `「${meta.event_title}」` : ` "${meta.event_title}"`) : '';
-                
+
                 let title = "Notification";
                 let msg = "";
 
                 if (newest.type === 'join_request') {
                     title = isZH ? "活動申請 / Join Request" : "Join Request";
-                    msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || '某人'} 申請加入${eventName}` 
-                               : `🔔 New join request received!`;
+                    msg = isZH ? `🔔 新申請：${meta?.snapshot_display_name || '某人'} 申請加入${eventName}`
+                        : `🔔 New join request received!`;
                 } else if (newest.type === 'NEW_EVENT') {
                     title = isZH ? "新活動 / New Event" : "New Event";
-                    msg = isZH ? `🚀 我們有新的活動${eventName}，快來查看！` 
-                               : `🚀 A new event has been created!`;
+                    msg = isZH ? `🚀 我們有新的活動${eventName}，快來查看！`
+                        : `🚀 A new event has been created!`;
                 } else if (newest.type === 'ACCEPTED') {
                     title = isZH ? "申請通過 / Accepted" : "Accepted";
-                    msg = isZH ? `🎉 您對 ${eventName} 的加入申請已獲批准！` 
-                               : `🎉 Your join request was approved!`;
+                    msg = isZH ? `🎉 您對 ${eventName} 的加入申請已獲批准！`
+                        : `🎉 Your join request was approved!`;
                 } else if (newest.type === 'REJECTED') {
                     title = isZH ? "申請婉拒 / Rejected" : "Rejected";
-                    msg = isZH ? `❌ 您對 ${eventName} 的加入申請已被婉拒。` 
-                               : `❌ Your join request was declined.`;
+                    msg = isZH ? `❌ 您對 ${eventName} 的加入申請已被婉拒。`
+                        : `❌ Your join request was declined.`;
                 } else {
                     title = isZH ? "系統通知 / System Update" : "System Update";
                     msg = isZH ? `🔔 您有一則新通知` : `🔔 You have a new notification`;
