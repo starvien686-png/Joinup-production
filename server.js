@@ -1000,6 +1000,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 WHERE a.status IN ('open', 'full') 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
                   AND (a.status != 'full' OR (LOWER(a.host) = ? OR viewer_ep.id IS NOT NULL))
+                GROUP BY a.id
                 ORDER BY a.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1010,6 +1011,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(a.host) = LOWER(u.email)
                 WHERE a.status != 'full' 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
+                GROUP BY a.id
                 ORDER BY a.created_at DESC
             `;
         }
@@ -1017,7 +1019,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         const [results] = await sequelize.query(query, { replacements });
         res.json(results);
     } catch (error) {
-        console.error("[GetActivities] Error:", error);
+        console.error("[GetActivities] Critical Error:", error);
         res.status(500).json({ 
             error: 'Failed to fetch activities', 
             details: error.message 
@@ -1297,6 +1299,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 WHERE c.status IN ('open', 'full') 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
                   AND (c.status != 'full' OR (LOWER(c.host) = ? OR viewer_ep.id IS NOT NULL))
+                GROUP BY c.id
                 ORDER BY c.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1307,6 +1310,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(c.host) = LOWER(u.email)
                 WHERE c.status != 'full' 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
+                GROUP BY c.id
                 ORDER BY c.created_at DESC
             `;
         }
@@ -1314,7 +1318,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         const [results] = await sequelize.query(query, { replacements });
         res.json(results);
     } catch (error) {
-        console.error("[GetCarpools] Error:", error);
+        console.error("[GetCarpools] Critical Error:", error);
         res.status(500).json({ 
             error: 'Failed to fetch carpools', 
             details: error.message 
@@ -1479,6 +1483,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 WHERE s.status IN ('open', 'full') 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
                   AND (s.status != 'full' OR (LOWER(s.host) = ? OR viewer_ep.id IS NOT NULL))
+                GROUP BY s.id
                 ORDER BY s.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1489,6 +1494,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(s.host) = LOWER(u.email)
                 WHERE s.status != 'full' 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
+                GROUP BY s.id
                 ORDER BY s.created_at DESC
             `;
         }
@@ -1496,7 +1502,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         const [results] = await sequelize.query(query, { replacements });
         res.json(results);
     } catch (error) {
-        console.error("[GetStudies] Error:", error);
+        console.error("[GetStudies] Critical Error:", error);
         res.status(500).json({ 
             error: 'Failed to fetch studies', 
             details: error.message 
@@ -1661,6 +1667,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 WHERE h.status IN ('open', 'full') 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
                   AND (h.status != 'full' OR (LOWER(h.host) = ? OR viewer_ep.id IS NOT NULL))
+                GROUP BY h.id
                 ORDER BY h.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1671,6 +1678,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(h.host) = LOWER(u.email)
                 WHERE h.status != 'full' 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
+                GROUP BY h.id
                 ORDER BY h.created_at DESC
             `;
         }
@@ -1678,7 +1686,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         const [results] = await sequelize.query(query, { replacements });
         res.json(results);
     } catch (error) {
-        console.error("[GetHangouts] Error:", error);
+        console.error("[GetHangouts] Critical Error:", error);
         res.status(500).json({ 
             error: 'Failed to fetch hangouts', 
             details: error.message 
@@ -1964,6 +1972,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 WHERE ho.status IN ('open', 'full') 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
                   AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR viewer_ep.id IS NOT NULL))
+                GROUP BY ho.id
                 ORDER BY ho.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1974,6 +1983,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(ho.host) = LOWER(u.email)
                 WHERE ho.status != 'full' 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
+                GROUP BY ho.id
                 ORDER BY ho.created_at DESC
             `;
         }
@@ -1981,7 +1991,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         const [results] = await sequelize.query(query, { replacements });
         res.json(results);
     } catch (error) {
-        console.error("[GetHousing] Error:", error);
+        console.error("[GetHousing] Critical Error:", error);
         res.status(500).json({ 
             error: 'Failed to fetch housing', 
             details: error.message 

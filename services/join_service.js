@@ -535,7 +535,7 @@ router.post('/notifications/:id/mark-as-read', async (req, res) => {
     const { id } = req.params;
     try {
         await sequelize.query(
-            "UPDATE system_notifications SET is_read = 1 WHERE id = ?",
+            "DELETE FROM system_notifications WHERE id = ?",
             { replacements: [id] }
         );
         res.json({ success: true, message: 'Notification marked as read' });
