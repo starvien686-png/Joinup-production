@@ -131,9 +131,13 @@ const render = () => {
         renderRegister();
 
     } else {
-
-        renderHome();
-
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            console.log('[DeepLink] Routing to:', hash);
+            window.navigateTo(hash);
+        } else {
+            renderHome();
+        }
     }
 
 };
@@ -1622,3 +1626,11 @@ document.addEventListener('visibilitychange', () => {
 if (localStorage.getItem('userProfile')) {
     startGlobalPolling();
 }
+
+// 🌏 Listen for URL Hash Changes for Deep Linking
+window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.substring(1);
+    if (hash && state.isLoggedIn) {
+        window.navigateTo(hash);
+    }
+});

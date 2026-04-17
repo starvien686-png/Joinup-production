@@ -240,7 +240,8 @@ router.post('/join', async (req, res) => {
             const pushTitle = `🚀 New Participant Request / 新成員加入申請`;
             const pushBody = `There is a new participant request for your event ("${event_title}"). Open the app to confirm! / 叮咚！有新夥伴想加入你的活動「${event_title}」，趕快打開 App 看看吧！`;
 
-            pushService.sendPushNotification([hostEmail], pushTitle, pushBody, `https://joinup-production.onrender.com/#home`);
+            const category = event_type === 'sports' ? 'sports' : (event_type === 'carpool' ? 'carpool' : (event_type === 'study' ? 'study' : 'travel'));
+            pushService.sendPushNotification([hostEmail], pushTitle, pushBody, `https://joinup-production.onrender.com/#${category}`);
 
             const io = req.app.get('io');
             if (io) {

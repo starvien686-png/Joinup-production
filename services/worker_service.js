@@ -113,7 +113,8 @@ async function processOutbox() {
                 // Map actionable metadata
                 if (payload.actionType) {
                     payload.action_metadata = { actionType: payload.actionType, targetId: payload.targetId };
-                    payload.link = 'home'; // Simplified for OneSignal URL
+                    const category = payload.event_type === 'sports' ? 'sports' : (payload.event_type === 'carpool' ? 'carpool' : (payload.event_type === 'study' ? 'study' : 'travel'));
+                    payload.link = category; // More specific module view
                 }
                 
                 // UX: Pass profile snapshots into persistent metadata

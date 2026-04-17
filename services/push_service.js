@@ -3,6 +3,7 @@ const https = require('https');
 // --- OneSignal Configuration ---
 const ONESIGNAL_APP_ID = "65d2da97-e8f8-40ed-a298-978a485ba6f9";
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+const DEFAULT_APP_URL = process.env.APP_URL || "https://joinup-production.onrender.com/";
 
 /**
  * Normalizes email by removing 'mail1.' and converting to lowercase.
@@ -32,7 +33,7 @@ const sendPushNotification = async (emails, title, message, url) => {
         include_external_user_ids: normalizedEmails,
         contents: { en: message, zh: message },
         headings: { en: title, zh: title },
-        url: url || "https://joinup-production.onrender.com/"
+        url: url || DEFAULT_APP_URL
     });
 
     const options = {
@@ -80,7 +81,7 @@ const broadcastPushNotification = async (title, message, url) => {
         included_segments: ["Total Subscriptions"],
         contents: { en: message, zh: message },
         headings: { en: title, zh: title },
-        url: url || "https://joinup-production.onrender.com/"
+        url: url || DEFAULT_APP_URL
     });
 
     const options = {
