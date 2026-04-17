@@ -1029,7 +1029,7 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [userEmail, userEmail, userEmail, userEmail]
+            replacements: [userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1422,7 +1422,7 @@ app.get('/my-carpools/:email', async (req, res) => {
             GROUP BY c.id
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my carpools: ' + error.message });
@@ -1574,7 +1574,7 @@ app.get('/my-studies/:email', async (req, res) => {
             GROUP BY s.id
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my studies: ' + error.message });
@@ -1742,7 +1742,7 @@ app.get('/my-hangouts/:email', async (req, res) => {
             GROUP BY h.id
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my hangouts: ' + error.message });
@@ -1941,7 +1941,7 @@ app.get('/my-housing/:email', async (req, res) => {
             GROUP BY ho.id
             ORDER BY ho.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch my housing/groupbuy: ' + error.message });

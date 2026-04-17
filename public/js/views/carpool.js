@@ -1,4 +1,5 @@
-import { MockStore } from '../models/mockStore.js?v=21';
+import { MockStore } from '../models/mockStore.js?v=12';
+import api from '../utils/api.js';
 import { I18n } from '../services/i18n.js';
 
 // --- SENSOR BAHASA ULTIMATE ---
@@ -544,8 +545,7 @@ export const renderCarpool = () => {
 
             // 1. Fetch from Server (Source of Truth)
             try {
-                const response = await fetch(`/api/v1/host/participants?event_type=carpool&event_id=${p.id}&host_email=${user.email}`);
-                const data = await response.json();
+                const data = await api.fetch(`/api/v1/host/participants?event_type=carpool&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
                 if (data.success && data.data) {
                     pendingApps = data.data.filter(a => a.status === 'pending');
                     acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');

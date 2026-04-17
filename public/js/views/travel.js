@@ -1,4 +1,6 @@
 import { I18n } from '../services/i18n.js';
+import { MockStore } from '../models/mockStore.js?v=12';
+import api from '../utils/api.js';
 
 // --- MESIN PENDAFTARAN HANGOUT ---
 window.HangoutAppEngine = {
@@ -499,8 +501,7 @@ export const renderTravel = () => {
 
             // 1. Fetch from Server (Source of Truth)
             try {
-                const response = await fetch(`/api/v1/host/participants?event_type=hangout&event_id=${p.id}&host_email=${user.email}`);
-                const data = await response.json();
+                const data = await api.fetch(`/api/v1/host/participants?event_type=hangout&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
                 if (data.success && data.data) {
                     pendingApps = data.data.filter(a => a.status === 'pending');
                     acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
