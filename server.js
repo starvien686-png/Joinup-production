@@ -1000,7 +1000,6 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 WHERE a.status IN ('open', 'full') 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
                   AND (a.status != 'full' OR (LOWER(a.host) = ? OR viewer_ep.id IS NOT NULL))
-                GROUP BY a.id
                 ORDER BY a.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1011,7 +1010,6 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(a.host) = LOWER(u.email)
                 WHERE a.status != 'full' 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
-                GROUP BY a.id
                 ORDER BY a.created_at DESC
             `;
         }
@@ -1036,7 +1034,6 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
             WHERE (LOWER(a.host) = ? OR ep.id IS NOT NULL)
               AND (a.status != 'full' OR (LOWER(a.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY a.id
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
@@ -1299,7 +1296,6 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 WHERE c.status IN ('open', 'full') 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
                   AND (c.status != 'full' OR (LOWER(c.host) = ? OR viewer_ep.id IS NOT NULL))
-                GROUP BY c.id
                 ORDER BY c.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1310,7 +1306,6 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(c.host) = LOWER(u.email)
                 WHERE c.status != 'full' 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
-                GROUP BY c.id
                 ORDER BY c.created_at DESC
             `;
         }
@@ -1445,7 +1440,6 @@ app.get('/my-carpools/:email', async (req, res) => {
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
             WHERE (LOWER(c.host) = ? OR ep.id IS NOT NULL)
               AND (c.status != 'full' OR (LOWER(c.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY c.id
             ORDER BY c.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1483,7 +1477,6 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 WHERE s.status IN ('open', 'full') 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
                   AND (s.status != 'full' OR (LOWER(s.host) = ? OR viewer_ep.id IS NOT NULL))
-                GROUP BY s.id
                 ORDER BY s.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1494,7 +1487,6 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(s.host) = LOWER(u.email)
                 WHERE s.status != 'full' 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
-                GROUP BY s.id
                 ORDER BY s.created_at DESC
             `;
         }
@@ -1612,7 +1604,6 @@ app.get('/my-studies/:email', async (req, res) => {
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
             WHERE (LOWER(s.host) = ? OR ep.id IS NOT NULL)
               AND (s.status != 'full' OR (LOWER(s.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY s.id
             ORDER BY s.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1667,7 +1658,6 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 WHERE h.status IN ('open', 'full') 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
                   AND (h.status != 'full' OR (LOWER(h.host) = ? OR viewer_ep.id IS NOT NULL))
-                GROUP BY h.id
                 ORDER BY h.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1678,7 +1668,6 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(h.host) = LOWER(u.email)
                 WHERE h.status != 'full' 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
-                GROUP BY h.id
                 ORDER BY h.created_at DESC
             `;
         }
@@ -1795,7 +1784,6 @@ app.get('/my-hangouts/:email', async (req, res) => {
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
             WHERE (LOWER(h.host) = ? OR ep.id IS NOT NULL)
               AND (h.status != 'full' OR (LOWER(h.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY h.id
             ORDER BY h.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
@@ -1972,7 +1960,6 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 WHERE ho.status IN ('open', 'full') 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
                   AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR viewer_ep.id IS NOT NULL))
-                GROUP BY ho.id
                 ORDER BY ho.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1983,7 +1970,6 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 LEFT JOIN users u ON LOWER(ho.host) = LOWER(u.email)
                 WHERE ho.status != 'full' 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
-                GROUP BY ho.id
                 ORDER BY ho.created_at DESC
             `;
         }
@@ -2009,7 +1995,6 @@ app.get('/my-housing/:email', async (req, res) => {
             LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.user_id = u_part.id
             WHERE (LOWER(ho.host) = ? OR ep.id IS NOT NULL)
               AND (ho.status != 'full' OR (LOWER(ho.host) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
-            GROUP BY ho.id
             ORDER BY ho.created_at DESC
         `;
         const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
