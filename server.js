@@ -152,7 +152,6 @@ const io = new Server(server, {
 app.set('io', io);
 
 
-// --- SOCKET.IO EVENT HANDLERS ---
 io.on('connection', (socket) => {
     logger.info(`[Socket] User connected: ${socket.id}`);
 
@@ -176,13 +175,11 @@ io.on('connection', (socket) => {
             const [uData] = await sequelize.query(`SELECT username FROM users WHERE email = ?`, { replacements: [sender_email] });
             const realSenderName = (uData.length > 0 && uData[0].username) ? uData[0].username : (sender_name || 'JoinUp User');
 
-            // --- PROTOCOL ZERO 500 ERROR: DB Persistence ---
             const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
             await sequelize.query(query, { replacements: [room_id, sender_email, realSenderName, message] });
 
-            // Broadcast to everyone in the room (including sender if they rely on it)
             io.to(String(room_id)).emit('receive_message', {
-                id: Date.now(), // Temporary ID until reload
+                id: Date.now(),
                 room_id,
                 sender_email,
                 sender_name: realSenderName,
@@ -190,7 +187,6 @@ io.on('connection', (socket) => {
                 created_at: new Date().toISOString()
             });
 
-            // --- Async Push Notification ---
             handleChatNotification(room_id, sender_email, sender_name, message).catch(err =>
                 logger.error(`[Socket] Push Notification error: ${err.message}`)
             );
@@ -872,12 +868,12 @@ async function autoJoinHost(eventType, eventId, hostEmail, eventTitle) {
     try {
         const normalizedEmail = (hostEmail || '').toLowerCase().trim();
         const emails = getEmailVariations(normalizedEmail);
-        
+
         // 1. Get Host User ID
-        const user = await User.findOne({ 
-            where: { email: { [Op.in]: emails } } 
+        const user = await User.findOne({
+            where: { email: { [Op.in]: emails } }
         });
-        
+
         if (!user) {
             logger.error(`[AutoJoin] Host not found for email: ${normalizedEmail}`);
             return;
@@ -896,11 +892,11 @@ async function autoJoinHost(eventType, eventId, hostEmail, eventTitle) {
             `INSERT IGNORE INTO event_participants 
              (event_type, event_id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at) 
              VALUES (?, ?, ?, 'approved', ?, ?, ?, NOW(), NOW())`,
-            { 
+            {
                 replacements: [
-                    eventType, eventId, user.id, 
+                    eventType, eventId, user.id,
                     user.username, user.profile_pic, user.bio
-                ] 
+                ]
             }
         );
 
@@ -1018,9 +1014,9 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[GetActivities] Critical Error:", error);
-        res.status(500).json({ 
-            error: 'Failed to fetch activities', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Failed to fetch activities',
+            details: error.message
         });
     }
 });
@@ -1042,9 +1038,9 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-activities:", error);
-        res.status(500).json({ 
-            error: "Database query failed", 
-            details: error.message 
+        res.status(500).json({
+            error: "Database query failed",
+            details: error.message
         });
     }
 });
@@ -1314,9 +1310,9 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[GetCarpools] Critical Error:", error);
-        res.status(500).json({ 
-            error: 'Failed to fetch carpools', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Failed to fetch carpools',
+            details: error.message
         });
     }
 });
@@ -1446,9 +1442,9 @@ app.get('/my-carpools/:email', async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-carpools:", error);
-        res.status(500).json({ 
-            error: "Database query failed", 
-            details: error.message 
+        res.status(500).json({
+            error: "Database query failed",
+            details: error.message
         });
     }
 });
@@ -1495,9 +1491,9 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[GetStudies] Critical Error:", error);
-        res.status(500).json({ 
-            error: 'Failed to fetch studies', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Failed to fetch studies',
+            details: error.message
         });
     }
 });
@@ -1610,9 +1606,9 @@ app.get('/my-studies/:email', async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-studies:", error);
-        res.status(500).json({ 
-            error: "Database query failed", 
-            details: error.message 
+        res.status(500).json({
+            error: "Database query failed",
+            details: error.message
         });
     }
 });
@@ -1676,9 +1672,9 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[GetHangouts] Critical Error:", error);
-        res.status(500).json({ 
-            error: 'Failed to fetch hangouts', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Failed to fetch hangouts',
+            details: error.message
         });
     }
 });
@@ -1790,9 +1786,9 @@ app.get('/my-hangouts/:email', async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-hangouts:", error);
-        res.status(500).json({ 
-            error: "Database query failed", 
-            details: error.message 
+        res.status(500).json({
+            error: "Database query failed",
+            details: error.message
         });
     }
 });
@@ -1978,9 +1974,9 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[GetHousing] Critical Error:", error);
-        res.status(500).json({ 
-            error: 'Failed to fetch housing', 
-            details: error.message 
+        res.status(500).json({
+            error: 'Failed to fetch housing',
+            details: error.message
         });
     }
 });
@@ -2001,9 +1997,9 @@ app.get('/my-housing/:email', async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-housing:", error);
-        res.status(500).json({ 
-            error: "Database query failed", 
-            details: error.message 
+        res.status(500).json({
+            error: "Database query failed",
+            details: error.message
         });
     }
 });
