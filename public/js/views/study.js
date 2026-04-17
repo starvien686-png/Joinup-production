@@ -441,7 +441,8 @@ export const renderStudy = () => {
 
             // 1. Fetch from Server (Source of Truth)
             try {
-                const data = await api.fetch(`/api/v1/host/participants?event_type=study&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                const response = await fetch(`/api/v1/host/participants?event_type=study&event_id=${p.id}&host_email=${user.email}`);
+                const data = await response.json();
                 if (data.success && data.data) {
                     pendingApps = data.data.filter(a => a.status === 'pending');
                     acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
@@ -459,7 +460,7 @@ export const renderStudy = () => {
                 const email = app.user_email || app.user_id || app.applicantId;
                 return email !== p.host_email && email !== user.email;
             });
-            const participantCount = actualParticipants.length + 1;
+            const participantCount = 1 + actualParticipants.length;
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${isZH ? '招募中' : 'Status: OK'}</span>`;

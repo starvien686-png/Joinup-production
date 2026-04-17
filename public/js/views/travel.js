@@ -499,7 +499,8 @@ export const renderTravel = () => {
 
             // 1. Fetch from Server (Source of Truth)
             try {
-                const data = await api.fetch(`/api/v1/host/participants?event_type=hangout&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
+                const response = await fetch(`/api/v1/host/participants?event_type=hangout&event_id=${p.id}&host_email=${user.email}`);
+                const data = await response.json();
                 if (data.success && data.data) {
                     pendingApps = data.data.filter(a => a.status === 'pending');
                     acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
@@ -517,7 +518,7 @@ export const renderTravel = () => {
                 const email = app.user_email || app.user_id || app.applicantId;
                 return email !== p.host_email && email !== user.email;
             });
-            const participantCount = actualParticipants.length + 1;
+            const participantCount = 1 + actualParticipants.length;
 
             let statusColor = '#9e9e9e';
             let statusIcon = '';
