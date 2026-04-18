@@ -989,7 +989,8 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
 
         if (viewerEmail) {
             query = `
-                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
@@ -1005,7 +1006,8 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
             replacements = [viewerEmail, viewerEmail];
         } else {
             query = `
-                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 WHERE a.status != 'full' 
@@ -1285,7 +1287,8 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
 
         if (viewerEmail) {
             query = `
-                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM carpools c
                 LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
@@ -1301,7 +1304,8 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
             replacements = [viewerEmail, viewerEmail];
         } else {
             query = `
-                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM carpools c
                 LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
                 WHERE c.status != 'full' 
@@ -1466,7 +1470,8 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
 
         if (viewerEmail) {
             query = `
-                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM studies s
                 LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
@@ -1482,7 +1487,8 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
             replacements = [viewerEmail, viewerEmail];
         } else {
             query = `
-                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM studies s
                 LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
                 WHERE s.status != 'full' 
@@ -1647,7 +1653,8 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
 
         if (viewerEmail) {
             query = `
-                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM hangouts h
                 LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
@@ -1663,7 +1670,8 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
             replacements = [viewerEmail, viewerEmail];
         } else {
             query = `
-                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM hangouts h
                 LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
                 WHERE h.status != 'full' 
@@ -1953,7 +1961,8 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
 
         if (viewerEmail) {
             query = `
-                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM housing ho
                 LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
                 LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
@@ -1969,7 +1978,8 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
             replacements = [viewerEmail, viewerEmail];
         } else {
             query = `
-                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount
+                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM housing ho
                 LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
                 WHERE ho.status != 'full' 

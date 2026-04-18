@@ -71,6 +71,7 @@ export const renderActivities = async () => {
             location: p.location || p.destination || p.meeting_location,
             deadline: p.deadline, description: p.description, hostEmail: p.host_email,
             hostName: p.host_name || 'Host', hostDept: p.host_dept || '', status: 'open',
+            approvedCount: p.approvedCount,
             createdAt: p.created_at
         }));
         window._cachedActivitiesPosts = upcoming;
@@ -163,7 +164,12 @@ export const renderActivities = async () => {
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName}
                         </span>
-                        <span style="font-size: 0.8rem; color: var(--text-secondary);">${dateStr}</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
+                                👥 ${1 + (parseInt(p.approvedCount) || 0)} / ${p.peopleNeeded || 0}
+                            </span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">${dateStr}</span>
+                        </div>
                     </div>
                     <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: var(--text-primary);">${p.title}</h3>
                     

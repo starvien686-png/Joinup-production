@@ -321,8 +321,9 @@ export const renderSports = () => {
         const txtExpired = isZH ? '已過期' : 'Expired';
 
         const postsHtml = posts.length ? posts.map(p => {
-            const participantCount = Math.max(0, (p.participants?.length || 1) - 1);
-            const isFull = participantCount >= p.maxParticipants;
+            const acceptedJoineesCount = Math.max(0, (p.participants?.length || 1) - 1);
+            const totalActiveCount = 1 + acceptedJoineesCount;
+            const isFull = totalActiveCount >= p.maxParticipants;
             const isExpired = new Date(p.deadline) < new Date();
             const statusKey = `${p.category || 'sports'}_${p.id}`;
             const userStatus = myStatuses[statusKey];
@@ -381,7 +382,7 @@ export const renderSports = () => {
                         <span>🏷️ ${txtHost}: ${p.hostName} (${p.hostDept})</span>
                     </div>
                     <div style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                        <span>👤 ${participantCount} / ${p.maxParticipants}</span>
+                        <span>👥 ${totalActiveCount} / ${p.maxParticipants}</span>
                         <span>📅 ${new Date(p.eventTime).toLocaleDateString()}</span>
                         <span>📍 ${getLocName(p.meetingPoint)}</span>
                     </div>
@@ -629,7 +630,7 @@ export const renderSports = () => {
                 const email = app.user_email || app.user_id || app.applicantId;
                 return email !== p.authorId && email !== user.email;
             });
-            const participantCount = actualParticipants.length + 1;
+            const totalActiveCount = 1 + actualParticipants.length;
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 ${isZH ? '狀態: 招募中' : 'Status: OK'}</span>`;
@@ -641,7 +642,7 @@ export const renderSports = () => {
             if (pendingApps.length > 0 || acceptedApps.length > 0) {
                 participantsView = `
                 <div style="background: var(--bg-body); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <h5 style="margin: 0 0 0.8rem 0; font-size: 0.95rem;">👥 ${isZH ? '報名名單' : 'Participants'} (${participantCount}/${p.maxParticipants})</h5>
+                    <h5 style="margin: 0 0 0.8rem 0; font-size: 0.95rem;">👥 ${isZH ? '報名名單' : 'Participants'} (${totalActiveCount}/${p.maxParticipants})</h5>
                     
                     ${pendingApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #ff9800; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #ffe0b2;">⏳ ${isZH ? '待確認' : 'Pending Confirmation'}:</div>` : ''}
                     ${pendingApps.map(app => `
@@ -651,7 +652,12 @@ export const renderSports = () => {
                     </div>
                     `).join('')}
 
-                    ${acceptedApps.length > 0 ? `<div style="font-size: 0.8rem; font-weight: bold; color: #4caf50; margin-top: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>` : ''}
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #4caf50; margin-top: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>
+                    
+                    <!-- NEW: Explicit Host Row -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: var(--text-primary);">⭐ <b>${p.hostName || 'Host'}</b> <span style="font-size: 0.75rem; background: #E3F2FD; color: #1976D2; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Host</span></span>
+                    </div>
                     ${acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
                         <span style="font-size: 0.9rem; color: var(--text-primary);">${app.snapshot_display_name || app.applicantName} <span style="color: var(--text-secondary);">(${app.applicantDept || ''})</span></span>
@@ -676,7 +682,7 @@ export const renderSports = () => {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
                         <span>📅 ${new Date(p.eventTime).toLocaleDateString()}</span>
-                        <span style="font-weight: bold; color: #FF9800;">👥 ${participantCount} / ${p.maxParticipants}</span>
+                        <span style="font-weight: bold; color: #FF9800;">👥 ${totalActiveCount} / ${p.maxParticipants}</span>
                     </div>
 
                     ${participantsView}

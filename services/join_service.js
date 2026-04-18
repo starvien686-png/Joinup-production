@@ -178,7 +178,7 @@ router.post('/join', async (req, res) => {
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
         // Host-Inclusive Rule: Host is included in the total capacity for all modules.
-        const currentCount = approvedCount;
+        const currentCount = approvedCount + 1;
 
         if (currentCount >= event.capacity) {
             throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
@@ -370,7 +370,7 @@ router.post('/join/approve', async (req, res) => {
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
         // Host-Inclusive Rule: Host is already in event_participants, so approvedCount reflects (Host + Approved Participants).
-        const currentCount = approvedCount;
+        const currentCount = approvedCount + 1;
 
         if (currentCount >= events[0].capacity) {
             throw { status: 409, message: 'Event full' };
@@ -391,9 +391,10 @@ router.post('/join/approve', async (req, res) => {
             { replacements: [event_type, event_id], transaction: t }
         );
 
-        if (updatedApproved[0].count >= events[0][capacityCol]) {
+        const totalAfterApprove = parseInt(updatedApproved[0].count, 10) + 1;
+        if (totalAfterApprove >= events[0].capacity) {
             await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
-            logger.info(`Event ${event_type}:${event_id} marked as FULL. (Count: ${updatedApproved[0].count} participants)`);
+            logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalAfterApprove})`);
         }
 
         // Auto Chat Join

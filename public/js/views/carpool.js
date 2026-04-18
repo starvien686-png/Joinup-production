@@ -157,7 +157,7 @@ export const renderCarpool = () => {
                     </div>
 
                     <div class="input-group">
-                        <label>需要人數 * (Seats)</label>
+                        <label>總座位數 (含司機) * (Total Seats incl. Driver)</label>
                         <input type="number" id="cpSeats" min="2" max="10" value="4" required>
                     </div>
 
@@ -404,10 +404,9 @@ export const renderCarpool = () => {
 
             if (availablePosts.length > 0) {
                 contentHtml = availablePosts.map(p => {
-                    const apps = window.CarpoolAppEngine.getApps(p.id) || [];
-                    const acceptedApps = apps.filter(a => a.status === 'accepted');
-                    const participantCount = acceptedApps.length;
-                    const availableNow = p.available_seats - participantCount;
+                    const acceptedJoineesCount = acceptedApps.length;
+                    const totalActiveCount = 1 + acceptedJoineesCount;
+                    const availableNow = p.available_seats - totalActiveCount;
 
 
                     // The post shouldn't be full here because of the above filter, but just in case
@@ -469,7 +468,7 @@ export const renderCarpool = () => {
                             
                             <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: flex; justify-content: space-between;">
                                 <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
-                                <div style="text-align: right;"><strong>💺 ${isZH ? '人數' : 'People'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${participantCount} / ${p.available_seats}</span></div>
+                                <div style="text-align: right;"><strong>💺 ${isZH ? '人數' : 'People'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${totalActiveCount} / ${p.available_seats}</span></div>
                             </div>
                             <div style="margin-top: 0.5rem; margin-bottom: 10px;">${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${txtFull}</span>` : ''}</div>
                             ${actionBtn}
@@ -582,8 +581,15 @@ export const renderCarpool = () => {
                     </div>
                 `).join('');
             }
-            if (acceptedApps.length > 0) {
+            if (acceptedApps.length > 0 || true) { // Always show Joined section for Host
                 appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
+                
+                // NEW: Explicit Host Row (Driver)
+                appsHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">⭐ ${p.host_name || 'Host'} <span style="font-size: 0.75rem; background: #E3F2FD; color: #1976D2; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Driver</span></span>
+                    </div>
+                `;
                 appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                         <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>

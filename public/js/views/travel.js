@@ -367,10 +367,9 @@ export const renderTravel = () => {
                         : `${(dTime.getMonth() + 1).toString().padStart(2, '0')}/${dTime.getDate().toString().padStart(2, '0')}/${dTime.getFullYear()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
                     const isHost = (p.host_email === user.email);
-                    const apps = window.HangoutAppEngine.getApps(p.id) || [];
-                    const acceptedApps = apps.filter(a => a.status === 'accepted');
-                    const participantCount = acceptedApps.length;
-                    const isFull = participantCount >= p.people_needed;
+                    const acceptedJoineesCount = acceptedApps.length;
+                    const totalActiveCount = 1 + acceptedJoineesCount;
+                    const isFull = totalActiveCount >= p.people_needed;
 
                     let hostData = null;
                     if (window.MockStore && window.MockStore.getUser) hostData = window.MockStore.getUser(p.host_email);
@@ -436,7 +435,7 @@ export const renderTravel = () => {
                             </div>
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <span style="font-size: 0.85rem; color: #666;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:#FF9800; font-weight:bold;">${participantCount} / ${p.people_needed}</span></span>
+                                <span style="font-size: 0.85rem; color: #666;"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:#FF9800; font-weight:bold;">${totalActiveCount} / ${p.people_needed}</span></span>
                                 ${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${t('common.full', '額滿', 'Full')}</span>` : ''}
                             </div>
 
@@ -545,8 +544,16 @@ export const renderTravel = () => {
                 `).join('');
             }
 
-            if (acceptedApps.length > 0) {
+            if (acceptedApps.length > 0 || true) { // Always show Joined section for Host
                 appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入' : 'Joined'}:</div>`;
+                
+                // NEW: Explicit Host Row
+                appsHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
+                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">⭐ ${p.host_name || 'Host'} <span style="font-size: 0.75rem; background: #FFF3E0; color: #FF9800; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Host</span></span>
+                    </div>
+                `;
+
                 appsHtml += acceptedApps.map(app => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
                         <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>

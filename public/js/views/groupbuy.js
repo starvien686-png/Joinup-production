@@ -621,7 +621,7 @@ export const renderGroupBuy = () => {
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.9rem;">
                     ${p.type !== 'off_campus' ? `
-                        <span style="display: flex; align-items: center;">👫 ${I18n.t('common.people_needed')}: <strong style="color: var(--accent-color); margin-left: 0.3rem;">${p.peopleCount}</strong></span>
+                        <span style="display: flex; align-items: center;">👫 ${I18n.t('common.people_needed')}: <strong style="color: var(--accent-color); margin-left: 0.3rem;">${1 + (parseInt(p.approvedCount) || 0)} / ${p.peopleCount}</strong></span>
                         <span style="display: flex; align-items: center;">🚪 ${p.roomNumber ? p.roomNumber : I18n.t('housing.type.room')}</span>
                     ` : `
                         <span style="display: flex; align-items: center;">💰 $${p.budget}/mo</span>
@@ -1107,7 +1107,17 @@ export const renderGroupBuy = () => {
             }
             actionButtons += `<button onclick="window.deletePost('${p.id}', 'housing')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
 
+            // Host-Inclusive Rule: Inject Host row and update fraction
             let appsHtml = '';
+            
+            // 1. Mandatory Host Row (Always exists)
+            appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: var(--accent-color); margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">👑 ${isZH ? '發起人' : 'Host'}:</div>`;
+            appsHtml += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${p.authorName} (You)</span>
+                <span style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold;">✓ Host</span>
+            </div>`;
+
             if (pendingApps.length > 0) {
                 appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending'}:</div>`;
                 appsHtml += pendingApps.map(app => `
@@ -1142,7 +1152,7 @@ export const renderGroupBuy = () => {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #666; margin-bottom: 15px;">
                         <span>🗓️ ${dateStr}</span>
-                        <span style="font-weight: bold; color: #FF9800;">👥 ${participantCount} / ${p.peopleCount}</span>
+                        <span style="font-weight: bold; color: #FF9800;">👥 ${1 + (parseInt(p.approvedCount) || acceptedApps.length)} / ${p.peopleCount}</span>
                     </div>
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
