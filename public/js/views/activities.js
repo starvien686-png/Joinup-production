@@ -165,9 +165,9 @@ export const renderActivities = async () => {
                             ${icon} ${labelName}
                         </span>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
-                                👥 ${1 + (parseInt(p.approvedCount) || 0)} / ${p.peopleNeeded || 0}
-                            </span>
+                             <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
+                                 👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peopleNeeded || 0}
+                             </span>
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">${dateStr}</span>
                         </div>
                     </div>
@@ -269,6 +269,10 @@ export const renderActivities = async () => {
 
             const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
             const hostAvatar = p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+            const totalNeeded = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
+            const capacityFraction = `${approvedCnt} / ${totalNeeded}`;
+            
             const evTimeStr = p.eventtime || p.eventTime || p.event_time || p.departure_time || p.deadline || p.created_at;
             const dTime = new Date(evTimeStr);
             const timeStr = dTime.toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -306,6 +310,10 @@ export const renderActivities = async () => {
                             <div style="padding: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">🕒 ${isZH ? '活動時間' : 'Time'}</div>
                                 <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">${timeStr}</div>
+                            </div>
+                            <div style="padding: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">👥 ${isZH ? '人數狀況' : 'Participants'}</div>
+                                <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">${capacityFraction}</div>
                             </div>
                         </div>
 

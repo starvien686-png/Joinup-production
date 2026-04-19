@@ -404,8 +404,7 @@ export const renderCarpool = () => {
 
             if (availablePosts.length > 0) {
                 contentHtml = availablePosts.map(p => {
-                    const acceptedJoineesCount = acceptedApps.length;
-                    const totalActiveCount = 1 + acceptedJoineesCount;
+                    const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
                     const availableNow = p.available_seats - totalActiveCount;
 
 
@@ -559,11 +558,7 @@ export const renderCarpool = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const actualParticipants = acceptedApps.filter(app => {
-                const email = app.user_email || app.user_id || app.applicantId;
-                return email !== p.host_email && email !== user.email;
-            });
-            const participantCount = 1 + actualParticipants.length;
+            const participantCount = Math.max(1, parseInt(p.approvedCount) || 0);
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${t('cp.stat.open', '狀態: 招募中', 'Status: OK')}</span>`;
@@ -1111,6 +1106,8 @@ window.showCarpoolDetail = async (id) => {
         const txtNotes = isZH ? '備註' : 'Notes';
         const txtClickMap = isZH ? '點擊開啟地圖' : 'Click to open Maps';
         const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
+        const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+        const activeFrac = `${approvedCnt} / ${p.available_seats}`;
 
         const dTime = new Date(p.departure_time);
         const timeStr = isZH
@@ -1158,54 +1155,54 @@ window.showCarpoolDetail = async (id) => {
                             ${hostHobby ? `<div style="font-size: 0.8rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
                         </div>
                     </div>
-1137: 
-1138:                     <div style="background: var(--bg-card); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-1139:                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-1140:                             <span style="font-size: 1.2rem; color: #2196F3;">📍</span>
-1141:                             <div>
-1142:                                 <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDepart} - <span style="font-size: 0.7rem; color: #2196F3;">${txtClickMap}</span></div>
-1143:                                 <a href="${departLink}" target="_blank" style="font-weight: bold; color: #2196F3; text-decoration: none; font-size: 1.1rem;">${p.departure_loc}</a>
-1144:                             </div>
-1145:                         </div>
-1146:                         <div style="margin-left: 6px; border-left: 2px dashed var(--border-color); height: 20px; margin-bottom: 10px;"></div>
-1147:                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-1148:                             <span style="font-size: 1.2rem; color: #F44336;">🏁</span>
-1149:                             <div>
-1150:                                 <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDest} - <span style="font-size: 0.7rem; color: #F44336;">${txtClickMap}</span></div>
-1151:                                 <a href="${destLink}" target="_blank" style="font-weight: bold; color: #F44336; text-decoration: none; font-size: 1.1rem;">${p.destination_loc}</a>
-1152:                             </div>
-1153:                         </div>
-1154:                         
-1155:                         <div style="width: 100%; height: 200px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-secondary);">
-1156:                             <iframe width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen src="${mapRouteUrl}"></iframe>
-1157:                         </div>
-1158:                     </div>
-1159: 
-1160:                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-1161:                         <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
-1162:                             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">🕒 ${txtTime}</div>
-1163:                             <div style="font-weight: bold; color: var(--text-primary);">${timeStr}</div>
-1164:                         </div>
-1165:                         <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
-1166:                             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💰 ${txtPrice}</div>
-1167:                             <div style="font-weight: bold; color: #E65100;">${p.price}</div>
-1168:                         </div>
-1169:                     </div>
-1170: 
-1171:                     <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-1172:                         <div>
-1173:                             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💺 ${txtSeats}</div>
-1174:                             <div style="font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${p.available_seats} ${txtSeatsLeft}</div>
-1175:                         </div>
-1176:                     </div>
-1177: 
-1178:                     <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-1179:                         <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${txtNotes}</div>
-1180:                         <div style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;">${p.description || (isZH ? '無' : 'None')}</div>
-1181:                     </div>
-1182:                 </div>
-1183:             </div>
-1184:             <style>@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
+
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.2rem; color: #2196F3;">📍</span>
+                            <div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDepart} - <span style="font-size: 0.7rem; color: #2196F3;">${txtClickMap}</span></div>
+                                <a href="${departLink}" target="_blank" style="font-weight: bold; color: #2196F3; text-decoration: none; font-size: 1.1rem;">${p.departure_loc}</a>
+                            </div>
+                        </div>
+                        <div style="margin-left: 6px; border-left: 2px dashed var(--border-color); height: 20px; margin-bottom: 10px;"></div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 1.2rem; color: #F44336;">🏁</span>
+                            <div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">${txtDest} - <span style="font-size: 0.7rem; color: #F44336;">${txtClickMap}</span></div>
+                                <a href="${destLink}" target="_blank" style="font-weight: bold; color: #F44336; text-decoration: none; font-size: 1.1rem;">${p.destination_loc}</a>
+                            </div>
+                        </div>
+                        
+                        <div style="width: 100%; height: 200px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-secondary);">
+                            <iframe width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen src="${mapRouteUrl}"></iframe>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">🕒 ${txtTime}</div>
+                            <div style="font-weight: bold; color: var(--text-primary);">${timeStr}</div>
+                        </div>
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💰 ${txtPrice}</div>
+                            <div style="font-weight: bold; color: #E65100;">${p.price}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px;">💺 ${txtSeats}</div>
+                            <div style="font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${activeFrac} ${isZH ? '已約定' : 'Booked'}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                        <div style="font-size: 0.8rem; color: #E65100; font-weight: bold; margin-bottom: 5px;">📝 ${txtNotes}</div>
+                        <div style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;">${p.description || (isZH ? '無' : 'None')}</div>
+                    </div>
+                </div>
+            </div>
+            <style>@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }</style>
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     } catch (e) {

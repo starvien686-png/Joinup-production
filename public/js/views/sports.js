@@ -321,8 +321,7 @@ export const renderSports = () => {
         const txtExpired = isZH ? '已過期' : 'Expired';
 
         const postsHtml = posts.length ? posts.map(p => {
-            const acceptedJoineesCount = Math.max(0, (p.participants?.length || 1) - 1);
-            const totalActiveCount = 1 + acceptedJoineesCount;
+            const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
             const isFull = totalActiveCount >= p.maxParticipants;
             const isExpired = new Date(p.deadline) < new Date();
             const statusKey = `${p.category || 'sports'}_${p.id}`;
@@ -626,11 +625,7 @@ export const renderSports = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const actualParticipants = acceptedApps.filter(app => {
-                const email = app.user_email || app.user_id || app.applicantId;
-                return email !== p.authorId && email !== user.email;
-            });
-            const totalActiveCount = 1 + actualParticipants.length;
+            const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 ${isZH ? '狀態: 招募中' : 'Status: OK'}</span>`;

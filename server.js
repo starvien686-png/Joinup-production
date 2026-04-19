@@ -1031,7 +1031,9 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
-            SELECT a.* FROM activities a 
+            SELECT a.*,
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM activities a 
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
             WHERE (LOWER(a.host_email) = ? OR ep.id IS NOT NULL)
@@ -1439,7 +1441,9 @@ app.get('/my-carpools/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
-            SELECT c.* FROM carpools c
+            SELECT c.*,
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM carpools c
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
             WHERE (LOWER(c.host_email) = ? OR ep.id IS NOT NULL)
@@ -1605,7 +1609,9 @@ app.get('/my-studies/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
-            SELECT s.* FROM studies s
+            SELECT s.*,
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM studies s
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
             WHERE (LOWER(s.host_email) = ? OR ep.id IS NOT NULL)
@@ -1787,7 +1793,9 @@ app.get('/my-hangouts/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
         const query = `
-            SELECT h.* FROM hangouts h
+            SELECT h.*,
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM hangouts h
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
             WHERE (LOWER(h.host_email) = ? OR ep.id IS NOT NULL)

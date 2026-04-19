@@ -513,7 +513,7 @@ export const renderHome = () => {
                             ${iconEmoji} ${labelName}
                         </span>
                         <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
-                            👥 ${1 + (parseInt(p.approvedCount) || 0)} / ${p.peoplecount || 0}
+                            👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peoplecount || 0}
                         </span>
                     </div>
                     
@@ -639,6 +639,9 @@ export const renderHome = () => {
             const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
 
             const peopleCnt = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
+            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+            const capacityFraction = `${approvedCnt} / ${peopleCnt}`;
+            
             const hostNm = p.host_name || p.hostName || 'Anonymous';
             const hostDp = p.host_dept || p.hostDept || '';
             const desc = p.description || p.notes || '';
@@ -703,14 +706,14 @@ export const renderHome = () => {
                 specificDetails = `
                     <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '地址' : 'Address'}:</strong> ${p.location}</div>
                     <div style="margin-bottom: 5px;"><strong>💰 ${isZH ? '租金' : 'Rent'}:</strong> ${p.rent_amount ? 'NT$' + p.rent_amount : (isZH ? '面議' : 'Negotiable')}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '缺幾人' : 'People Needed'}:</strong> ${peopleCnt}</div>
+                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '缺幾人' : 'People Needed'}:</strong> ${capacityFraction}</div>
                     <div style="margin-bottom: 5px;"><strong>🚻 ${isZH ? '性別限制' : 'Gender Req'}:</strong> ${p.gender_req || '無'}</div>
                     ${makeMap(p.location)}
                 `;
             } else {
                 specificDetails = `
                     <div style="margin-bottom: 5px;"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> ${p.location || 'N/A'}</div>
-                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> ${peopleCnt}</div>
+                    <div style="margin-bottom: 5px;"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> ${capacityFraction}</div>
                     ${makeMap(p.location)}
                 `;
             }

@@ -370,7 +370,7 @@ router.post('/join/approve', async (req, res) => {
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
         // Host-Inclusive Rule: Host is already in event_participants, so approvedCount reflects (Host + Approved Participants).
-        const currentCount = approvedCount + 1;
+        const currentCount = approvedCount;
 
         if (currentCount >= events[0].capacity) {
             throw { status: 409, message: 'Event full' };
@@ -391,7 +391,7 @@ router.post('/join/approve', async (req, res) => {
             { replacements: [event_type, event_id], transaction: t }
         );
 
-        const totalAfterApprove = parseInt(updatedApproved[0].count, 10) + 1;
+        const totalAfterApprove = parseInt(updatedApproved[0].count, 10);
         if (totalAfterApprove >= events[0].capacity) {
             await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
             logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalAfterApprove})`);

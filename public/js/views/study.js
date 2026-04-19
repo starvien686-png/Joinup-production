@@ -329,8 +329,7 @@ export const renderStudy = () => {
                     const isHost = (p.host_email === user.email);
 
                     const apps = window.StudyAppEngine.getApps(p.id) || [];
-                    const acceptedJoineesCount = acceptedApps.length;
-                    const totalActiveCount = 1 + acceptedJoineesCount;
+                    const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
                     const isFull = totalActiveCount >= p.people_needed;
 
                     let hostData = null;
@@ -457,11 +456,7 @@ export const renderStudy = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const actualParticipants = acceptedApps.filter(app => {
-                const email = app.user_email || app.user_id || app.applicantId;
-                return email !== p.host_email && email !== user.email;
-            });
-            const participantCount = 1 + actualParticipants.length;
+            const participantCount = Math.max(1, parseInt(p.approvedCount) || 0);
 
             let statusBadge = '';
             if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${isZH ? '招募中' : 'Status: OK'}</span>`;
@@ -870,6 +865,9 @@ export const renderStudy = () => {
                 ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
                 : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
+            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+            const activeFrac = `${approvedCnt} / ${p.people_needed}`;
+
             const modalHtml = `
                 <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
                     <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
@@ -885,7 +883,7 @@ export const renderStudy = () => {
                         <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; color: var(--text-main);">
                             <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> <span style="color: var(--text-primary);">${p.location}</span></div>
                             <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <span style="color: var(--text-primary);">${timeStr}</span></div>
-                            <div style="color: var(--text-secondary);"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${p.people_needed}</span></div>
+                            <div style="color: var(--text-secondary);"><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${activeFrac}</span></div>
                         </div>
 
                         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">

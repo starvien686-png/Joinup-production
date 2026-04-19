@@ -367,8 +367,7 @@ export const renderTravel = () => {
                         : `${(dTime.getMonth() + 1).toString().padStart(2, '0')}/${dTime.getDate().toString().padStart(2, '0')}/${dTime.getFullYear()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
                     const isHost = (p.host_email === user.email);
-                    const acceptedJoineesCount = acceptedApps.length;
-                    const totalActiveCount = 1 + acceptedJoineesCount;
+                    const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
                     const isFull = totalActiveCount >= p.people_needed;
 
                     let hostData = null;
@@ -515,11 +514,7 @@ export const renderTravel = () => {
                 acceptedApps = legacyApps.filter(a => a.status === 'accepted');
             }
 
-            const actualParticipants = acceptedApps.filter(app => {
-                const email = app.user_email || app.user_id || app.applicantId;
-                return email !== p.host_email && email !== user.email;
-            });
-            const participantCount = 1 + actualParticipants.length;
+            const participantCount = Math.max(1, parseInt(p.approvedCount) || 0);
 
             let statusColor = '#9e9e9e';
             let statusIcon = '';
@@ -1007,6 +1002,9 @@ export const renderTravel = () => {
 
             const mapRouteUrl = `https://maps.google.com/maps?saddr=${encodeURIComponent(p.meeting_location)}&daddr=${encodeURIComponent(p.destination)}&output=embed`;
 
+            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+            const activeFrac = `${approvedCnt} / ${p.people_needed}`;
+
             const modalHtml = `
                 <div id="ho-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
                     <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
@@ -1022,7 +1020,7 @@ export const renderTravel = () => {
                             <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                             <div style="margin-bottom: 10px;"><strong>🤝 ${isZH ? '身分' : 'Meeting'}:</strong> <span style="color:#2196F3; font-weight:bold;">${p.meeting_location}</span></div>
                             <div style="margin-bottom: 10px;"><strong>📍 ${isZH ? '目的地' : 'Destination'}:</strong> <span style="color:#E65100; font-weight:bold;">${p.destination}</span></div>
-                            <div><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:#FF9800; font-weight:bold;">${p.people_needed}</span></div>
+                            <div><strong>👥 ${isZH ? '需要人數' : 'People Needed'}:</strong> <span style="color:#FF9800; font-weight:bold;">${activeFrac}</span></div>
                         </div>
 
                         <div style="width: 100%; height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-secondary); margin-bottom: 20px;">

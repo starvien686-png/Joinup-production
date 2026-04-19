@@ -621,7 +621,7 @@ export const renderGroupBuy = () => {
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.9rem;">
                     ${p.type !== 'off_campus' ? `
-                        <span style="display: flex; align-items: center;">👫 ${I18n.t('common.people_needed')}: <strong style="color: var(--accent-color); margin-left: 0.3rem;">${1 + (parseInt(p.approvedCount) || 0)} / ${p.peopleCount}</strong></span>
+                        <span style="display: flex; align-items: center;">👫 ${I18n.t('common.people_needed')}: <strong style="color: var(--accent-color); margin-left: 0.3rem;">${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peopleCount}</strong></span>
                         <span style="display: flex; align-items: center;">🚪 ${p.roomNumber ? p.roomNumber : I18n.t('housing.type.room')}</span>
                     ` : `
                         <span style="display: flex; align-items: center;">💰 $${p.budget}/mo</span>
@@ -703,7 +703,8 @@ export const renderGroupBuy = () => {
                     leaseTerm: p.rental_period,
                     offCampusDetail: p.description,
                     createdAt: p.created_at,
-                    status: p.status
+                    status: p.status,
+                    approvedCount: p.approvedCount
                 };
             }
         } catch (e) { console.error(e); }
@@ -790,7 +791,7 @@ export const renderGroupBuy = () => {
                         </div>
                         <div>
                             <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('common.people_needed')}</span>
-                            <span style="color: var(--accent-color); font-weight: bold;">${post.peopleCount}p</span>
+                            <span style="color: var(--accent-color); font-weight: bold;">${Math.max(1, parseInt(post.approvedCount) || 0)} / ${post.peopleCount}</span>
                         </div>
                         <div>
                             <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('housing.label.gender')}</span>
@@ -1152,7 +1153,7 @@ export const renderGroupBuy = () => {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #666; margin-bottom: 15px;">
                         <span>🗓️ ${dateStr}</span>
-                        <span style="font-weight: bold; color: #FF9800;">👥 ${1 + (parseInt(p.approvedCount) || acceptedApps.length)} / ${p.peopleCount}</span>
+                        <span style="font-weight: bold; color: #FF9800;">👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peopleCount}</span>
                     </div>
                     <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                         <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
