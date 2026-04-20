@@ -998,9 +998,8 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                     AND viewer_ep.event_type = 'sports' 
                     AND viewer_ep.user_id = u_viewer.id 
                     AND viewer_ep.status IN ('approved', 'accepted')
-                WHERE a.status IN ('open', 'full') 
+                WHERE a.status = 'open'
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
-                  AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY a.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1010,7 +1009,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-                WHERE a.status != 'full' 
+                WHERE a.status = 'open' 
                   AND (a.deadline > NOW() OR a.deadline IS NULL OR a.event_time > NOW())
                 ORDER BY a.created_at DESC
             `;
@@ -1298,9 +1297,8 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                     AND viewer_ep.event_type = 'carpool' 
                     AND viewer_ep.user_id = u_viewer.id 
                     AND viewer_ep.status IN ('approved', 'accepted')
-                WHERE c.status IN ('open', 'full') 
+                WHERE c.status = 'open'
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
-                  AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY c.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1310,7 +1308,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM carpools c
                 LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-                WHERE c.status != 'full' 
+                WHERE c.status = 'open' 
                   AND (c.deadline > NOW() OR c.deadline IS NULL OR c.departure_time > NOW())
                 ORDER BY c.created_at DESC
             `;
@@ -1483,9 +1481,8 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                     AND viewer_ep.event_type = 'study' 
                     AND viewer_ep.user_id = u_viewer.id 
                     AND viewer_ep.status IN ('approved', 'accepted')
-                WHERE s.status IN ('open', 'full') 
+                WHERE s.status = 'open'
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
-                  AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY s.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1495,7 +1492,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM studies s
                 LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-                WHERE s.status != 'full' 
+                WHERE s.status = 'open' 
                   AND (s.deadline > NOW() OR s.deadline IS NULL OR s.event_time > NOW())
                 ORDER BY s.created_at DESC
             `;
@@ -1668,9 +1665,8 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                     AND viewer_ep.event_type = 'hangout' 
                     AND viewer_ep.user_id = u_viewer.id 
                     AND viewer_ep.status IN ('approved', 'accepted')
-                WHERE h.status IN ('open', 'full') 
+                WHERE h.status = 'open'
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
-                  AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY h.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1680,7 +1676,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM hangouts h
                 LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-                WHERE h.status != 'full' 
+                WHERE h.status = 'open' 
                   AND (h.deadline > NOW() OR h.deadline IS NULL OR h.event_time > NOW())
                 ORDER BY h.created_at DESC
             `;
@@ -1978,9 +1974,8 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                     AND (viewer_ep.event_type = 'housing' OR viewer_ep.event_type = 'groupbuy')
                     AND viewer_ep.user_id = u_viewer.id 
                     AND viewer_ep.status IN ('approved', 'accepted')
-                WHERE ho.status IN ('open', 'full') 
+                WHERE ho.status = 'open'
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
-                  AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR viewer_ep.id IS NOT NULL))
                 ORDER BY ho.created_at DESC
             `;
             replacements = [viewerEmail, viewerEmail];
@@ -1990,7 +1985,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                        (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
                 FROM housing ho
                 LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-                WHERE ho.status != 'full' 
+                WHERE ho.status = 'open' 
                   AND (ho.deadline > NOW() OR ho.deadline IS NULL)
                 ORDER BY ho.created_at DESC
             `;
