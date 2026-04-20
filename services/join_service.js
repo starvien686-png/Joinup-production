@@ -178,7 +178,8 @@ router.post('/join', async (req, res) => {
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
         // Host-Inclusive Rule: Host is included in the total capacity for all modules.
-        const currentCount = approvedCount + 1;
+        // The DB count (approvedCount) already includes the auto-joined host.
+        const currentCount = approvedCount;
 
         if (currentCount >= event.capacity) {
             throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
