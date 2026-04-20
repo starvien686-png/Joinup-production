@@ -423,6 +423,27 @@ router.post('/join/approve', async (req, res) => {
         );
 
         await t.commit();
+
+        // 🚀 Real-time Notification Shortcut (Shortcut to Activities)
+        try {
+            const io = req.app.get('io');
+            if (io && targetUser.length > 0) {
+                const targetEmail = targetUser[0].email;
+                const normalizedTargetEmail = targetEmail.toLowerCase().trim();
+                const participantRoom = `user_${normalizedTargetEmail}`;
+
+                io.to(participantRoom).emit('join_accepted', {
+                    eventName: events[0].title,
+                    eventId: event_id,
+                    eventType: event_type,
+                    message: `🎉 You have been accepted to "${events[0].title}"! Click here to view your activity history.`
+                });
+                console.log(`[Socket] Targeted join_accepted emitted to: ${participantRoom}`);
+            }
+        } catch (socketErr) {
+            console.error(`[Socket] Failed to emit join_accepted:`, socketErr.message);
+        }
+
         res.status(200).json({ success: true, message: 'Approved' });
     } catch (err) {
         if (t) await t.rollback();

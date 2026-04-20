@@ -84,6 +84,23 @@ if (window.socket) {
         });
 
     });
+
+    window.socket.on('join_accepted', (data) => {
+        console.log('[Socket] Received real-time join acceptance:', data);
+
+        notifications.showNativeBanner({
+            title: `🎉 Accepted!`,
+            body: data.message || `You have been accepted to "${data.eventName}"! Click here to view your activity history and enter the chat room.`,
+            data: {
+                type: 'ACCEPTED',
+                id: data.eventId,
+                metadata: {
+                    event_title: data.eventName,
+                    event_type: data.eventType
+                }
+            }
+        });
+    });
 }
 
 if (state.isLoggedIn && state.userEmail) {
