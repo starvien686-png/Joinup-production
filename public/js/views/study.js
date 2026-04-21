@@ -344,7 +344,7 @@ export const renderStudy = () => {
 
                     let actionBtn = '';
                     if (isHost || isParticipant) {
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');" style="width:100%; padding:0.7rem; background:#ffc200; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 194, 0, 0.3); border-radius:8px;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
                     } else if (isFull || p.status === 'full') {
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;">${isZH ? '額滿' : 'Full'}</button>`;
                     } else {

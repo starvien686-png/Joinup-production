@@ -146,10 +146,10 @@ export const renderActivities = async () => {
             const roleStatus = myStatuses[statusKey];
 
             let actionBtn = '';
-            if (user && user.email && p.hostEmail && user.email === p.hostEmail) {
-                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
-            } else if (roleStatus === 'approved' || roleStatus === 'accepted') {
-                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
+            const isInsider = (user && user.email && p.hostEmail && user.email === p.hostEmail) || (roleStatus === 'approved' || roleStatus === 'accepted');
+
+            if (isInsider) {
+                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" class="btn" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#ffc200; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 194, 0, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
             } else if (p.status === 'full') {
