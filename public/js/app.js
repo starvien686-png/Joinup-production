@@ -101,6 +101,27 @@ if (window.socket) {
             }
         });
     });
+
+    window.socket.on('new_event_popup', (data) => {
+        console.log('[Socket] Global Event Broadcast:', data);
+        const emoji = { 'sports': '🏀', 'carpool': '🚗', 'study': '📚', 'hangout': '🎉', 'housing': '🏠' }[data.category] || '🆕';
+        notifications.showNativeBanner({
+            title: `${emoji} New Event / 新活動!`,
+            body: `New Event: "${data.title}" just posted! Check it out. / 剛剛有人發布了新活動：「${data.title}」，快去看看吧！`,
+            data: { type: 'NEW_EVENT', link: data.category }
+        });
+        if (window.checkNotificationBadge) window.checkNotificationBadge();
+    });
+
+    window.socket.on('reminder_notification', (data) => {
+        console.log('[Socket] Event Reminder:', data);
+        notifications.showNativeBanner({
+            title: `⏰ Reminder / 活動提醒`,
+            body: data.message,
+            data: { type: 'REMINDER', link: 'home' }
+        });
+        if (window.checkNotificationBadge) window.checkNotificationBadge();
+    });
 }
 
 if (state.isLoggedIn && state.userEmail) {
@@ -389,6 +410,13 @@ window.validLogin = (user) => {
     state.onLoggedIn(user);
     render();
 
+    // Red Dot Bootstrap
+    if (window.checkNotificationBadge) window.checkNotificationBadge();
+    setInterval(() => {
+        if (state.isLoggedIn) window.checkNotificationBadge();
+    }, 30000); // Check every 30s
+
+
     // OneSignal & Socket.io Sync
     const cleanEmail = normalizeEmail(user.email);
     OneSignal.push(function () {
@@ -497,7 +525,16 @@ window.showAnnouncements = async () => {
     // 1. SEDOT DATA LANGSUNG DARI DATABASE MySQL TIAP KALI LONCENG DIKLIK!
     if (safeUserEmail) {
         try {
+            // Mark all as read immediately when opening the bell
+            api.fetch('/api/v1/notifications/mark-all-read', {
+                method: 'POST',
+                body: { user_email: safeUserEmail }
+            }).then(() => {
+                if (window.checkNotificationBadge) window.checkNotificationBadge();
+            }).catch(e => console.warn("Failed to clear notifications:", e));
+
             const res = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=20`, { idempotency: false });
+
 
             if (res.success && res.data && res.data.list) {
                 personalNotifications = res.data.list.map(n => {
@@ -560,6 +597,10 @@ window.showAnnouncements = async () => {
                     } else if (n.type === 'CANCELLED') {
                         msg = I18n.t('notifications.type.cancelled', { eventTitle: meta.event_title || 'Event' });
                         iconType = 'info';
+                    } else if (n.type === 'daily_digest' || n.type === 'event_reminder') {
+                        msg = meta.message || (isZH ? '活動提醒' : 'Event Reminder');
+                        iconType = 'info';
+                        link = meta.link || 'home';
                     }
 
                     return {
@@ -934,48 +975,34 @@ window.deletePost = async (id, category) => {
 
 
 
-window.checkNotificationBadge = () => {
+window.checkNotificationBadge = async () => {
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) return;
 
-    const userProfileStr = localStorage.getItem('userProfile');
-
-    if (!userProfileStr) return;
-
-    const user = JSON.parse(userProfileStr);
-
-
-
-    const countMock = MockStore.getGlobalUnreadCount ? MockStore.getGlobalUnreadCount(user.email) : 0;
-
-    const localNotifs = JSON.parse(localStorage.getItem(`joinup_notifs_${user.email}`) || '[]');
-
-    const countLocal = localNotifs.filter(n => !n.isRead).length;
-
-    const count = countMock + countLocal;
-
-
-
-    const badge = document.querySelector('.notification-badge-dot');
-
-    if (badge) {
-
-        if (count > 0) {
-
-            badge.style.display = 'flex';
-
-            badge.textContent = count > 9 ? '9+' : count;
-
-            badge.style.alignItems = 'center';
-
-            badge.style.justifyContent = 'center';
-
-            badge.style.color = 'white';
-
-            badge.style.fontSize = '10px';
-
-        } else { badge.style.display = 'none'; }
-
+    try {
+        const res = await fetch(`/api/v1/notifications/unread-count?user_email=${encodeURIComponent(userEmail)}`);
+        const data = await res.json();
+        
+        const badge = document.querySelector('.notification-badge-dot');
+        if (badge) {
+            const count = data.count || 0;
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.alignItems = 'center';
+                badge.style.justifyContent = 'center';
+                badge.style.justifyContent = 'center';
+                badge.style.color = 'white';
+                badge.style.fontSize = '10px';
+                badge.style.fontWeight = 'bold';
+                badge.style.pointerEvents = 'none'; // Ensure clicks pass to the bell
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (err) {
+        console.warn("Failed to update notification badge:", err);
     }
-
 };
 
 

@@ -965,6 +965,11 @@ app.post('/create-activity', async (req, res) => {
             const pushTitle = `🏀 New Sport Event: ${title}`;
             const pushBody = `You got a new sport event from ${finalHostName}: Let's play ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#sports?id=${insertId}`);
+            
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('new_event_popup', { title, category: 'sports' });
+            }
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1394,6 +1399,11 @@ app.post('/create-carpool', async (req, res) => {
             const pushTitle = `🚗 New Carpool: ${departure_loc} ➔ ${destination_loc}`;
             const pushBody = `You got a new carpool from ${finalHostName}: Let's ride to ${destination_loc}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#carpool?id=${insertId}`);
+            
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('new_event_popup', { title, category: 'carpool' });
+            }
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1587,6 +1597,11 @@ app.post('/create-study', async (req, res) => {
             const pushTitle = `📚 New Study Group: ${title}`;
             const pushBody = `You got a new study group from ${finalHostName}: Let's study ${subject}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#study?id=${insertId}`);
+
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('new_event_popup', { title, category: 'study' });
+            }
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1780,6 +1795,11 @@ app.post('/create-hangout', async (req, res) => {
             const pushTitle = `🎉 New Hangout: ${title}`;
             const pushBody = `You got a new hangout from ${finalHostName}: Let's hang out to ${destination}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#travel?id=${insertId}`);
+
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('new_event_popup', { title, category: 'hangout' });
+            }
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1977,6 +1997,11 @@ app.post('/create-housing', async (req, res) => {
             const pushTitle = `🏠 Housing / Group Buy: ${title}`;
             const pushBody = `You got a new housing from ${finalHostName}: Let's find a roommate / group buy for ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#groupbuy?id=${insertId}`);
+
+            const io = req.app.get('io');
+            if (io) {
+                io.emit('new_event_popup', { title, category: 'housing' });
+            }
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -2653,6 +2678,82 @@ cron.schedule('0 12,19 * * *', async () => {
         }
     } catch (error) {
         console.error("[Cron] Daily Digest Error:", error);
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Taipei"
+});
+
+// 🕒 24-HOUR EVENT REMINDER CRON JOB (Runs every hour)
+cron.schedule('0 * * * *', async () => {
+    try {
+        console.log('[Cron] Checking for 24-hour event reminders...');
+        const categories = [
+            { table: 'activities', type: 'sports', timeCol: 'event_time' },
+            { table: 'carpools', type: 'carpool', timeCol: 'departure_time' },
+            { table: 'studies', type: 'study', timeCol: 'event_time' },
+            { table: 'hangouts', type: 'hangout', timeCol: 'event_time' }
+        ];
+
+        for (const cat of categories) {
+            // Find events happening in exactly 24 hours (within 1 hour window)
+            const [events] = await sequelize.query(`
+                SELECT id, title, host_email FROM ${cat.table} 
+                WHERE status IN ('open', 'full') 
+                AND ${cat.timeCol} BETWEEN DATE_ADD(NOW(), INTERVAL 23 HOUR 55 MINUTE) AND DATE_ADD(NOW(), INTERVAL 24 HOUR 5 MINUTE)
+            `);
+
+            for (const event of events) {
+                // Get all approved participants
+                const [participants] = await sequelize.query(`
+                    SELECT u.email, u.id FROM event_participants ep
+                    JOIN users u ON ep.user_id = u.id
+                    WHERE ep.event_type = ? AND ep.event_id = ? AND ep.status IN ('approved', 'accepted')
+                `, { replacements: [cat.type, event.id] });
+
+                const recipients = participants.map(p => ({ email: p.email, id: p.id }));
+                
+                // Also include the host if not already in participants
+                const [hostUser] = await User.findAll({ where: { email: event.host_email } });
+                if (hostUser.length > 0 && !recipients.some(r => r.id === hostUser[0].id)) {
+                    recipients.push({ email: hostUser[0].email, id: hostUser[0].id });
+                }
+
+                for (const recipient of recipients) {
+                    const message = `Reminder: You have an event '${event.title}' tomorrow! Check your dashboard for details. / 提醒：你明天有一個活動「${event.title}」，記得查看儀表板確認詳情！`;
+                    const metadata = JSON.stringify({
+                        title: event.title,
+                        message: message,
+                        link: `#manage-${cat.type}`
+                    });
+
+                    // 1. Save to DB
+                    await sequelize.query(
+                        `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                         VALUES (UUID(), ?, 'event_reminder', ?, ?, '{}', NOW())
+                         ON DUPLICATE KEY UPDATE created_at = NOW()`,
+                        { replacements: [recipient.id, `reminder_${cat.type}_${event.id}`, metadata] }
+                    );
+
+                    // 2. Emit via Socket
+                    const normalizedEmail = (recipient.email || '').toLowerCase().trim();
+                    const userRoom = `user_${normalizedEmail}`;
+                    io.to(userRoom).emit('reminder_notification', {
+                        title: event.title,
+                        message: message
+                    });
+                }
+                
+                // 3. Send Push Notification
+                const targetEmails = recipients.map(r => r.email);
+                const pushTitle = `⏰ Event Reminder / 活動提醒`;
+                await pushService.sendPushNotification(targetEmails, pushTitle, `You have an event tomorrow! / 你明天有個活動喔，別忘了！`, `https://joinup-production.onrender.com/#home`);
+                
+                console.log(`[Cron] Sent 24h reminders for ${cat.type} ${event.id} to ${recipients.length} users.`);
+            }
+        }
+    } catch (error) {
+        console.error("[Cron] 24h Reminder Error:", error);
     }
 }, {
     scheduled: true,

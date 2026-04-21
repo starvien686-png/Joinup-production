@@ -583,6 +583,36 @@ router.get('/join/my-statuses', async (req, res) => {
     }
 });
 
+// 6.1 GET /api/v1/notifications/unread-count
+router.get('/notifications/unread-count', async (req, res) => {
+    const { user_email } = req.query;
+    if (!user_email) return res.status(400).json({ success: false, message: 'Email required' });
+    try {
+        const [results] = await sequelize.query(
+            "SELECT COUNT(*) as count FROM system_notifications n JOIN users u ON n.recipient_id = u.id WHERE u.email = ?",
+            { replacements: [user_email] }
+        );
+        res.json({ success: true, count: results[0].count });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// 6.2 POST /api/v1/notifications/mark-all-read
+router.post('/notifications/mark-all-read', async (req, res) => {
+    const { user_email } = req.body;
+    if (!user_email) return res.status(400).json({ success: false, message: 'Email required' });
+    try {
+        await sequelize.query(
+            "DELETE FROM system_notifications WHERE recipient_id IN (SELECT id FROM users WHERE email = ?)",
+            { replacements: [user_email] }
+        );
+        res.json({ success: true, message: 'All notifications cleared' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // 7. GET /api/v1/host/participants
 router.get('/host/participants', async (req, res) => {
     const { event_type, event_id, host_email, status, limit = 20, cursor_at, cursor_id } = req.query;
