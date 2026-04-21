@@ -279,10 +279,10 @@ export const renderHome = () => {
     let isRefreshing = false;
     const loadHomeActivities = async (isManual = false) => {
         if (isRefreshing) return;
-        
+
         // Strict Visibility Check: Skip if hidden unless manual
         if (document.hidden && !isManual) return;
-        
+
         const scrollContainer = document.getElementById('home-upcoming-scroll');
         if (!scrollContainer) return;
 
@@ -641,7 +641,7 @@ export const renderHome = () => {
             const peopleCnt = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
             const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
             const capacityFraction = `${approvedCnt} / ${peopleCnt}`;
-            
+
             const hostNm = p.host_name || p.hostName || 'Anonymous';
             const hostDp = p.host_dept || p.hostDept || '';
             const desc = p.description || p.notes || '';
@@ -763,19 +763,19 @@ export const renderHome = () => {
     }
 
     // Manual Refresh Event
-    document.getElementById('btn-refresh-home')?.addEventListener('click', function() {
+    document.getElementById('btn-refresh-home')?.addEventListener('click', function () {
         const btn = this;
         btn.style.transform = 'rotate(360deg)';
         btn.style.transition = 'transform 0.6s ease';
-        
+
         loadHomeActivities(true); // Force refresh
-        
+
         setTimeout(() => { btn.style.transform = 'rotate(0deg)'; btn.style.transition = 'none'; }, 600);
     });
 
     // Handle initial and global refresh hooks
     window.refreshHome = () => loadHomeActivities(true);
-    
+
     loadHomeActivities();
 
     // --- Feedback Trigger (Time Check) ---
