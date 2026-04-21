@@ -334,7 +334,7 @@ export const renderSports = () => {
                 <button 
                     class="btn" 
                     onclick="event.stopPropagation(); window.openGroupChat('${p.id}');" 
-                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: #ffc200; border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(255, 194, 0, 0.3);"
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
                 >
                     💬 ${txtJoinChat}
                 </button>`;

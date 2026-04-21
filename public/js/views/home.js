@@ -533,25 +533,28 @@ export const renderHome = () => {
                     </div>
 
                     ${(() => {
-                        // Determine participation status
-                        const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
-                        const isHost = user.email && p.host_email && user.email === p.host_email;
-                        const isInsider = isHost || roleStatus === 'approved' || roleStatus === 'accepted';
+                    if (user.email && p.host_email && user.email === p.host_email) {
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
+                                💬 進入聊天室 / Enter Chat
+                            </button>`;
+                    }
 
-                        if (isInsider) {
-                            return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" class="btn" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#ffc200; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 194, 0, 0.3);">
-                                    💬 進入聊天室 / Enter Chat
-                                </button>`;
-                        } else if (roleStatus === 'pending') {
-                            return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
-                                    ⏳ Pending...
-                                </button>`;
-                        } else {
-                            return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
-                                    申請加入 / Apply to Join
-                                </button>`;
-                        }
-                    })()}
+                    // Determine participant status
+                    const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
+                    if (roleStatus === 'approved' || roleStatus === 'accepted') {
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
+                                💬 進入聊天室 / Enter Chat
+                            </button>`;
+                    } else if (roleStatus === 'pending') {
+                        return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
+                                ⏳ Pending...
+                            </button>`;
+                    } else {
+                        return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
+                                申請加入 / Apply to Join
+                            </button>`;
+                    }
+                })()}
                 </div>
             `;
         }).join('');

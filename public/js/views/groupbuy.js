@@ -599,7 +599,7 @@ export const renderGroupBuy = () => {
             const safeTitle = (p.title || '').replace(/'/g, "\\'");
             let btnHtml = '';
             if (isHost || isParticipant) {
-                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#ffc200;border:none;color:white;font-weight:bold;cursor:pointer;box-shadow: 0 2px 4px rgba(255, 194, 0, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
             } else if (p.status === 'full') {
                 btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed;">${I18n.t('common.full') || 'FULL'}</button>`;
             } else {

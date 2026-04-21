@@ -999,9 +999,15 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                     AND viewer_ep.user_id = u_viewer.id 
                 WHERE a.status IN ('open', 'full') 
                   AND (
-                    (LOWER(a.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                    (a.status = 'full' AND (LOWER(a.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
                     OR
-                    (a.status = 'open' AND (a.deadline > NOW() OR a.deadline IS NULL))
+                    (a.status = 'open' AND (
+                        (LOWER(a.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                        OR
+                        (viewer_ep.status = 'pending' AND a.event_time > CURDATE())
+                        OR
+                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (a.deadline > NOW() OR a.deadline IS NULL))
+                    ))
                   )
                 ORDER BY a.created_at DESC
             `;
@@ -1301,9 +1307,15 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                     AND viewer_ep.user_id = u_viewer.id 
                 WHERE c.status IN ('open', 'full') 
                   AND (
-                    (LOWER(c.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                    (c.status = 'full' AND (LOWER(c.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
                     OR
-                    (c.status = 'open' AND (c.deadline > NOW() OR c.deadline IS NULL))
+                    (c.status = 'open' AND (
+                        (LOWER(c.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                        OR
+                        (viewer_ep.status = 'pending' AND c.departure_time > CURDATE())
+                        OR
+                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (c.deadline > NOW() OR c.deadline IS NULL))
+                    ))
                   )
                 ORDER BY c.created_at DESC
             `;
@@ -1488,9 +1500,15 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                     AND viewer_ep.user_id = u_viewer.id 
                 WHERE s.status IN ('open', 'full') 
                   AND (
-                    (LOWER(s.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                    (s.status = 'full' AND (LOWER(s.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
                     OR
-                    (s.status = 'open' AND (s.deadline > NOW() OR s.deadline IS NULL))
+                    (s.status = 'open' AND (
+                        (LOWER(s.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                        OR
+                        (viewer_ep.status = 'pending' AND s.event_time > CURDATE())
+                        OR
+                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (s.deadline > NOW() OR s.deadline IS NULL))
+                    ))
                   )
                 ORDER BY s.created_at DESC
             `;
@@ -1675,9 +1693,15 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                     AND viewer_ep.user_id = u_viewer.id 
                 WHERE h.status IN ('open', 'full') 
                   AND (
-                    (LOWER(h.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                    (h.status = 'full' AND (LOWER(h.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
                     OR
-                    (h.status = 'open' AND (h.deadline > NOW() OR h.deadline IS NULL))
+                    (h.status = 'open' AND (
+                        (LOWER(h.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                        OR
+                        (viewer_ep.status = 'pending' AND h.event_time > CURDATE())
+                        OR
+                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (h.deadline > NOW() OR h.deadline IS NULL))
+                    ))
                   )
                 ORDER BY h.created_at DESC
             `;
@@ -1987,9 +2011,13 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                     AND viewer_ep.user_id = u_viewer.id 
                 WHERE ho.status IN ('open', 'full') 
                   AND (
-                    (LOWER(ho.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                    (ho.status = 'full' AND (LOWER(ho.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
                     OR
-                    (ho.status = 'open' AND (ho.deadline > NOW() OR ho.deadline IS NULL))
+                    (ho.status = 'open' AND (
+                        (LOWER(ho.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
+                        OR
+                        ((ho.deadline > NOW() OR ho.deadline IS NULL))
+                    ))
                   )
                 ORDER BY ho.created_at DESC
             `;
