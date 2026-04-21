@@ -541,7 +541,7 @@ export const renderHome = () => {
 
                     // Determine participant status
                     const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
-                    if (roleStatus === 'approved') {
+                    if (roleStatus === 'approved' || roleStatus === 'accepted') {
                         return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
