@@ -965,9 +965,6 @@ app.post('/create-activity', async (req, res) => {
             const pushTitle = `🏀 New Sport Event: ${title}`;
             const pushBody = `You got a new sport event from ${finalHostName}: Let's play ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#sports?id=${insertId}`);
-
-            // 🚀 Socket.io Broadcast for Real-time Popup
-            req.app.get('io').emit('new_event_popup', { title: title, category: 'sports' });
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1397,9 +1394,6 @@ app.post('/create-carpool', async (req, res) => {
             const pushTitle = `🚗 New Carpool: ${departure_loc} ➔ ${destination_loc}`;
             const pushBody = `You got a new carpool from ${finalHostName}: Let's ride to ${destination_loc}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#carpool?id=${insertId}`);
-
-            // 🚀 Socket.io Broadcast for Real-time Popup
-            req.app.get('io').emit('new_event_popup', { title: title, category: 'carpool' });
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1593,9 +1587,6 @@ app.post('/create-study', async (req, res) => {
             const pushTitle = `📚 New Study Group: ${title}`;
             const pushBody = `You got a new study group from ${finalHostName}: Let's study ${subject}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#study?id=${insertId}`);
-
-            // 🚀 Socket.io Broadcast for Real-time Popup
-            req.app.get('io').emit('new_event_popup', { title: title, category: 'study' });
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1789,9 +1780,6 @@ app.post('/create-hangout', async (req, res) => {
             const pushTitle = `🎉 New Hangout: ${title}`;
             const pushBody = `You got a new hangout from ${finalHostName}: Let's hang out to ${destination}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#travel?id=${insertId}`);
-
-            // 🚀 Socket.io Broadcast for Real-time Popup
-            req.app.get('io').emit('new_event_popup', { title: title, category: 'hangout' });
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -1989,9 +1977,6 @@ app.post('/create-housing', async (req, res) => {
             const pushTitle = `🏠 Housing / Group Buy: ${title}`;
             const pushBody = `You got a new housing from ${finalHostName}: Let's find a roommate / group buy for ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#groupbuy?id=${insertId}`);
-
-            // 🚀 Socket.io Broadcast for Real-time Popup
-            req.app.get('io').emit('new_event_popup', { title: title, category: 'housing' });
         } catch (pushErr) {
             logger.error("[OneSignal] Broadcast failed:", pushErr);
         }
@@ -2261,47 +2246,6 @@ app.post('/api/v1/subscriptions', async (req, res) => {
         }
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// --- NOTIFICATION BADGE APIS ---
-app.get('/api/v1/notifications/unread-count', async (req, res) => {
-    try {
-        const { user_email } = req.query;
-        if (!user_email) return res.status(400).json({ error: 'Missing user_email' });
-
-        const emails = getEmailVariations(user_email.toLowerCase().trim());
-        const [results] = await sequelize.query(`
-            SELECT COUNT(*) as unreadCount 
-            FROM system_notifications sn
-            JOIN users u ON sn.recipient_id = u.id
-            WHERE u.email IN (?) AND sn.is_read = FALSE
-        `, { replacements: [emails] });
-
-        res.json({ success: true, count: results[0].unreadCount || 0 });
-    } catch (error) {
-        logger.error("[UnreadCount] Error:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post('/api/v1/notifications/mark-all-read', async (req, res) => {
-    try {
-        const { user_email } = req.body;
-        if (!user_email) return res.status(400).json({ error: 'Missing user_email' });
-
-        const emails = getEmailVariations(user_email.toLowerCase().trim());
-        await sequelize.query(`
-            UPDATE system_notifications sn
-            JOIN users u ON sn.recipient_id = u.id
-            SET sn.is_read = TRUE
-            WHERE u.email IN (?) AND sn.is_read = FALSE
-        `, { replacements: [emails] });
-
-        res.json({ success: true, message: 'All notifications marked as read' });
-    } catch (error) {
-        logger.error("[MarkRead] Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -2709,73 +2653,6 @@ cron.schedule('0 12,19 * * *', async () => {
         }
     } catch (error) {
         console.error("[Cron] Daily Digest Error:", error);
-    }
-}, {
-    scheduled: true,
-    timezone: "Asia/Taipei"
-});
-
-// 🕒 1-DAY REMINDER CRON JOB (Hourly Check)
-cron.schedule('5 * * * *', async () => {
-    try {
-        const categories = [
-            { table: 'activities', type: 'sports', timeCol: 'event_time', link: '#sports' },
-            { table: 'carpools', type: 'carpool', timeCol: 'departure_time', link: '#carpool' },
-            { table: 'studies', type: 'study', timeCol: 'event_time', link: '#study' },
-            { table: 'hangouts', type: 'hangout', timeCol: 'event_time', link: '#travel' }
-        ];
-
-        console.log(`[Cron] Checking for 24h event reminders...`);
-
-        for (const cat of categories) {
-            // Find events starting in approx 24 hours
-            const [events] = await sequelize.query(`
-                SELECT id, title, host_email 
-                FROM ${cat.table} 
-                WHERE status IN ('open', 'full') 
-                AND ${cat.timeCol} BETWEEN DATE_ADD(NOW(), INTERVAL 23 HOUR 30 MINUTE) AND DATE_ADD(NOW(), INTERVAL 24 HOUR 30 MINUTE)
-            `);
-
-            for (const event of events) {
-                // Get approved participants (Host is already approved by autoJoinHost)
-                const [participants] = await sequelize.query(`
-                    SELECT u.id, u.email 
-                    FROM event_participants ep
-                    JOIN users u ON ep.user_id = u.id
-                    WHERE ep.event_type = ? AND ep.event_id = ? AND ep.status IN ('approved', 'accepted')
-                `, { replacements: [cat.type, event.id] });
-
-                const msg = `Reminder: You have an event '${event.title}' tomorrow! Check your dashboard for details.`;
-                const metadata = JSON.stringify({
-                    message: msg,
-                    link: `${cat.link}?id=${event.id}`,
-                    event_id: event.id,
-                    event_type: cat.type
-                });
-
-                for (const user of participants) {
-                    const aggregateId = `reminder_24h_${cat.type}_${event.id}`;
-                    
-                    // 1. Insert into DB (Persistent for Red Dot)
-                    await sequelize.query(`
-                        INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                        VALUES (UUID(), ?, 'event_reminder', ?, ?, '{}', NOW())
-                        ON DUPLICATE KEY UPDATE created_at = NOW()
-                    `, { replacements: [user.id, aggregateId, metadata] });
-
-                    // 2. Emit Real-time Socket Signal
-                    const userRoom = `user_${user.email.toLowerCase().trim()}`;
-                    io.to(userRoom).emit('reminder_notification', {
-                        title: 'Event Reminder',
-                        message: msg,
-                        link: `${cat.link}?id=${event.id}`
-                    });
-                }
-                console.log(`[Cron] Sent 24h reminder for ${cat.type} ${event.id} to ${participants.length} users.`);
-            }
-        }
-    } catch (error) {
-        console.error("[Cron] 1-Day Reminder Error:", error);
     }
 }, {
     scheduled: true,

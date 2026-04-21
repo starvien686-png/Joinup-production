@@ -6,29 +6,6 @@ import { ThemeService } from './services/themeService.js';
 window.notifications = notifications;
 window.socket = io(); // Initialize Socket.io globally
 
-// 🚀 REAL-TIME NOTIFICATION LISTENERS
-window.socket.on('new_event_popup', (data) => {
-    console.log('[Socket] Global New Event:', data);
-    const msg = `New Event: ${data.title} just posted! Check it out.`;
-    if (window.notifications && window.notifications.showNativeBanner) {
-        window.notifications.showNativeBanner(data.category, msg);
-    } else {
-        alert(msg);
-    }
-    // Refresh badge since we just got a broad signal
-    if (window.checkNotificationBadge) window.checkNotificationBadge();
-});
-
-window.socket.on('reminder_notification', (data) => {
-    console.log('[Socket] Event Reminder:', data);
-    if (window.notifications && window.notifications.showNativeBanner) {
-        window.notifications.showNativeBanner('info', data.message);
-    } else {
-        alert(data.message);
-    }
-    if (window.checkNotificationBadge) window.checkNotificationBadge();
-});
-
 
 import { renderRegister } from './views/register.js?v=16';
 
@@ -476,41 +453,32 @@ window.handleDeepLink = (payload) => {
 
 
 window.sendAppNotification = (userId, type, message, link) => {
+
     const key = `joinup_notifs_${userId}`;
+
     const notifs = JSON.parse(localStorage.getItem(key) || '[]');
+
     notifs.unshift({
+
         id: Date.now().toString(),
+
         type: type,
+
         message: message,
+
         link: link,
+
         createdAt: new Date().toISOString(),
+
         isRead: false
+
     });
+
     localStorage.setItem(key, JSON.stringify(notifs));
+
     if (window.checkNotificationBadge) window.checkNotificationBadge();
+
 };
-
-window.checkNotificationBadge = async () => {
-    const userEmail = localStorage.getItem('userEmail');
-    if (!userEmail) return;
-
-    try {
-        const dot = document.querySelector('.notification-badge-dot');
-        if (!dot) return;
-
-        const res = await api.fetch(`/api/v1/notifications/unread-count?user_email=${encodeURIComponent(userEmail)}`);
-        if (res.success && res.count > 0) {
-            dot.style.display = 'block';
-        } else {
-            dot.style.display = 'none';
-        }
-    } catch (err) {
-        console.error("[BadgeCheck] Failed to sync unread count:", err);
-    }
-};
-
-// Auto-check periodically
-setInterval(window.checkNotificationBadge, 30000); // Every 30s
 
 
 
@@ -529,14 +497,6 @@ window.showAnnouncements = async () => {
     // 1. SEDOT DATA LANGSUNG DARI DATABASE MySQL TIAP KALI LONCENG DIKLIK!
     if (safeUserEmail) {
         try {
-            // MARK ALL AS READ IMMEDIATELY ON OPEN
-            api.fetch('/api/v1/notifications/mark-all-read', {
-                method: 'POST',
-                body: JSON.stringify({ user_email: safeUserEmail })
-            }).then(() => {
-                if (window.checkNotificationBadge) window.checkNotificationBadge();
-            }).catch(e => console.error("Mark Read Error:", e));
-
             const res = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=20`, { idempotency: false });
 
             if (res.success && res.data && res.data.list) {
@@ -600,10 +560,6 @@ window.showAnnouncements = async () => {
                     } else if (n.type === 'CANCELLED') {
                         msg = I18n.t('notifications.type.cancelled', { eventTitle: meta.event_title || 'Event' });
                         iconType = 'info';
-                    } else if (n.type === 'event_reminder') {
-                        msg = meta.message || (isZH ? '活動提醒' : 'Event Reminder');
-                        iconType = 'info';
-                        link = meta.link || 'home';
                     }
 
                     return {
