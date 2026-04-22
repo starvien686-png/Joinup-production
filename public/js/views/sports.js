@@ -321,6 +321,7 @@ export const renderSports = () => {
         const txtExpired = isZH ? '已過期' : 'Expired';
 
         const postsHtml = posts.length ? posts.map(p => {
+            const isHost = (p.authorId === user.email);
             const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
             const isFull = totalActiveCount >= p.maxParticipants;
             const isExpired = new Date(p.deadline) < new Date();

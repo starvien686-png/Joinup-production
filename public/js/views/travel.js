@@ -493,6 +493,7 @@ export const renderTravel = () => {
             html = renderCreateForm();
         } else if (currentState === 'list') {
             html = await renderList();
+        }
 
 
         const navHtml = `
