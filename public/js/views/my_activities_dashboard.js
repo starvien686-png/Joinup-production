@@ -22,6 +22,7 @@ export const renderMyActivitiesDashboard = async () => {
             const res = await api.fetch(`/api/v1/my-activities?email=${encodeURIComponent(user.email)}`, { idempotency: false });
             if (res.success) {
                 allActivities = res.data || [];
+                console.log("Dashboard Data (Raw):", allActivities);
                 applyFilter(currentFilter, activeTab);
             }
         } catch (err) {

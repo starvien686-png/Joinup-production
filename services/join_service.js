@@ -690,8 +690,8 @@ router.get('/profile-user', async (req, res) => {
 // NEW: Unified Activity Dashboard Feed
 // Fetches all events where the user is either the HOST or an APPROVED participant.
 // Uses SQL UNION ALL with standardized aliases for the frontend.
-router.get('/api/v1/my-activities', async (req, res) => {
-    const { email } = req.query;
+router.get('/my-activities', async (req, res) => {
+    const email = (req.query.email || '').toLowerCase().trim();
     if (!email) {
         return res.status(400).json({ success: false, message: 'User email is required' });
     }
