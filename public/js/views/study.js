@@ -328,7 +328,7 @@ export const renderStudy = () => {
 
                     const apps = window.StudyAppEngine.getApps(p.id) || [];
                     const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
-                    const isFull = totalActiveCount >= p.people_needed;
+
 
                     let hostData = null;
                     if (window.MockStore && window.MockStore.getUser) hostData = window.MockStore.getUser(p.host_email);

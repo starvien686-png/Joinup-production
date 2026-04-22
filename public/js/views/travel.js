@@ -366,7 +366,7 @@ export const renderTravel = () => {
 
                     const isHost = (p.host_email === user.email);
                     const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
-                    const isFull = totalActiveCount >= p.people_needed;
+
 
                     let hostData = null;
                     if (window.MockStore && window.MockStore.getUser) hostData = window.MockStore.getUser(p.host_email);

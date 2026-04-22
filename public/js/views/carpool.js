@@ -408,7 +408,6 @@ export const renderCarpool = () => {
 
 
                     // The post shouldn't be full here because of the above filter, but just in case
-                    const isFull = availableNow <= 0;
                     const dTime = new Date(p.departure_time);
                     const timeStr = isZH
                         ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
