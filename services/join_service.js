@@ -705,7 +705,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM activities a
-            LEFT JOIN users u ON a.host_email = u.email
+            LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
             WHERE LOWER(a.host_email) = LOWER(:email)
 
             UNION ALL
@@ -716,7 +716,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM carpools c
-            LEFT JOIN users u ON c.host_email = u.email
+            LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
             WHERE LOWER(c.host_email) = LOWER(:email)
 
             UNION ALL
@@ -727,7 +727,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM studies s
-            LEFT JOIN users u ON s.host_email = u.email
+            LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
             WHERE LOWER(s.host_email) = LOWER(:email)
 
             UNION ALL
@@ -738,7 +738,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM hangouts h
-            LEFT JOIN users u ON h.host_email = u.email
+            LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
             WHERE LOWER(h.host_email) = LOWER(:email)
 
             UNION ALL
@@ -749,7 +749,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM housing ho
-            LEFT JOIN users u ON ho.host_email = u.email
+            LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
             WHERE LOWER(ho.host_email) = LOWER(:email)
 
             UNION ALL
@@ -763,7 +763,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
             FROM activities a
             JOIN event_participants ep ON (ep.event_type = 'sports' AND ep.event_id = a.id)
             JOIN users u_me ON ep.user_id = u_me.id
-            LEFT JOIN users u_host ON a.host_email = u_host.email
+            LEFT JOIN users u_host ON LOWER(a.host_email) = LOWER(u_host.email)
             WHERE LOWER(u_me.email) = LOWER(:email) 
               AND ep.status IN ('approved', 'accepted')
               AND LOWER(a.host_email) != LOWER(:email)
@@ -778,7 +778,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
             FROM carpools c
             JOIN event_participants ep ON (ep.event_type = 'carpool' AND ep.event_id = c.id)
             JOIN users u_me ON ep.user_id = u_me.id
-            LEFT JOIN users u_host ON c.host_email = u_host.email
+            LEFT JOIN users u_host ON LOWER(c.host_email) = LOWER(u_host.email)
             WHERE LOWER(u_me.email) = LOWER(:email) 
               AND ep.status IN ('approved', 'accepted')
               AND LOWER(c.host_email) != LOWER(:email)
@@ -793,7 +793,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
             FROM studies s
             JOIN event_participants ep ON (ep.event_type = 'study' AND ep.event_id = s.id)
             JOIN users u_me ON ep.user_id = u_me.id
-            LEFT JOIN users u_host ON s.host_email = u_host.email
+            LEFT JOIN users u_host ON LOWER(s.host_email) = LOWER(u_host.email)
             WHERE LOWER(u_me.email) = LOWER(:email) 
               AND ep.status IN ('approved', 'accepted')
               AND LOWER(s.host_email) != LOWER(:email)
@@ -808,7 +808,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
             FROM hangouts h
             JOIN event_participants ep ON (ep.event_type = 'hangout' AND ep.event_id = h.id)
             JOIN users u_me ON ep.user_id = u_me.id
-            LEFT JOIN users u_host ON h.host_email = u_host.email
+            LEFT JOIN users u_host ON LOWER(h.host_email) = LOWER(u_host.email)
             WHERE LOWER(u_me.email) = LOWER(:email) 
               AND ep.status IN ('approved', 'accepted')
               AND LOWER(h.host_email) != LOWER(:email)
@@ -823,7 +823,7 @@ router.get('/api/v1/my-activities', async (req, res) => {
             FROM housing ho
             JOIN event_participants ep ON (ep.event_type = 'housing' AND ep.event_id = ho.id)
             JOIN users u_me ON ep.user_id = u_me.id
-            LEFT JOIN users u_host ON ho.host_email = u_host.email
+            LEFT JOIN users u_host ON LOWER(ho.host_email) = LOWER(u_host.email)
             WHERE LOWER(u_me.email) = LOWER(:email) 
               AND ep.status IN ('approved', 'accepted')
               AND LOWER(ho.host_email) != LOWER(:email)
