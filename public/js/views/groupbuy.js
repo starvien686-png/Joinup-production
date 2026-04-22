@@ -130,7 +130,7 @@ export const renderGroupBuy = () => {
                     </button>
                     
                     <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #FFD600, #FF6D00); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        ⚙️ ${I18n.t('common.manage')}
+                        ⚙️ ${I18n.t('home.cat.activity')}
                     </button>
                 </div>
                 
@@ -1032,220 +1032,9 @@ export const renderGroupBuy = () => {
         `;
     };
 
-    const renderManage = async () => {
-        let myPosts = [];
-        try {
-            // Ambil data langsung dari MySQL (Supabase)
-            const res = await fetch('/my-housing/' + user.email);
-            if (res.ok) {
-                const data = await res.json();
-                myPosts = Array.isArray(data) ? data : [];
-            }
-        } catch (e) { console.error(e); }
 
-        const isZH = localStorage.getItem('language') === 'zh-TW' || localStorage.getItem('language') === 'zh-CN';
-        const txtManageTitle = I18n.t('common.manage') || 'Manage My Events';
-        const txtNoData = I18n.t('common.no_data') || 'No records found.';
 
-        const combinedPosts = myPosts.map(p => ({
-            ...p,
-            type: p.housing_type,
-            authorId: p.host_email,
-            authorName: p.host_name,
-            authorDept: p.host_dept,
-            peopleCount: p.people_needed,
-            createdAt: p.created_at,
-            status: p.status || 'open'
-        }));
 
-        const postsHtmlArray = await Promise.all(combinedPosts.map(async p => {
-            let pendingApps = [];
-            let acceptedApps = [];
-            
-            // 1. Fetch from Server (Source of Truth)
-            try {
-                const data = await api.fetch(`/api/v1/host/participants?event_type=housing&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
-                if (data.success && data.data) {
-                    pendingApps = data.data.filter(a => a.status === 'pending');
-                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
-                }
-            } catch (e) { console.warn("Failed to fetch server participants.", e); }
-
-            // 2. Legacy Fallback
-            if (pendingApps.length === 0 && acceptedApps.length === 0) {
-                const legacyApps = window.HousingAppEngine.getApps(p.id) || [];
-                pendingApps = legacyApps.filter(a => a.status === 'pending');
-                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
-            }
-
-            let statusColor = '#9e9e9e';
-            let statusIcon = '';
-            let statusText = p.status;
-
-            switch (p.status) {
-                case 'open': statusColor = '#4CAF50'; statusIcon = '🟢'; statusText = isZH ? '招募中' : 'Status: OK'; break;
-                case 'paused': statusColor = '#ff9800'; statusIcon = '⏸️'; statusText = isZH ? '暫停' : 'Paused'; break;
-                case 'success': case 'full': statusColor = '#2196f3'; statusIcon = '✓'; statusText = isZH ? '已成案' : 'Success'; break;
-                case 'cancelled': statusColor = '#f44336'; statusIcon = '✗'; statusText = isZH ? '已取消' : 'Cancelled'; break;
-            }
-
-            const statusBadge = `<span style="font-size: 0.85rem; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 12px; border-radius: 4px; font-weight: normal;">${statusIcon} ${statusText}</span>`;
-            const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-';
-            const chatAction = `window.openHousingChat('${p.id}', '${(p.title || '').replace(/'/g, "\\\\'")}')`;
-
-            let actionButtons = `<button onclick="${chatAction}" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-
-            if (p.status === 'open') {
-                actionButtons += `
-                    <button onclick="window.pausePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${isZH ? '暫停招募' : 'Pause Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
-            } else if (p.status === 'paused') {
-                actionButtons += `
-                    <button onclick="window.resumePost('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${isZH ? '繼續招募' : 'Resume Recruiting'}</button>
-                    <button onclick="window.confirmSuccess('${p.id}')" style="width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${isZH ? '成案' : 'Success'}</button>
-                    <button onclick="window.cancelPost('${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${isZH ? '取消' : 'Cancel'}</button>`;
-            }
-            actionButtons += `<button onclick="window.deletePost('${p.id}', 'housing')" style="width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>`;
-
-            // Host-Inclusive Rule: Inject Host row and update fraction
-            let appsHtml = '';
-            
-            // 1. Mandatory Host Row (Always exists)
-            appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: var(--accent-color); margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">👑 ${isZH ? '發起人' : 'Host'}:</div>`;
-            appsHtml += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${p.authorName} (You)</span>
-                <span style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold;">✓ Host</span>
-            </div>`;
-
-            if (pendingApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 8px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認' : 'Pending'}:</div>`;
-                appsHtml += pendingApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') || 'Housing'}', 'housing', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
-                    </div>
-                `).join('');
-            }
-            if (acceptedApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 12px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已接受' : 'Accepted'}:</div>`;
-                appsHtml += acceptedApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ Joined</span>
-                    </div>
-                `).join('');
-            }
-            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '尚無人申請' : 'No applications yet.'}</div>`;
-
-            const actualParticipants = acceptedApps.filter(app => {
-                const email = app.user_email || app.user_id || app.applicantId;
-                return email !== p.host_email && email !== user.email;
-            });
-            const participantCount = 1 + actualParticipants.length;
-
-            return `
-                <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: white; padding: 20px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.2rem; color: #333;">${p.title}</h3>
-                        ${statusBadge}
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #666; margin-bottom: 15px;">
-                        <span>🗓️ ${dateStr}</span>
-                        <span style="font-weight: bold; color: #FF9800;">👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peopleCount}</span>
-                    </div>
-                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; margin-bottom: 10px; color: #333; display: flex; align-items: center; gap: 8px;">👥 ${isZH ? '申請名單' : 'Applications'}</div>
-                        ${appsHtml}
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">${actionButtons}</div>
-                </div>`;
-        }));
-
-        return `
-            <div class="container fade-in" style="padding-bottom: 80px;">
-                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <button class="btn-back" onclick="currentState='landing'; updateView();" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer; color: #1976D2;">⬅️</button>
-                    <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">⚙️ ${txtManageTitle}</h2>
-                </header>
-
-                ${combinedPosts.length > 0 ? `<section style="margin-bottom: 2rem;">${postsHtmlArray.join('')}</section>` : `<div style="text-align: center; padding: 3rem 1rem; color: #888;">📝 <br>${txtNoData}</div>`}
-            </div>
-        `;
-    };
-
-    const renderApplicationsList = async (postId) => {
-        const posts = await MockStore.getPosts({ category: CATEGORY_ID, includeAll: true });
-        if (!Array.isArray(posts)) return;
-        const post = posts.find(p => p.id === postId);
-        const applications = await MockStore.getPostApplications(postId);
-
-        if (!post) return '<div class="container"><p>Post not found</p></div>';
-
-        return `
-            <div class="container fade-in" style="padding-bottom: 80px;">
-                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <button class="btn-back-to-manage" onclick="currentState='manage'; updateView();" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
-                    <div>
-                        <h2>${I18n.t('housing.app.list_title')}</h2>
-                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0.5rem 0 0 0;">${post.title}</p>
-                    </div>
-                </header>
-
-                ${applications.length === 0 ? `
-                    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                        <p>${I18n.t('housing.app.no_apps')}</p>
-                    </div>
-                ` : `
-                    ${applications.map(app => `
-                        <div class="card" style="${app.status === 'accepted' ? 'border-left: 4px solid #ffc200;' : app.status === 'rejected' ? 'border-left: 4px solid #f44336; opacity: 0.6;' : ''}">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                <div>
-                                    <h4 style="margin: 0 0 0.25rem 0;" onclick="window.showUserProfile('${app.applicantId}')" style="cursor: pointer; text-decoration: underline; color: #1976D2;">${app.applicantName}</h4>
-                                    <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary);">${app.applicantDept}</p>
-                                </div>
-                                <span style="font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 12px; ${app.status === 'accepted' ? 'background: #fff8e1; color: #ffc200;' : app.status === 'rejected' ? 'background: #ffebee; color: #f44336;' : 'background: #fff3e0; color: #ff9800;'}">
-                                    ${I18n.t('housing.status.' + app.status) || app.status}
-                                </span>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; font-size: 0.9rem; margin: 0.75rem 0;">
-                                <span style="color: var(--text-secondary);">${I18n.t('housing.label.gender')}:</span>
-                                <span>${app.applicantGender === 'male' ? I18n.t('housing.gender.male') : (app.applicantGender === 'female' ? I18n.t('housing.gender.female') : '-')}</span>
-                            </div>
-
-                            <div style="margin: 0.75rem 0;">
-                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">${I18n.t('housing.label.schedule')}:</div>
-                                <div style="font-size: 0.9rem; color: var(--text-main);">${app.scheduleDesc || '-'}</div>
-                            </div>
-
-                            <div style="margin: 0.75rem 0;">
-                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">${I18n.t('housing.label.habits')}:</div>
-                                <div style="font-size: 0.9rem; color: var(--text-main);">${app.habitDesc || '-'}</div>
-                            </div>
-
-                            ${app.status === 'pending' ? `
-                                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                                    <button onclick="window.acceptApplication('${app.id}', '${postId}')" class="btn btn-primary" style="flex: 1;">✓ ${I18n.t('housing.action.accept')}</button>
-                                    <button onclick="window.rejectApplication('${app.id}', '${postId}')" class="btn" style="flex: 1; background: #f44336; color: white;">✗ ${I18n.t('housing.action.reject')}</button>
-                                </div>
-                            ` : app.status === 'accepted' ? `
-                                <div style="margin-top: 1rem;">
-                                    <button onclick="window.openHousingChat('${postId}', '${(post.title || '').replace(/'/g, "\\\\'")}')" class="btn btn-primary" style="width: 100%;">💬 ${I18n.t('housing.action.chat')}</button>
-                                </div>
-                            ` : ''}
-
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
-                                ${new Date(app.createdAt).toLocaleString()}
-                            </div>
-                        </div>
-                    `).join('')}
-                `}
-            </div>
-        `;
-    };
 
     // --- Main Logic ---
 
@@ -1257,7 +1046,7 @@ export const renderGroupBuy = () => {
             else if (currentState === 'create_on_campus') app.innerHTML = renderCreatePostOnCampus();
             else if (currentState === 'create_off_campus') app.innerHTML = renderCreatePostOffCampus();
             else if (currentState === 'list') app.innerHTML = await renderList();
-            else if (currentState === 'manage') app.innerHTML = await renderManage();
+
 
             // Ensure listeners are bound only AFTER HTML is injected and the browser repaints
             bindListeners();
@@ -1380,148 +1169,6 @@ export const renderGroupBuy = () => {
             </style>
         `;
         document.body.appendChild(modalDiv);
-    };
-
-    window.pausePost = async (postId) => {
-        const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'paused' }) });
-        if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
-        currentState = 'manage';
-        updateView();
-        bindListeners();
-    };
-
-    window.resumePost = async (postId) => {
-        const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'open' }) });
-        if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
-        currentState = 'manage';
-        updateView();
-        bindListeners();
-    };
-
-    window.cancelPost = async (postId) => {
-        const savedLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-        const isZH = savedLang.toLowerCase().includes('zh');
-        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-
-        const executeCancel = async () => {
-            const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
-            if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
-            currentState = 'manage';
-            updateView();
-            bindListeners();
-        };
-
-        // --- Fetch created_at ---
-        let createdAt = null;
-        try {
-            const res = await fetch('/my-housing/' + (userProfile.email || ''));
-            const data = await res.json();
-            const found = data.find(item => String(item.id) === String(postId));
-            createdAt = found ? found.created_at : null;
-        } catch (e) { console.warn('Could not fetch housing created_at:', e); }
-
-        if (createdAt) {
-            const ageMs = Date.now() - new Date(createdAt).getTime();
-            if (ageMs <= 10 * 60 * 1000) {
-                const silentMsg = isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure you want to cancel?";
-                window.showSimpleConfirm(silentMsg, executeCancel);
-                return;
-            }
-        }
-
-        // > 10 min → Mandatory Feedback Modal
-        const existingModal = document.getElementById('cancel-feedback-overlay');
-        if (existingModal) existingModal.remove();
-
-        const reasons = isZH ? [
-            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
-            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
-            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
-            { value: 'personal_reason', label: '🙋 個人原因' },
-            { value: 'other', label: '💬 其他原因' }
-        ] : [
-            { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
-            { value: 'not_enough_people', label: '👥 Not Enough Participants' },
-            { value: 'wrong_info', label: '📝 Posted Wrong Information' },
-            { value: 'personal_reason', label: '🙋 Personal Reason' },
-            { value: 'other', label: '💬 Other' }
-        ];
-
-        const reasonRadios = reasons.map(r => `<label><input type="radio" name="cancel-reason" value="${r.value}"><span>${r.label}</span></label>`).join('');
-
-        const modalHtml = `
-            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
-                <div class="cancel-feedback-modal">
-                    <div class="cancel-warning-badge">⚠️ ${isZH ? '取消前必填' : 'Required Before Cancel'}</div>
-                    <h3>${isZH ? '為什麼要取消此活動？' : 'Why are you canceling this event?'}</h3>
-                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please tell us the reason. Canceling with accepted participants, or within 2 hours of start time, will result in a -2 point deduction.'}</p>
-                    <div class="cancel-reason-group" id="cancel-reason-group">${reasonRadios}</div>
-                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
-                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>${isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit'}</button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const escHandler = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); } };
-        document.addEventListener('keydown', escHandler, true);
-
-        const overlay = document.getElementById('cancel-feedback-overlay');
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) { e.preventDefault(); e.stopPropagation(); const modal = overlay.querySelector('.cancel-feedback-modal'); modal.style.animation = 'none'; requestAnimationFrame(() => { modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'; }); }
-        });
-
-        document.getElementById('cancel-reason-group').addEventListener('change', () => {
-            document.getElementById('cancel-submit-btn').disabled = !document.querySelector('input[name="cancel-reason"]:checked');
-        });
-
-        document.getElementById('cancel-submit-btn').addEventListener('click', async () => {
-            const selected = document.querySelector('input[name="cancel-reason"]:checked');
-            if (!selected) return;
-            const submitBtn = document.getElementById('cancel-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
-            try {
-                await fetch('/api/v1/cancellation-feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: postId, event_category: 'housing', user_email: userProfile.email || '', action_type: 'cancel', reason: selected.value, detail: document.getElementById('cancel-detail-text').value || '' }) });
-                await executeCancel();
-            } catch (error) {
-                console.error("Cancel Error:", error);
-                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred.");
-                submitBtn.disabled = false;
-                submitBtn.textContent = isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit';
-            } finally { document.removeEventListener('keydown', escHandler, true); overlay?.remove(); }
-        });
-    };
-
-    window.confirmSuccess = async (postId) => {
-        window.showSimpleConfirm(
-            `${I18n.t('housing.confirm.success_match') || 'Confirm success?'}`,
-            async () => {
-                const response = await fetch('/update-housing-status/' + postId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'success' }) });
-                if (response.ok && window.refreshUserProfile) await window.refreshUserProfile();
-                currentState = 'manage';
-                updateView();
-                bindListeners();
-            }
-        );
-    };
-
-    // Partner confirms to join
-    window.partnerConfirmJoin = (postId, applicationId) => {
-        window.showSimpleConfirm(
-            `${I18n.t('housing.confirm.success_match')}<br><span style="font-size:0.85rem; color:#888;">${I18n.t('housing.confirm.success_desc')}</span>`,
-            async () => {
-                const result = await MockStore.confirmHousingApplication(postId, applicationId);
-                if (result.success) {
-                    alert(result.message);
-                    currentState = 'manage';
-                    updateView();
-                    bindListeners();
-                } else {
-                    alert(result.message);
-                }
-            }
-        );
     };
 
     // Advanced filter functions
@@ -1660,8 +1307,7 @@ export const renderGroupBuy = () => {
             updateView();
         };
         if (btnManage) btnManage.onclick = () => {
-            currentState = 'manage';
-            updateView();
+            window.navigateTo('my-activities');
         };
 
         // Location Select Page
@@ -1695,8 +1341,7 @@ export const renderGroupBuy = () => {
                 currentState = 'landing';
             } else if (currentState.startsWith('create') || currentState === 'list') {
                 currentState = 'location_select';
-            } else if (currentState === 'manage') {
-                currentState = 'landing';
+
             } else if (currentState === 'landing') {
                 window.navigateTo('home');
                 return;
@@ -1887,106 +1532,17 @@ export const renderGroupBuy = () => {
     };
 
     // Application management functions
-    window.viewApplications = async (postId) => {
-        app.innerHTML = await renderApplicationsList(postId);
 
-        // Bind back button
-        const btnBackToManage = document.querySelector('.btn-back-to-manage');
-        if (btnBackToManage) {
-            btnBackToManage.onclick = () => {
-                currentState = 'manage';
-                updateView();
-                bindListeners();
-            };
-        }
-    };
 
     // Taruh di bagian bawah file housing.js
-    window.openHousingChat = async (postId, postTitle) => {
-        const userProfileStr = localStorage.getItem('userProfile');
-        if (!userProfileStr) return;
-        const user = JSON.parse(userProfileStr);
 
-        try {
-            await fetch('/setup-chat-room', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    room_id: 'housing_' + postId,
-                    post_id: postId,
-                    room_type: 'housing',
-                    team_name: postTitle || 'Housing Group',
-                    participants: [{
-                        id: user.email,
-                        name: user.name || user.displayName,
-                        role: 'participant'
-                    }]
-                })
-            });
-            window.navigateTo(`messages?room=housing_${postId}`);
-        } catch (e) {
-            console.error('Failed to setup chat:', e);
-            alert('Failed to connect to chat room');
-        }
-    };
 
     // Consolidated openChatRoom
-    window.openChatRoom = async (applicationId) => {
-        const app = await MockStore.getApplicationById(applicationId) || window.HousingAppEngine.getApps().find(a => a.id === applicationId);
-        if (app) {
-            window.navigateTo(`messages?room=housing_${app.postId}`);
-        } else {
-            alert(I18n.t('housing.alert.chat_error'));
-        }
-    };
 
-    window.acceptApplication = async (appId, postId) => {
-        await MockStore.updateApplicationStatus(appId, 'accepted', postId);
 
-        // Fetch application for potential future use (or remove if unneeded)
-        const applications = await MockStore.getPostApplications(postId);
-        const acceptedApp = applications.find(a => a.id === appId);
 
-        // Refresh the view safely
-        if (currentState === 'manage') {
-            await updateView();
-            bindListeners();
-        } else {
-            app.innerHTML = await renderApplicationsList(postId);
-            const btnBackToManage = document.querySelector('.btn-back-to-manage');
-            if (btnBackToManage) {
-                btnBackToManage.onclick = () => {
-                    currentState = 'manage';
-                    updateView();
-                    bindListeners();
-                };
-            }
-        }
 
-        alert(I18n.t('housing.alert.accepted'));
-    };
 
-    window.rejectApplication = async (appId, postId) => {
-        window.showSimpleConfirm(I18n.t('housing.confirm.reject'), async () => {
-            await MockStore.updateApplicationStatus(appId, 'rejected', postId);
-
-            // Refresh the view safely
-            if (currentState === 'manage') {
-                await updateView();
-                bindListeners();
-            } else {
-                app.innerHTML = await renderApplicationsList(postId);
-                const btnBackToManage = document.querySelector('.btn-back-to-manage');
-                if (btnBackToManage) {
-                    btnBackToManage.onclick = () => {
-                        currentState = 'manage';
-                        updateView();
-                        bindListeners();
-                    };
-                }
-            }
-        });
-    };
 
 
     // --- HOUSING JOIN FORM ---

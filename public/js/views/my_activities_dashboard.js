@@ -15,26 +15,30 @@ export const renderMyActivitiesDashboard = async () => {
     let allActivities = [];
     let filteredActivities = [];
     let currentFilter = 'all';
+    let activeTab = 'hosted'; // 'hosted' or 'joined'
 
     const fetchActivities = async () => {
         try {
             const res = await api.fetch(`/api/v1/my-activities?email=${encodeURIComponent(user.email)}`, { idempotency: false });
             if (res.success) {
                 allActivities = res.data || [];
-                applyFilter(currentFilter);
+                applyFilter(currentFilter, activeTab);
             }
         } catch (err) {
             console.error('Failed to fetch my activities:', err);
         }
     };
 
-    const applyFilter = (filter) => {
+    const applyFilter = (filter, tab) => {
         currentFilter = filter;
+        activeTab = tab;
+        
+        // Filter by role (host vs participant)
+        let tabFiltered = allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+
         if (filter === 'all') {
-            filteredActivities = allActivities;
+            filteredActivities = tabFiltered;
         } else {
-            // Mapping UI filter groups to backend category strings
-            // Skill -> sports, Hangout -> hangout, Housing -> housing
             const filterMap = {
                 'skill': 'sports',
                 'carpool': 'carpool',
@@ -43,7 +47,7 @@ export const renderMyActivitiesDashboard = async () => {
                 'housing': 'housing'
             };
             const targetCategory = filterMap[filter] || filter;
-            filteredActivities = allActivities.filter(a => a.category === targetCategory);
+            filteredActivities = tabFiltered.filter(a => a.category === targetCategory);
         }
         render();
     };
@@ -69,15 +73,26 @@ export const renderMyActivitiesDashboard = async () => {
             { id: 'housing', label: I18n.t('home.cat.groupbuy') || '租屋' }
         ];
 
+        const tabsHtml = `
+            <div style="display: flex; background: var(--bg-body); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                <button onclick="window.setDashboardTab('hosted')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'hosted' ? 'white' : 'transparent'}; color: ${activeTab === 'hosted' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'hosted' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
+                    我發起的
+                </button>
+                <button onclick="window.setDashboardTab('joined')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'joined' ? 'white' : 'transparent'}; color: ${activeTab === 'joined' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'joined' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
+                    我參與的
+                </button>
+            </div>
+        `;
+
         const filterHtml = `
-            <div class="filter-bar" style="display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 15px; scrollbar-width: none; -ms-overflow-style: none;">
+            <div class="filter-bar" style="display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 15px 0; margin-bottom: 0; scrollbar-width: none; -ms-overflow-style: none;">
                 ${filters.map(f => `
                     <button 
                         onclick="window.applyDashboardFilter('${f.id}')"
                         style="padding: 6px 16px; border-radius: 20px; border: 1px solid ${currentFilter === f.id ? 'var(--primary-light)' : 'var(--border-color)'}; 
-                               background: ${currentFilter === f.id ? 'var(--primary-light)' : 'var(--bg-card)'}; 
-                               color: ${currentFilter === f.id ? 'white' : 'var(--text-secondary)'}; 
-                               white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;"
+                                background: ${currentFilter === f.id ? 'var(--primary-light)' : 'var(--bg-card)'}; 
+                                color: ${currentFilter === f.id ? 'white' : 'var(--text-secondary)'}; 
+                                white-space: nowrap; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;"
                     >
                         ${f.label}
                     </button>
@@ -89,21 +104,49 @@ export const renderMyActivitiesDashboard = async () => {
         const listHtml = filteredActivities.length > 0 ? filteredActivities.map(p => {
             const { icon, color } = getIconAndColor(p.category);
             const labelName = I18n.t(`home.cat.${p.category === 'sports' ? 'sports' : (p.category === 'hangout' ? 'travel' : (p.category === 'housing' ? 'groupbuy' : p.category))}`);
-            
             const date = new Date(p.unified_event_time || p.created_at || Date.now());
             const dateStr = date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+            const isHost = p.user_role === 'host';
+            let statusBadge = '';
+            if (p.status === 'open') statusBadge = `<span style="font-size: 0.7rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 招募中</span>`;
+            else if (p.status === 'full') statusBadge = `<span style="font-size: 0.7rem; color: #f44336; border: 1px solid #f44336; padding: 2px 6px; border-radius: 4px;">🔴 額滿</span>`;
+            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.7rem; color: #ff9800; border: 1px solid #ff9800; padding: 2px 6px; border-radius: 4px;">⏸️ 暫停</span>`;
+            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.7rem; color: #2196f3; border: 1px solid #2196f3; padding: 2px 6px; border-radius: 4px;">🎉 已成案</span>`;
+            else if (p.status === 'cancelled') statusBadge = `<span style="font-size: 0.7rem; color: #9e9e9e; border: 1px solid #9e9e9e; padding: 2px 6px; border-radius: 4px;">✗ 已取消</span>`;
+
+            let manageButtons = '';
+            if (isHost) {
+                if (p.status === 'open' || p.status === 'full') {
+                    manageButtons = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                            <button onclick="window.pauseDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">⏸️ 暫停</button>
+                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 成案</button>
+                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ 取消活動</button>
+                        </div>
+                    `;
+                } else if (p.status === 'paused') {
+                    manageButtons = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                            <button onclick="window.resumeDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">▶️ 繼續</button>
+                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 成案</button>
+                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ 取消活動</button>
+                        </div>
+                    `;
+                }
+            }
+
             return `
-                <div class="card" style="margin-bottom: 1.2rem; padding: 18px; cursor: default; background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+                <div class="card" style="margin-bottom: 1.2rem; padding: 18px; cursor: default; background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); ${p.status === 'cancelled' ? 'opacity: 0.6;' : ''}">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName}
                         </span>
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                             ${statusBadge}
                              <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
                                  👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.people_needed || 0}
                              </span>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">${dateStr}</span>
                         </div>
                     </div>
                     <h3 style="margin: 0 0 10px 0; font-size: 1.15rem; color: var(--text-primary); text-align: left;">${p.title}</h3>
@@ -114,34 +157,189 @@ export const renderMyActivitiesDashboard = async () => {
                             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${p.host_name || 'Host'}</div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.host_dept || ''}</div>
                         </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${dateStr}</div>
                     </div>
 
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; text-align: left;">
                         <div>📍 ${p.unified_location || 'NCNU'}</div>
                     </div>
 
-                    <button onclick="window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:5px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #42A5F5, #1976D2); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <button onclick="window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; padding:10px; border-radius:8px; background:linear-gradient(135deg, #42A5F5, #1976D2); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2);">
                         💬 ${I18n.t('sports.action.join_chat') || '進入聊天室'}
                     </button>
+
+                    ${manageButtons}
                 </div>
             `;
-        }).join('') : `<div style="text-align: center; color: var(--text-secondary); margin-top: 3rem;">${I18n.t('common.no_data') || '目前沒有參加中的活動'}</div>`;
+        }).join('') : `<div style="text-align: center; color: var(--text-secondary); margin-top: 3rem;">${I18n.t('common.no_data') || '目前沒有活動'}</div>`;
 
         app.innerHTML = `
             <div class="container fade-in" style="padding-bottom: 80px; text-align: center;">
-                <header style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: flex-start;">
+                <header style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: flex-start;">
                     <button onclick="window.navigateTo('home')" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer; color: var(--text-primary);">⬅️</button>
                     <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-primary); font-weight: 700;">${I18n.t('home.cat.activity') || '活動'}</h2>
                 </header>
+                ${tabsHtml}
                 ${filterHtml}
                 <div class="activity-list">${listHtml}</div>
             </div>
             ${renderBottomNav('activities')}
+            <style>
+                .cancel-feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10001; backdrop-filter: blur(4px); }
+                .cancel-feedback-modal { background: white; width: 90%; max-width: 380px; border-radius: 20px; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; }
+                @keyframes cancelModalIn { from { transform: scale(0.8) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+                .cancel-warning-badge { background: #fee2e2; color: #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; width: fit-content; margin: 0 auto 1rem; }
+                .modal-subtitle { color: #6b7280; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.5rem; }
+                .cancel-reason-group { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; text-align: left; }
+                .cancel-reason-group label { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+                .cancel-reason-group label:has(input:checked) { background: #fef2f2; border-color: #ef4444; }
+                .cancel-detail-textarea { width: 100%; height: 80px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; font-size: 0.9rem; resize: none; margin-bottom: 1.5rem; outline: none; }
+                .cancel-submit-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; background: #ef4444; color: white; }
+                .cancel-submit-btn:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+            </style>
         `;
     };
 
+    window.setDashboardTab = (tab) => {
+        applyFilter(currentFilter, tab);
+    };
+
     window.applyDashboardFilter = (filter) => {
-        applyFilter(filter);
+        applyFilter(filter, activeTab);
+    };
+
+    // Generic Status Updater
+    const updateDashboardActivityStatus = async (postId, category, newStatus) => {
+        const endpointMap = {
+            'sports': `/update-activity-status/${postId}`,
+            'carpool': `/carpools/${postId}/status`,
+            'study': `/update-study-status/${postId}`,
+            'hangout': `/update-hangout-status/${postId}`,
+            'housing': `/update-housing-status/${postId}`
+        };
+
+        const endpoint = endpointMap[category];
+        if (!endpoint) {
+            console.error('Unknown category for status update:', category);
+            return;
+        }
+
+        try {
+            const method = category === 'carpool' ? 'PATCH' : 'PUT';
+            const response = await fetch(endpoint, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+                if (window.refreshUserProfile) await window.refreshUserProfile();
+                await fetchActivities();
+            } else {
+                alert('Update failed.');
+            }
+        } catch (error) {
+            console.error('API Error:', error);
+            alert('Connection error.');
+        }
+    };
+
+    window.pauseDashboardActivity = (postId, category) => {
+        if (confirm('確定要暫停招募嗎？')) {
+            updateDashboardActivityStatus(postId, category, 'paused');
+        }
+    };
+
+    window.resumeDashboardActivity = (postId, category) => {
+        if (confirm('確定要繼續招募嗎？')) {
+            updateDashboardActivityStatus(postId, category, 'open');
+        }
+    };
+
+    window.successDashboardActivity = (postId, category) => {
+        if (confirm('恭喜成案！確定要標記為已成案嗎？')) {
+            updateDashboardActivityStatus(postId, category, 'success');
+        }
+    };
+
+    window.cancelDashboardActivity = async (postId, category) => {
+        const isZH = true;
+        const currentActivity = allActivities.find(a => String(a.id) === String(postId) && a.category === category);
+        
+        const executeCancel = () => updateDashboardActivityStatus(postId, category, 'cancelled');
+
+        if (currentActivity && currentActivity.created_at) {
+            const ageMs = Date.now() - new Date(currentActivity.created_at).getTime();
+            if (ageMs <= 10 * 60 * 1000) {
+                if (confirm(isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure?")) {
+                    executeCancel();
+                }
+                return;
+            }
+        }
+
+        // Penalty Modal for older activities
+        const existingModal = document.getElementById('cancel-feedback-overlay');
+        if (existingModal) existingModal.remove();
+
+        const reasons = [
+            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
+            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
+            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
+            { value: 'personal_reason', label: '🙋 個人原因' },
+            { value: 'other', label: '💬 其他原因' }
+        ];
+
+        const reasonRadios = reasons.map(r => `<label><input type="radio" name="cancel-reason" value="${r.value}"><span>${r.label}</span></label>`).join('');
+
+        const modalHtml = `
+            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
+                <div class="cancel-feedback-modal">
+                    <div class="cancel-warning-badge">⚠️ 取消前必填</div>
+                    <h3>${isZH ? '為什麼要取消此活動？' : 'Why are you canceling?'}</h3>
+                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please provide a reason to avoid penalties.'}</p>
+                    <div class="cancel-reason-group" id="cancel-reason-group">${reasonRadios}</div>
+                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="補充說明（選填）..."></textarea>
+                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>❌ 確認取消並送出</button>
+                    <button onclick="document.getElementById('cancel-feedback-overlay').remove()" style="margin-top: 10px; background: none; border: none; color: #999; cursor: pointer; text-decoration: underline; width: 100%;">暫不取消</button>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const overlay = document.getElementById('cancel-feedback-overlay');
+        const submitBtn = document.getElementById('cancel-submit-btn');
+
+        document.getElementById('cancel-reason-group').addEventListener('change', () => {
+            submitBtn.disabled = !document.querySelector('input[name="cancel-reason"]:checked');
+        });
+
+        submitBtn.addEventListener('click', async () => {
+            const selected = document.querySelector('input[name="cancel-reason"]:checked');
+            if (!selected) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ 處理中...';
+            try {
+                await api.fetch('/api/v1/cancellation-feedback', {
+                    method: 'POST',
+                    body: {
+                        event_id: postId,
+                        event_category: category,
+                        user_email: user.email,
+                        action_type: 'cancel',
+                        reason: selected.value,
+                        detail: document.getElementById('cancel-detail-text').value || ''
+                    }
+                });
+                executeCancel();
+            } catch (err) {
+                console.error(err);
+                alert('Cancellation failed.');
+            } finally {
+                overlay.remove();
+            }
+        });
     };
 
     render();

@@ -96,7 +96,7 @@ export const renderCarpool = () => {
                     </button>
 
                     <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #FFD600, #FF6D00); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3); transition: transform 0.2s;">
-                        ⚙️ ${t('common.manage', '管理我的活動', 'Manage My Activities')}
+                        ⚙️ ${t('home.cat.activity', '活動', 'Activities')}
                     </button>
                 </div>
                 
@@ -525,134 +525,6 @@ export const renderCarpool = () => {
         `;
     };
 
-    const renderManage = async () => {
-        let myPosts = [];
-        try {
-            const response = await fetch('/my-carpools/' + user.email);
-            const data = await response.json();
-            myPosts = Array.isArray(data) ? data : [];
-        } catch (error) { }
-
-        const isZH = isAppZH();
-        const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
-        const txtNoData = t('cp.nodata_manage', '尚未建立任何活動。', 'No events created yet.');
-        const txtCreateBtn = t('cp.btn.create', '+ 建立新共乘', '+ Create New Ride');
-
-        const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            let pendingApps = [];
-            let acceptedApps = [];
-
-            // 1. Fetch from Server (Source of Truth)
-            try {
-                const data = await api.fetch(`/api/v1/host/participants?event_type=carpool&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
-                if (data.success && data.data) {
-                    pendingApps = data.data.filter(a => a.status === 'pending');
-                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
-                }
-            } catch (e) { console.warn("Failed to fetch server participants.", e); }
-
-            // 2. Legacy Fallback
-            if (pendingApps.length === 0 && acceptedApps.length === 0) {
-                const legacyApps = window.CarpoolAppEngine.getApps(p.id) || [];
-                pendingApps = legacyApps.filter(a => a.status === 'pending');
-                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
-            }
-
-            const participantCount = Math.max(1, parseInt(p.approvedCount) || 0);
-
-            let statusBadge = '';
-            if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${t('cp.stat.open', '狀態: 招募中', 'Status: OK')}</span>`;
-            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.8rem; color: #ff9800; border: 1px solid #ff9800; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⏸️ ${t('common.paused', '暫停招募', 'Paused')}</span>`;
-            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${t('common.success', '已成案', 'Success')}</span>`;
-            else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${t('common.cancel', '已取消', 'Cancelled')}</span>`;
-
-            let appsHtml = '';
-            if (pendingApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${t('cp.pending', '待確認:', 'Pending Confirmation:')}:</div>`;
-                appsHtml += pendingApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'carpool', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
-                    </div>
-                `).join('');
-            }
-            if (acceptedApps.length > 0 || true) { // Always show Joined section for Host
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
-                
-                // NEW: Explicit Host Row (Driver)
-                appsHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">⭐ ${p.host_name || 'Host'} <span style="font-size: 0.75rem; background: #E3F2FD; color: #1976D2; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Driver</span></span>
-                    </div>
-                `;
-                appsHtml += acceptedApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                        <span style="font-size: 0.9rem; color: #333; font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已在前座' : 'Joined'}</span>
-                    </div>
-                `).join('');
-            }
-            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
-
-            const cpTitle = p.title || `${p.departure_loc} ➔ ${p.destination_loc}`;
-            const dTime = new Date(p.departure_time);
-            const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
-
-            return `
-                <div class="card" style="${p.status === 'cancelled' || p.status === 'expired' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-card); padding: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${cpTitle}</h3>
-                        ${statusBadge}
-                    </div>
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">🗓️ ${dateStr}</div>
-                    
-                    <div style="background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; color: #333; font-size: 0.95rem; margin-bottom: 10px;">👥 ${t('cp.passengers', '乘客名單', 'Participants')} (${participantCount}/${p.available_seats})</div>
-                        ${appsHtml}
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="window.navigateTo('messages?room=carpool_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('cp.chat', '進入聊天室', 'Enter Chat Room')}</button>
-
-                        ${p.status === 'open' ? `
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'paused')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${t('common.pause', '暫停招募', 'Pause Recruiting')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
-                        ` : p.status === 'paused' ? `
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FFC107; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${t('common.resume', '繼續招募', 'Resume Recruiting')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
-                            <button onclick="window.updateCarpoolStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
-                            ` : p.status === 'success' ? `
-                            <button onclick="window.openRatingModal({ id: '${p.id}', title: '${(p.title || (p.departure_loc + ' ➔ ' + p.destination_loc)).replace(/'/g, "\\'")}', category: 'carpool' })" style="width: 100%; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #FFB300, #FF8C00); color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 8px; box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);">⭐ 給予評價 (Rate Event)</button>
-                        ` : ''}
-                        <button onclick="window.deletePost('${p.id}', 'carpool')" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isZH ? '🗑️ 刪除' : '🗑️ Delete'}</button>
-                    </div>
-                </div>
-            `;
-        }));
-
-        return `
-            <div class="container fade-in" style="padding-bottom: 80px;">
-                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
-                    <h2>⚙️ ${txtManageTitle}</h2>
-                </header>
-
-                ${myPosts.length > 0 ? `
-                    <section style="margin-bottom: 2rem;">
-                        ${postsHtmlArray.join('')}
-                    </section>
-                ` : `
-                    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🚙</div>
-                        <p>${txtNoData}</p>
-                        <button onclick="window.setState('create', 'host')" class="btn btn-primary" style="margin-top: 1rem; background: linear-gradient(135deg, #FF8C00, #E65100); border: none; box-shadow: 0 2px 5px rgba(255, 140, 0, 0.3);">${txtCreateBtn}</button>
-                    </div>
-                `}
-            </div>
-        `;
-    };
-
     const updateView = async () => {
         let html = '';
         if (currentState === 'landing') {
@@ -661,8 +533,6 @@ export const renderCarpool = () => {
             html = renderCreateForm();
         } else if (currentState === 'list') {
             html = await renderList();
-        } else if (currentState === 'manage') {
-            html = await renderManage();
         }
 
         const navHtml = `
@@ -700,7 +570,6 @@ export const renderCarpool = () => {
         if (currentState === 'landing') bindLandingListeners();
         else if (currentState === 'create') bindCreateListeners();
         else if (currentState === 'list') bindListListeners();
-        else if (currentState === 'manage') bindManageListeners();
 
         if (window.checkNotificationBadge) window.checkNotificationBadge();
     };
@@ -708,7 +577,7 @@ export const renderCarpool = () => {
     const bindLandingListeners = () => {
         document.getElementById('btn-role-host')?.addEventListener('click', () => { currentState = 'create'; updateView(); });
         document.getElementById('btn-role-partner')?.addEventListener('click', () => { currentState = 'list'; updateView(); });
-        document.getElementById('btn-manage')?.addEventListener('click', () => { currentState = 'manage'; updateView(); });
+        document.getElementById('btn-manage')?.addEventListener('click', () => { window.navigateTo('my-activities'); });
     };
 
     const bindCreateListeners = () => {
@@ -765,8 +634,7 @@ export const renderCarpool = () => {
                 if (response.ok) {
                     if (window.refreshUserProfile) await window.refreshUserProfile();
                     alert(t('cp.alert.ok', "發佈成功！ 🎉", "Success! 🎉"));
-                    currentState = 'manage';
-                    updateView();
+                    window.navigateTo('my-activities');
                 } else {
                     const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
                     alert("⚠️ " + t('cp.alert.err1', "資料庫錯誤：", "Database error: ") + (errorMsg || "Unknown"));
@@ -833,190 +701,6 @@ export const renderCarpool = () => {
         updateView();
     };
 
-    const bindManageListeners = () => {
-        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
-    };
-
-    window.setState = (state, role) => {
-        currentState = state;
-        updateView();
-    };
-
-    window.updateCarpoolStatus = async (postId, newStatus) => {
-        const isZH = isAppZH();
-        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-
-        // --- Helper: Execute the actual status update ---
-        const executeUpdate = async () => {
-            const response = await fetch(`/update-carpool-status/${postId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-
-            if (response.ok) {
-                if (window.refreshUserProfile) await window.refreshUserProfile();
-                updateView();
-            } else {
-                alert(t('cp.fail.stat', "更新失敗。", "Failed to update."));
-            }
-        };
-
-        // --- For non-cancel statuses, use simple confirm ---
-        if (newStatus !== 'cancelled') {
-            const msgConfirm = t('cp.confirm.stat', `確定要更改狀態為 ${newStatus} 嗎？`, `Change status to ${newStatus}?`);
-            if (!confirm(msgConfirm)) return;
-            try { await executeUpdate(); }
-            catch (error) { alert("Error server."); }
-            return;
-        }
-
-        // --- CANCEL FLOW: Apply 10-minute grace period ---
-        let createdAt = null;
-        try {
-            const res = await fetch(`/carpool/${postId}`);
-            const data = await res.json();
-            createdAt = data.created_at || null;
-        } catch (e) {
-            console.warn('Could not fetch carpool created_at:', e);
-        }
-
-        if (createdAt) {
-            const ageMs = Date.now() - new Date(createdAt).getTime();
-            const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes
-
-            if (ageMs <= GRACE_PERIOD_MS) {
-                // Within grace period → Silent cancel
-                const silentMsg = isZH
-                    ? "此共乘剛建立不久，確定要取消嗎？"
-                    : "This ride was just created. Are you sure you want to cancel?";
-                if (!confirm(silentMsg)) return;
-                try { await executeUpdate(); }
-                catch (error) { alert("Error server."); }
-                return;
-            }
-        }
-
-        // --- > 10 minutes → Show Mandatory Feedback Modal ---
-        const existingModal = document.getElementById('cancel-feedback-overlay');
-        if (existingModal) existingModal.remove();
-
-        const reasons = isZH ? [
-            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
-            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
-            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
-            { value: 'vehicle_issue', label: '🚗 車輛問題 / 無法出車' },
-            { value: 'personal_reason', label: '🙋 個人原因' },
-            { value: 'other', label: '💬 其他原因' }
-        ] : [
-            { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
-            { value: 'not_enough_people', label: '👥 Not Enough Passengers' },
-            { value: 'wrong_info', label: '📝 Posted Wrong Information' },
-            { value: 'vehicle_issue', label: '🚗 Vehicle Issue / Can\'t Drive' },
-            { value: 'personal_reason', label: '🙋 Personal Reason' },
-            { value: 'other', label: '💬 Other' }
-        ];
-
-        const reasonRadios = reasons.map(r => `
-            <label>
-                <input type="radio" name="cancel-reason" value="${r.value}">
-                <span>${r.label}</span>
-            </label>
-        `).join('');
-
-        const modalHtml = `
-            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
-                <div class="cancel-feedback-modal">
-                    <div class="cancel-warning-badge">⚠️ ${isZH ? '取消前必填' : 'Required Before Cancel'}</div>
-                    <h3>${isZH ? '為什麼要取消此共乘？' : 'Why are you canceling this ride?'}</h3>
-                    <p class="modal-subtitle">${isZH 
-                        ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' 
-                        : 'Please tell us the reason. Canceling with accepted participants, or within 2 hours of start time, will result in a -2 point deduction.'}</p>
-                    
-                    <div class="cancel-reason-group" id="cancel-reason-group">
-                        ${reasonRadios}
-                    </div>
-
-                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
-
-                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>
-                        ${isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit'}
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        // --- Block Escape key ---
-        const escHandler = (e) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        };
-        document.addEventListener('keydown', escHandler, true);
-
-        // --- Block overlay click ---
-        const overlay = document.getElementById('cancel-feedback-overlay');
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                e.preventDefault();
-                e.stopPropagation();
-                const modal = overlay.querySelector('.cancel-feedback-modal');
-                modal.style.animation = 'none';
-                requestAnimationFrame(() => {
-                    modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                });
-            }
-        });
-
-        // --- Enable submit when a reason is selected ---
-        const radioGroup = document.getElementById('cancel-reason-group');
-        const submitBtn = document.getElementById('cancel-submit-btn');
-
-        radioGroup.addEventListener('change', () => {
-            const selected = document.querySelector('input[name="cancel-reason"]:checked');
-            submitBtn.disabled = !selected;
-        });
-
-        // --- Submit handler ---
-        submitBtn.addEventListener('click', async () => {
-            const selected = document.querySelector('input[name="cancel-reason"]:checked');
-            if (!selected) return;
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
-
-            try {
-                // 1. Save feedback
-                await fetch('/api/v1/cancellation-feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        event_id: postId,
-                        event_category: 'carpool',
-                        user_email: userProfile.email || '',
-                        action_type: 'cancel',
-                        reason: selected.value,
-                        detail: document.getElementById('cancel-detail-text').value || ''
-                    })
-                });
-
-                // 2. Execute cancel
-                await executeUpdate();
-            } catch (error) {
-                console.error("Cancel Error:", error);
-                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred. Please try again later.");
-                submitBtn.disabled = false;
-                submitBtn.textContent = isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit';
-            } finally {
-                document.removeEventListener('keydown', escHandler, true);
-                overlay?.remove();
-            }
-        });
-    };
-
     // HANDLED GLOBALLY IN app.js (window.handleReviewAction)
 
     updateView();
@@ -1075,13 +759,13 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
                 alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
                 document.getElementById('join-overlay').remove();
             } else {
-                alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
+                alert(isAppZH() ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
             }
         } catch (e) {
             console.error("Join Request Error:", e);
-            alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+            alert(isAppZH() ? "伺服器連線失敗。" : "Server connection failed.");
             btnSubmit.disabled = false;
             btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
         }
@@ -1113,23 +797,13 @@ window.showCarpoolDetail = async (id) => {
             console.error("Failed to get Host profile from MySQL:", err);
         }
 
-        // Kalau dapet dari MySQL, pakai datanya. Kalau kosong, pakai data dari postingan
+        // Kalau dapet from MySQL, pakai datanya. Kalau kosong, pakai data from postingan
         const hostName = hostUser.name || p.host_name || 'Host';
         const hostDept = hostUser.department || p.host_dept || 'Student';
         const hostAvatar = hostUser.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         const hostHobby = hostUser.hobby || '';
         const studyYear = hostUser.study_year || '';
 
-        const isAppZH = () => {
-            try {
-                const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-                if (langObj.includes('en')) return false;
-                if (langObj.includes('zh')) return true;
-            } catch (e) { }
-            const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
-            if (ls.includes('en')) return false;
-            return true;
-        };
         const isZH = isAppZH();
 
         const txtDetails = isZH ? '共乘詳情' : 'Ride Details';
@@ -1247,13 +921,11 @@ window.showCarpoolDetail = async (id) => {
     }
 };
 
-// Taruh di bagian bawah file carpool.js dan study.js
 window.openGroupChat = (activityId) => {
     const userProfileStr = localStorage.getItem('userProfile');
     if (!userProfileStr) {
         alert(I18n.t('auth.err.login_required') || "Please login first!");
         return;
     }
-    // Ini kodingan ajaib yang melempar user ke messages.js
     window.navigateTo(`messages?room=carpool_${activityId}`);
 };

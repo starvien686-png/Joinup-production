@@ -698,68 +698,135 @@ router.get('/api/v1/my-activities', async (req, res) => {
 
     try {
         const query = `
+            /* --- PART 1: HOSTED BY ME (ALL STATUSES) --- */
             SELECT 
                 a.id, a.title, 'sports' as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic,
+                'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM activities a
             LEFT JOIN users u ON a.host_email = u.email
-            WHERE (a.host_email = :email OR EXISTS (
-                SELECT 1 FROM event_participants ep 
-                WHERE ep.event_type = 'sports' AND ep.event_id = a.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
-            ))
+            WHERE a.host_email = :email
 
             UNION ALL
 
             SELECT 
                 c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
                 c.host_name, c.host_dept, u.profile_pic,
+                'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM carpools c
             LEFT JOIN users u ON c.host_email = u.email
-            WHERE (c.host_email = :email OR EXISTS (
-                SELECT 1 FROM event_participants ep 
-                WHERE ep.event_type = 'carpool' AND ep.event_id = c.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
-            ))
+            WHERE c.host_email = :email
 
             UNION ALL
 
             SELECT 
                 s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
                 s.host_name, s.host_dept, u.profile_pic,
+                'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM studies s
             LEFT JOIN users u ON s.host_email = u.email
-            WHERE (s.host_email = :email OR EXISTS (
-                SELECT 1 FROM event_participants ep 
-                WHERE ep.event_type = 'study' AND ep.event_id = s.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
-            ))
+            WHERE s.host_email = :email
 
             UNION ALL
 
             SELECT 
                 h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
                 h.host_name, h.host_dept, u.profile_pic,
+                'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM hangouts h
             LEFT JOIN users u ON h.host_email = u.email
-            WHERE (h.host_email = :email OR EXISTS (
-                SELECT 1 FROM event_participants ep 
-                WHERE ep.event_type = 'hangout' AND ep.event_id = h.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
-            ))
+            WHERE h.host_email = :email
 
             UNION ALL
 
             SELECT 
                 ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
                 ho.host_name, ho.host_dept, u.profile_pic,
+                'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM housing ho
             LEFT JOIN users u ON ho.host_email = u.email
-            WHERE (ho.host_email = :email OR EXISTS (
-                SELECT 1 FROM event_participants ep 
-                WHERE ep.event_type = 'housing' AND ep.event_id = ho.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
-            ))
+            WHERE ho.host_email = :email
+
+            UNION ALL
+
+            /* --- PART 2: JOINED BY ME (ONLY APPROVED/ACCEPTED) --- */
+            SELECT 
+                a.id, a.title, 'sports' as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                'participant' as user_role,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM activities a
+            JOIN event_participants ep ON (ep.event_type = 'sports' AND ep.event_id = a.id)
+            JOIN users u_me ON ep.user_id = u_me.id
+            LEFT JOIN users u_host ON a.host_email = u_host.email
+            WHERE u_me.email = :email 
+              AND ep.status IN ('approved', 'accepted')
+              AND a.host_email != :email
+
+            UNION ALL
+
+            SELECT 
+                c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                'participant' as user_role,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM carpools c
+            JOIN event_participants ep ON (ep.event_type = 'carpool' AND ep.event_id = c.id)
+            JOIN users u_me ON ep.user_id = u_me.id
+            LEFT JOIN users u_host ON c.host_email = u_host.email
+            WHERE u_me.email = :email 
+              AND ep.status IN ('approved', 'accepted')
+              AND c.host_email != :email
+
+            UNION ALL
+
+            SELECT 
+                s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                'participant' as user_role,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM studies s
+            JOIN event_participants ep ON (ep.event_type = 'study' AND ep.event_id = s.id)
+            JOIN users u_me ON ep.user_id = u_me.id
+            LEFT JOIN users u_host ON s.host_email = u_host.email
+            WHERE u_me.email = :email 
+              AND ep.status IN ('approved', 'accepted')
+              AND s.host_email != :email
+
+            UNION ALL
+
+            SELECT 
+                h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                'participant' as user_role,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM hangouts h
+            JOIN event_participants ep ON (ep.event_type = 'hangout' AND ep.event_id = h.id)
+            JOIN users u_me ON ep.user_id = u_me.id
+            LEFT JOIN users u_host ON h.host_email = u_host.email
+            WHERE u_me.email = :email 
+              AND ep.status IN ('approved', 'accepted')
+              AND h.host_email != :email
+
+            UNION ALL
+
+            SELECT 
+                ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                'participant' as user_role,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM housing ho
+            JOIN event_participants ep ON (ep.event_type = 'housing' AND ep.event_id = ho.id)
+            JOIN users u_me ON ep.user_id = u_me.id
+            LEFT JOIN users u_host ON ho.host_email = u_host.email
+            WHERE u_me.email = :email 
+              AND ep.status IN ('approved', 'accepted')
+              AND ho.host_email != :email
 
             ORDER BY created_at DESC
         `;

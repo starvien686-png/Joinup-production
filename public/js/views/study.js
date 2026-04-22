@@ -95,7 +95,7 @@ export const renderStudy = () => {
                     </button>
 
                     <button id="btn-manage" class="btn" style="background: linear-gradient(135deg, #FFD600, #FF6D00); color: white; margin-top: 1rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3); transition: transform 0.2s;">
-                        ⚙️ ${t('common.manage', '管理我的活動', 'Manage My Activities')}
+                        ⚙️ ${t('home.cat.activity', '活動', 'Activities')}
                     </button>
                 </div>
                 
@@ -425,119 +425,7 @@ export const renderStudy = () => {
         `;
     };
 
-    const renderManage = async () => {
-        let myPosts = [];
-        try {
-            const response = await fetch(`/my-studies/${user.email}`);
-            const data = await response.json();
-            myPosts = Array.isArray(data) ? data : [];
-        } catch (error) { }
 
-        const isZH = isAppZH();
-        const txtManageTitle = t('common.manage', '管理我的活動', 'Manage My Events');
-
-        const postsHtmlArray = await Promise.all(myPosts.map(async p => {
-            let pendingApps = [];
-            let acceptedApps = [];
-
-            // 1. Fetch from Server (Source of Truth)
-            try {
-                const data = await api.fetch(`/api/v1/host/participants?event_type=study&event_id=${p.id}&host_email=${user.email}`, { idempotency: false });
-                if (data.success && data.data) {
-                    pendingApps = data.data.filter(a => a.status === 'pending');
-                    acceptedApps = data.data.filter(a => a.status === 'approved' || a.status === 'accepted');
-                }
-            } catch (e) { console.warn("Failed to fetch server participants.", e); }
-
-            // 2. Legacy Fallback
-            if (pendingApps.length === 0 && acceptedApps.length === 0) {
-                const legacyApps = window.StudyAppEngine.getApps(p.id) || [];
-                pendingApps = legacyApps.filter(a => a.status === 'pending');
-                acceptedApps = legacyApps.filter(a => a.status === 'accepted');
-            }
-
-            const participantCount = Math.max(1, parseInt(p.approvedCount) || 0);
-
-            let statusBadge = '';
-            if (p.status === 'open') statusBadge = `<span style="font-size: 0.8rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🟢 ${isZH ? '招募中' : 'Status: OK'}</span>`;
-            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.8rem; color: #ff9800; border: 1px solid #ff9800; padding: 4px 10px; border-radius: 20px; font-weight: bold;">⏸️ ${isZH ? '暫停' : 'Paused'}</span>`;
-            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.8rem; color: #2196f3; border: 1px solid #2196f3; padding: 4px 10px; border-radius: 20px; font-weight: bold;">🎉 ${isZH ? '已成案' : 'Success'}</span>`;
-            else statusBadge = `<span style="font-size: 0.8rem; color: #f44336; border: 1px solid #f44336; padding: 4px 10px; border-radius: 20px; font-weight: bold;">✗ ${isZH ? '已取消' : 'Cancelled'}</span>`;
-
-            let appsHtml = '';
-            if (pendingApps.length > 0) {
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #FF9800; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #FFE0B2;">⏳ ${isZH ? '待確認:' : 'Pending Confirmation:'}</div>`;
-                appsHtml += pendingApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
-                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <button onclick="window.showReviewApplicationModal('${app.id}', '${p.id}', '${app.user_email || app.user_id || app.applicantId}', '${p.title.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'study', null)" style="background: #2196F3; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">👤 ${isZH ? '查看申請' : 'Review'}</button>
-                    </div>
-                `).join('');
-            }
-
-            if (acceptedApps.length > 0 || true) { // Always show Joined section for Host
-                appsHtml += `<div style="font-size: 0.85rem; font-weight: bold; color: #4caf50; margin-top: 15px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #c8e6c9;">✅ ${isZH ? '已加入:' : 'Joined:'}</div>`;
-                
-                // NEW: Explicit Host Row
-                appsHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
-                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">⭐ ${p.host_name || 'Host'} <span style="font-size: 0.75rem; background: #E3F2FD; color: #1976D2; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Host</span></span>
-                    </div>
-                `;
-
-                appsHtml += acceptedApps.map(app => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
-                        <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: bold;">${app.snapshot_display_name || app.applicantName}</span>
-                        <span style="font-size: 0.8rem; color: #4caf50; font-weight: bold;">✓ ${isZH ? '已加入' : 'Joined'}</span>
-                    </div>
-                `).join('');
-            }
-            if (!appsHtml) appsHtml = `<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9rem;">${isZH ? '目前沒有申請' : 'No applications yet.'}</div>`;
-
-            const dTime = new Date(p.event_time);
-            const dateStr = isZH ? `${dTime.getFullYear()}/${(dTime.getMonth() + 1)}/${dTime.getDate()}` : `${(dTime.getMonth() + 1)}/${dTime.getDate()}/${dTime.getFullYear()}`;
-
-            return `
-                <div class="card" style="${p.status === 'cancelled' ? 'opacity: 0.6;' : ''} margin-bottom: 1.5rem; border-radius: 12px; background: var(--bg-card); padding: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">${p.title}</h3>
-                        ${statusBadge}
-                    </div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;">🗓️ ${dateStr}</div>
-                    
-                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; margin-bottom: 10px;">👥 ${isZH ? '成員名單' : 'Participants'} (${participantCount}/${p.people_needed})</div>
-                        ${appsHtml}
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="window.navigateTo('messages?room=study_${p.id}')" style="width: 100%; padding: 12px; border-radius: 8px; background: #1976D2; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">💬 ${t('study.chat', '進入聊天室', 'Enter Chat Room')}</button>
-                        ${p.status === 'open' ? `
-                            <button onclick="window.updateStudyStatus('${p.id}', 'paused')" style="width: 100%; padding: 12px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">⏸️ ${t('common.pause', '暫停招募', 'Pause Recruiting')}</button>
-                            <button onclick="window.updateStudyStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
-                            <button onclick="window.updateStudyStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
-                        ` : p.status === 'paused' ? `
-                            <button onclick="window.updateStudyStatus('${p.id}', 'open')" style="width: 100%; padding: 12px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">▶️ ${t('common.resume', '繼續招募', 'Resume Recruiting')}</button>
-                            <button onclick="window.updateStudyStatus('${p.id}', 'success')" style="width: 100%; padding: 12px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">✓ ${t('common.success', '成案', 'Success')}</button>
-                            <button onclick="window.updateStudyStatus('${p.id}', 'cancelled')" style="width: 100%; padding: 12px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;">${t('common.cancel', '取消', 'Cancel')}</button>
-                        ` : ''}
-                        <button onclick="window.deletePost('${p.id}', 'study')" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border_color); font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px;">${isAppZH() ? '🗑️ 刪除' : '🗑️ Delete'}</button>
-                    </div>
-                </div>
-            `;
-        }));
-
-        return `
-            <div class="container fade-in" style="padding-bottom: 80px;">
-                <header style="margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <button class="btn-back" style="background: none; border: none; font-size: 1.5rem; margin-right: 1rem; cursor: pointer;">⬅️</button>
-                    <h2>⚙️ ${txtManageTitle}</h2>
-                </header>
-
-                ${myPosts.length > 0 ? `<section style="margin-bottom: 2rem;">${postsHtmlArray.join('')}</section>` : `<div style="text-align: center; padding: 3rem 1rem; color: #888;">📝 <br>${t('study.nodata_manage', '尚未建立任何活動。', 'No events created yet.')}</div>`}
-            </div>
-        `;
-    };
 
     const updateView = async () => {
         let html = '';
@@ -547,8 +435,6 @@ export const renderStudy = () => {
             html = renderCreateForm();
         } else if (currentState === 'list') {
             html = await renderList();
-        } else if (currentState === 'manage') {
-            html = await renderManage();
         }
 
         const navHtml = `
@@ -586,7 +472,6 @@ export const renderStudy = () => {
         if (currentState === 'landing') bindLandingListeners();
         else if (currentState === 'create') bindCreateListeners();
         else if (currentState === 'list') bindListListeners();
-        else if (currentState === 'manage') bindManageListeners();
 
         if (window.checkNotificationBadge) window.checkNotificationBadge();
     };
@@ -594,7 +479,7 @@ export const renderStudy = () => {
     const bindLandingListeners = () => {
         document.getElementById('btn-role-host')?.addEventListener('click', () => { currentState = 'create'; updateView(); });
         document.getElementById('btn-role-partner')?.addEventListener('click', () => { currentState = 'list'; updateView(); });
-        document.getElementById('btn-manage')?.addEventListener('click', () => { currentState = 'manage'; updateView(); });
+        document.getElementById('btn-manage')?.addEventListener('click', () => { window.navigateTo('my-activities'); });
     };
 
     const bindCreateListeners = () => {
@@ -719,9 +604,7 @@ export const renderStudy = () => {
         updateView();
     };
 
-    const bindManageListeners = () => {
-        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
-    };
+
 
     // --- POP-UP JOIN CONFIRMATION ---
     window.openStudyJoinForm = async (postId, teamName) => {
@@ -787,110 +670,7 @@ export const renderStudy = () => {
         };
     };
 
-    window.updateStudyStatus = async (postId, newStatus) => {
-        const isZH = isAppZH();
-        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
-        const executeUpdate = async () => {
-            const response = await fetch(`/update-study-status/${postId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            if (response.ok) {
-                if (window.refreshUserProfile) await window.refreshUserProfile();
-                updateView();
-            }
-        };
-
-        // Non-cancel: simple confirm
-        if (newStatus !== 'cancelled') {
-            if (!confirm(isZH ? "確定要執行此操作嗎？" : "Are you sure?")) return;
-            try { await executeUpdate(); } catch (e) { }
-            return;
-        }
-
-        // Cancel: check grace period
-        let createdAt = null;
-        try {
-            const res = await fetch(`/study/${postId}`);
-            const data = await res.json();
-            createdAt = data.created_at || null;
-        } catch (e) { console.warn('Could not fetch study created_at:', e); }
-
-        if (createdAt) {
-            const ageMs = Date.now() - new Date(createdAt).getTime();
-            if (ageMs <= 10 * 60 * 1000) {
-                const silentMsg = isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure you want to cancel?";
-                if (!confirm(silentMsg)) return;
-                try { await executeUpdate(); } catch (e) { }
-                return;
-            }
-        }
-
-        // > 10 min → Mandatory Feedback Modal
-        const existingModal = document.getElementById('cancel-feedback-overlay');
-        if (existingModal) existingModal.remove();
-
-        const reasons = isZH ? [
-            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
-            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
-            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
-            { value: 'personal_reason', label: '🙋 個人原因' },
-            { value: 'other', label: '💬 其他原因' }
-        ] : [
-            { value: 'schedule_conflict', label: '🗓️ Schedule Conflict' },
-            { value: 'not_enough_people', label: '👥 Not Enough Participants' },
-            { value: 'wrong_info', label: '📝 Posted Wrong Information' },
-            { value: 'personal_reason', label: '🙋 Personal Reason' },
-            { value: 'other', label: '💬 Other' }
-        ];
-
-        const reasonRadios = reasons.map(r => `<label><input type="radio" name="cancel-reason" value="${r.value}"><span>${r.label}</span></label>`).join('');
-
-        const modalHtml = `
-            <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
-                <div class="cancel-feedback-modal">
-                    <div class="cancel-warning-badge">⚠️ ${isZH ? '取消前必填' : 'Required Before Cancel'}</div>
-                    <h3>${isZH ? '為什麼要取消此活動？' : 'Why are you canceling this event?'}</h3>
-                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please tell us the reason. Canceling with accepted participants, or within 2 hours of start time, will result in a -2 point deduction.'}</p>
-                    <div class="cancel-reason-group" id="cancel-reason-group">${reasonRadios}</div>
-                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
-                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>${isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit'}</button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const escHandler = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); } };
-        document.addEventListener('keydown', escHandler, true);
-
-        const overlay = document.getElementById('cancel-feedback-overlay');
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) { e.preventDefault(); e.stopPropagation(); const modal = overlay.querySelector('.cancel-feedback-modal'); modal.style.animation = 'none'; requestAnimationFrame(() => { modal.style.animation = 'cancelModalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'; }); }
-        });
-
-        document.getElementById('cancel-reason-group').addEventListener('change', () => {
-            document.getElementById('cancel-submit-btn').disabled = !document.querySelector('input[name="cancel-reason"]:checked');
-        });
-
-        document.getElementById('cancel-submit-btn').addEventListener('click', async () => {
-            const selected = document.querySelector('input[name="cancel-reason"]:checked');
-            if (!selected) return;
-            const submitBtn = document.getElementById('cancel-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
-            try {
-                await fetch('/api/v1/cancellation-feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: postId, event_category: 'study', user_email: userProfile.email || '', action_type: 'cancel', reason: selected.value, detail: document.getElementById('cancel-detail-text').value || '' }) });
-                await executeUpdate();
-            } catch (error) {
-                console.error("Cancel Error:", error);
-                alert(isZH ? "❌ 發生錯誤，請稍後再試。" : "❌ An error occurred.");
-                submitBtn.disabled = false;
-                submitBtn.textContent = isZH ? '❌ 確認取消並送出' : '❌ Confirm Cancel & Submit';
-            } finally { document.removeEventListener('keydown', escHandler, true); overlay?.remove(); }
-        });
-    };
 
 
     // --- POPUP DETAIL STUDY ---
@@ -942,10 +722,7 @@ export const renderStudy = () => {
         } catch (e) { console.error(e); }
     };
 
-    window.setState = (state, role) => {
-        currentState = state;
-        updateView();
-    };
+
 
     // Taruh di bagian bawah file carpool.js dan study.js
     window.openGroupChat = (activityId) => {
@@ -954,7 +731,6 @@ export const renderStudy = () => {
             alert(I18n.t('auth.err.login_required') || "Please login first!");
             return;
         }
-        // Ini kodingan ajaib yang melempar user ke messages.js
         window.navigateTo(`messages?room=study_${activityId}`);
     };
 
