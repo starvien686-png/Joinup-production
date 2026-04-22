@@ -29,7 +29,7 @@ async function sendNotification(payload) {
 
     const t = await sequelize.transaction();
     try {
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [recipient_email], transaction: t });
+        const [users] = await sequelize.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', { replacements: [recipient_email], transaction: t });
         if (users.length === 0) throw new NonRetryableError(`Recipient not found: ${recipient_email}`);
         
         const recipient_id = users[0].id;

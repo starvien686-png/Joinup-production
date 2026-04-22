@@ -615,6 +615,7 @@ window.showAnnouncements = async () => {
                         isRead: n.is_read == 1 || n.is_read === true
                     };
                 });
+                console.log('Notifications Data (Mapped):', personalNotifications);
             }
         } catch (err) {
             console.error("Failed to fetch notifications from server:", err);

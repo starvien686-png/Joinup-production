@@ -508,7 +508,7 @@ router.get('/notifications', async (req, res) => {
     try {
         // KITA PAKAI JALAN PINTAS (JOIN) BIAR JAVASCRIPT NGGAK USAH PUSING BACA ID
         let queryStr = `
-            SELECT n.id, n.type, n.metadata, n.is_read, n.created_at 
+            SELECT n.id, n.type, n.metadata, n.action_metadata, n.link, n.is_read, n.created_at 
             FROM system_notifications n 
             JOIN users u ON n.recipient_id = u.id 
             WHERE LOWER(u.email) = LOWER(:email)
@@ -557,7 +557,7 @@ router.post('/notifications/:id/mark-as-read', async (req, res) => {
     const { id } = req.params;
     try {
         await sequelize.query(
-            "DELETE FROM system_notifications WHERE id = ?",
+            "UPDATE system_notifications SET is_read = 1 WHERE id = ?",
             { replacements: [id] }
         );
         res.json({ success: true, message: 'Notification marked as read' });
@@ -589,7 +589,7 @@ router.get('/notifications/unread-count', async (req, res) => {
     if (!user_email) return res.status(400).json({ success: false, message: 'Email required' });
     try {
         const [results] = await sequelize.query(
-            "SELECT COUNT(*) as count FROM system_notifications n JOIN users u ON n.recipient_id = u.id WHERE u.email = ?",
+            "SELECT COUNT(*) as count FROM system_notifications n JOIN users u ON n.recipient_id = u.id WHERE LOWER(u.email) = LOWER(?) AND n.is_read = 0",
             { replacements: [user_email] }
         );
         res.json({ success: true, count: results[0].count });
@@ -604,10 +604,10 @@ router.post('/notifications/mark-all-read', async (req, res) => {
     if (!user_email) return res.status(400).json({ success: false, message: 'Email required' });
     try {
         await sequelize.query(
-            "DELETE FROM system_notifications WHERE recipient_id IN (SELECT id FROM users WHERE email = ?)",
+            "UPDATE system_notifications SET is_read = 1 WHERE recipient_id IN (SELECT id FROM users WHERE LOWER(email) = LOWER(?))",
             { replacements: [user_email] }
         );
-        res.json({ success: true, message: 'All notifications cleared' });
+        res.json({ success: true, message: 'All notifications marked as read' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
