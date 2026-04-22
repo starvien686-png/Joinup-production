@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const winston = require('winston');
 const pushService = require('./push_service');
 const { awardViolationPoint } = require('./points_service');
+const { nowTaipei, dayjs } = require('./time_service');
 
 
 const logger = winston.createLogger({
@@ -67,7 +68,7 @@ async function withIdempotency(req, res, next) {
 
         if (records.length > 0) {
             const stored = records[0];
-            if (new Date() > new Date(stored.expires_at)) {
+            if (nowTaipei().isAfter(dayjs(stored.expires_at))) {
                 await sequelize.query('DELETE FROM request_idempotency WHERE idempotency_key = ?', { replacements: [idempotencyKey] });
             } else if (stored.request_hash !== currentHash) {
                 return res.status(409).json({
@@ -86,7 +87,7 @@ async function withIdempotency(req, res, next) {
         const originalJson = res.json;
         res.json = function (body) {
             if (res.statusCode >= 200 && res.statusCode < 300 && req.idempotencyKey) {
-                const expiresAt = new Date(Date.now() + 5 * 60000); // 5 mins TTL
+                const expiresAt = nowTaipei().add(5, 'minute').format('YYYY-MM-DD HH:mm:ss');
                 sequelize.query(
                     'INSERT INTO request_idempotency (idempotency_key, request_hash, response_snapshot, expires_at) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE expires_at = ?',
                     { replacements: [req.idempotencyKey, req.requestHash, JSON.stringify(body), expiresAt, expiresAt] }
@@ -163,7 +164,7 @@ router.post('/join', async (req, res) => {
         }
 
         const deadline = event.deadline || event.start_time;
-        if (deadline && new Date(deadline) < new Date()) {
+        if (deadline && nowTaipei().isAfter(dayjs(deadline))) {
             throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
         }
         if (event.host_email === user_email) {

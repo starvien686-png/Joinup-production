@@ -19,6 +19,7 @@ const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const joinService = require('./services/join_service');
 const workerService = require('./services/worker_service');
+const { nowTaipei, toTaipei, formatTaipei, dayjs, APP_TIMEZONE } = require('./services/time_service');
 const pushService = require('./services/push_service');
 const { awardCreditPoint, awardViolationPoint } = require('./services/points_service');
 const { Op } = require('sequelize');
@@ -50,36 +51,6 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// --- TIMEZONE UTILITY (Asia/Taipei = UTC+8) ---
-const dayjs = require('dayjs');
-const utc = require('dayjs/plugin/utc');
-const timezone = require('dayjs/plugin/timezone');
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-const APP_TIMEZONE = 'Asia/Taipei';
-
-/**
- * Converts any datetime string to Asia/Taipei timezone format for MySQL DATETIME columns.
- * Handles inputs like: '2026-04-07T14:00', '2026-04-07 14:00:00', ISO strings, etc.
- * Returns: 'YYYY-MM-DD HH:mm:ss' in Asia/Taipei time, or null if input is falsy.
- */
-function toTaipei(datetimeStr) {
-    if (!datetimeStr) return null;
-    // Parse as-is (the input from frontend datetime-local is in the user's local time = Taipei)
-    // We treat the raw string as Taipei time and format it for MySQL
-    const parsed = dayjs.tz(datetimeStr, APP_TIMEZONE);
-    if (!parsed.isValid()) return datetimeStr; // fallback: return original if unparseable
-    return parsed.format('YYYY-MM-DD HH:mm:ss');
-}
-
-/**
- * Get current time in Asia/Taipei as a JS Date-compatible value.
- * Use this instead of Date.now() for time comparisons on the server.
- */
-function nowTaipei() {
-    return dayjs().tz(APP_TIMEZONE);
-}
 
 /**
  * Standardized helper to validate required fields in request body.
@@ -992,12 +963,13 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         let query;
         let replacements = [];
 
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' 
+                         WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE a.status 
                        END AS display_status
                 FROM activities a
@@ -1005,13 +977,13 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 WHERE a.status NOT IN ('deleted', 'cancelled')
                 ORDER BY a.created_at DESC
             `;
-            replacements = []; // No longer need replacements for the WHERE clause logic
+            replacements = [currentTime, currentTime];
         } else {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' 
+                         WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE a.status 
                        END AS display_status
                 FROM activities a
@@ -1019,6 +991,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 WHERE a.status NOT IN ('deleted', 'cancelled')
                 ORDER BY a.created_at DESC
             `;
+            replacements = [currentTime, currentTime];
         }
 
         const [results] = await sequelize.query(query, { replacements });
@@ -1292,12 +1265,13 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         let query;
         let replacements = [];
 
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' 
+                         WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
                          ELSE c.status 
                        END AS display_status
                 FROM carpools c
@@ -1305,13 +1279,13 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 WHERE c.status NOT IN ('deleted', 'cancelled')
                 ORDER BY c.created_at DESC
             `;
-            replacements = [];
+            replacements = [currentTime, currentTime];
         } else {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' 
+                         WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
                          ELSE c.status 
                        END AS display_status
                 FROM carpools c
@@ -1319,6 +1293,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
                 WHERE c.status NOT IN ('deleted', 'cancelled')
                 ORDER BY c.created_at DESC
             `;
+            replacements = [currentTime, currentTime];
         }
 
         const [results] = await sequelize.query(query, { replacements });
@@ -1482,12 +1457,13 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         let query;
         let replacements = [];
 
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' 
+                         WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
                          ELSE s.status 
                        END AS display_status
                 FROM studies s
@@ -1495,13 +1471,13 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 WHERE s.status NOT IN ('deleted', 'cancelled')
                 ORDER BY s.created_at DESC
             `;
-            replacements = [];
+            replacements = [currentTime, currentTime];
         } else {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' 
+                         WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
                          ELSE s.status 
                        END AS display_status
                 FROM studies s
@@ -1509,6 +1485,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
                 WHERE s.status NOT IN ('deleted', 'cancelled')
                 ORDER BY s.created_at DESC
             `;
+            replacements = [currentTime, currentTime];
         }
 
         const [results] = await sequelize.query(query, { replacements });
@@ -1672,12 +1649,13 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         let query;
         let replacements = [];
 
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' 
+                         WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
                          ELSE h.status 
                        END AS display_status
                 FROM hangouts h
@@ -1685,13 +1663,13 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 WHERE h.status NOT IN ('deleted', 'cancelled')
                 ORDER BY h.created_at DESC
             `;
-            replacements = [];
+            replacements = [currentTime, currentTime];
         } else {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' 
+                         WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
                          ELSE h.status 
                        END AS display_status
                 FROM hangouts h
@@ -1699,6 +1677,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
                 WHERE h.status NOT IN ('deleted', 'cancelled')
                 ORDER BY h.created_at DESC
             `;
+            replacements = [currentTime, currentTime];
         }
 
         const [results] = await sequelize.query(query, { replacements });
@@ -1992,12 +1971,13 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         let query;
         let replacements = [];
 
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' 
+                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
                          ELSE ho.status 
                        END AS display_status
                 FROM housing ho
@@ -2005,13 +1985,13 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 WHERE ho.status NOT IN ('deleted', 'cancelled')
                 ORDER BY ho.created_at DESC
             `;
-            replacements = [];
+            replacements = [currentTime];
         } else {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
-                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' 
+                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
                          ELSE ho.status 
                        END AS display_status
                 FROM housing ho
@@ -2019,6 +1999,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
                 WHERE ho.status NOT IN ('deleted', 'cancelled')
                 ORDER BY ho.created_at DESC
             `;
+            replacements = [currentTime];
         }
 
         const [results] = await sequelize.query(query, { replacements });
@@ -2517,18 +2498,18 @@ async function startEventRetirementWorker() {
                 { table: 'housing', type: 'housing', timeCol: 'deadline' }
             ];
 
+            const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
+            const bufferTime = nowTaipei().subtract(3, 'hour').format('YYYY-MM-DD HH:mm:ss');
+
             for (const cat of categories) {
-                // Fetch candidate events that are open/paused and either:
-                // 1) 3 hours past their scheduled time
-                // 2) Past their deadline
                 const [candidates] = await sequelize.query(`
                     SELECT id, host_email FROM ${cat.table} 
                     WHERE status IN ('open', 'paused') 
                     AND (
-                        (IFNULL(${cat.timeCol}, '2099-01-01') < DATE_SUB(NOW(), INTERVAL 3 HOUR))
-                        OR (deadline IS NOT NULL AND deadline < NOW())
+                        (IFNULL(${cat.timeCol}, '2099-01-01') < ?)
+                        OR (deadline IS NOT NULL AND deadline < ?)
                     )
-                `);
+                `, { replacements: [bufferTime, currentTime] });
 
                 for (const event of candidates) {
                     const [parts] = await sequelize.query(`
@@ -2541,8 +2522,8 @@ async function startEventRetirementWorker() {
                         // Mark as success ONLY if we've passed the 3-hour buffer post-event time
                         const [checkTime] = await sequelize.query(`
                             SELECT 1 FROM ${cat.table} 
-                            WHERE id = ? AND IFNULL(${cat.timeCol}, '2099-01-01') < DATE_SUB(NOW(), INTERVAL 3 HOUR)
-                        `, { replacements: [event.id] });
+                            WHERE id = ? AND IFNULL(${cat.timeCol}, '2099-01-01') < ?
+                        `, { replacements: [event.id, bufferTime] });
 
                         if (checkTime.length > 0) {
                             await sequelize.query(`UPDATE ${cat.table} SET status = 'success' WHERE id = ?`, { replacements: [event.id] });
@@ -2617,11 +2598,12 @@ cron.schedule('0 12,19 * * *', async () => {
             for (const user of users) {
                 // aggregate_id unique per day/slot to avoid dupe inserts
                 const digestId = `digest_${translationKey}_${now.format('YYYYMMDD')}`;
+                const currentTimeStr = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
                 await sequelize.query(
                     `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                     VALUES (UUID(), ?, 'daily_digest', ?, ?, '{}', NOW())
-                     ON DUPLICATE KEY UPDATE created_at = NOW()`,
-                    { replacements: [user.id, digestId, metadata] }
+                     VALUES (UUID(), ?, 'daily_digest', ?, ?, '{}', ?)
+                     ON DUPLICATE KEY UPDATE created_at = ?`,
+                    { replacements: [user.id, digestId, metadata, currentTimeStr, currentTimeStr] }
                 );
             }
 
@@ -2659,12 +2641,15 @@ cron.schedule('0 * * * *', async () => {
         ];
 
         for (const cat of categories) {
+            const tMin = nowTaipei().add(1435, 'minute').format('YYYY-MM-DD HH:mm:ss');
+            const tMax = nowTaipei().add(1445, 'minute').format('YYYY-MM-DD HH:mm:ss');
+
             // Find events happening in exactly 24 hours (within 10 minute window check every hour)
             const [events] = await sequelize.query(`
                 SELECT id, title, host_email FROM ${cat.table} 
                 WHERE status IN ('open', 'full') 
-                AND ${cat.timeCol} BETWEEN DATE_ADD(NOW(), INTERVAL 1435 MINUTE) AND DATE_ADD(NOW(), INTERVAL 1445 MINUTE)
-            `);
+                AND ${cat.timeCol} BETWEEN ? AND ?
+            `, { replacements: [tMin, tMax] });
 
             for (const event of events) {
                 // Get all approved participants
@@ -2690,12 +2675,13 @@ cron.schedule('0 * * * *', async () => {
                         link: `#manage-${cat.type}`
                     });
 
+                    const currentTimeStr = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
                     // 1. Save to DB
                     await sequelize.query(
                         `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
-                         VALUES (UUID(), ?, 'event_reminder', ?, ?, '{}', NOW())
-                         ON DUPLICATE KEY UPDATE created_at = NOW()`,
-                        { replacements: [recipient.id, `reminder_${cat.type}_${event.id}`, metadata] }
+                         VALUES (UUID(), ?, 'event_reminder', ?, ?, '{}', ?)
+                         ON DUPLICATE KEY UPDATE created_at = ?`,
+                        { replacements: [recipient.id, `reminder_${cat.type}_${event.id}`, metadata, currentTimeStr, currentTimeStr] }
                     );
 
                     // 2. Emit via Socket
