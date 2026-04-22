@@ -511,7 +511,7 @@ router.get('/notifications', async (req, res) => {
             SELECT n.id, n.type, n.metadata, n.is_read, n.created_at 
             FROM system_notifications n 
             JOIN users u ON n.recipient_id = u.id 
-            WHERE u.email = :email
+            WHERE LOWER(u.email) = LOWER(:email)
         `;
         let replacements = { email: user_email };
 
