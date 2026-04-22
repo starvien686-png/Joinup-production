@@ -2692,15 +2692,16 @@ cron.schedule('0 * * * *', async () => {
             { table: 'activities', type: 'sports', timeCol: 'event_time' },
             { table: 'carpools', type: 'carpool', timeCol: 'departure_time' },
             { table: 'studies', type: 'study', timeCol: 'event_time' },
-            { table: 'hangouts', type: 'hangout', timeCol: 'event_time' }
+            { table: 'hangouts', type: 'hangout', timeCol: 'event_time' },
+            { table: 'housing', type: 'housing', timeCol: 'deadline' }
         ];
 
         for (const cat of categories) {
-            // Find events happening in exactly 24 hours (within 1 hour window)
+            // Find events happening in exactly 24 hours (within 10 minute window check every hour)
             const [events] = await sequelize.query(`
                 SELECT id, title, host_email FROM ${cat.table} 
                 WHERE status IN ('open', 'full') 
-                AND ${cat.timeCol} BETWEEN DATE_ADD(NOW(), INTERVAL 23 HOUR 55 MINUTE) AND DATE_ADD(NOW(), INTERVAL 24 HOUR 5 MINUTE)
+                AND ${cat.timeCol} BETWEEN DATE_ADD(NOW(), INTERVAL 1435 MINUTE) AND DATE_ADD(NOW(), INTERVAL 1445 MINUTE)
             `);
 
             for (const event of events) {

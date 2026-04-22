@@ -585,9 +585,171 @@ export const renderSports = () => {
         `;
     };
 
-    window.applyFilters = () => {
+    const updateView = async () => {
+        let html = '';
+        if (currentState === 'landing') html = renderLanding();
+        else if (currentState === 'create') html = renderCreatePost();
+        else if (currentState === 'list') html = await renderList();
+
+        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const navHtml = `
+            <nav class="bottom-nav" style="display: flex; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 10px 0; justify-content: space-around; align-items: center; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
+                <a href="#" class="nav-item" onclick="window.navigateTo('home')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">🏠</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.home', '首頁')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('my-activities')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">📋</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.activities', '活動')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('messages')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem; position: relative;">
+                        💬
+                        <span id="unread-badge-nav" class="unread-badge" style="display: none; position: absolute; top: -5px; right: -8px; background: #FF3D00; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; border: 2px solid white; min-width: 14px; text-align: center;">0</span>
+                    </span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.messages', '訊息')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('profile')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">👤</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.profile', '我的')}</span>
+                </a>
+            </nav>
+        `;
+        app.innerHTML = html + navHtml;
+
+        if (currentState === 'landing') bindLandingListeners();
+        else if (currentState === 'create') bindCreateListeners();
+        else if (currentState === 'list') bindListListeners();
+        
+        if (window.checkNotificationBadge) window.checkNotificationBadge();
+    };
+
+    const bindLandingListeners = () => {
+        document.getElementById('btn-role-host')?.addEventListener('click', () => { currentState = 'create'; updateView(); });
+        document.getElementById('btn-role-partner')?.addEventListener('click', () => { currentState = 'list'; updateView(); });
+        document.getElementById('btn-manage')?.addEventListener('click', () => { window.navigateTo('my-activities'); });
+    };
+
+    const bindCreateListeners = () => {
+        document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
+        
+        const eventTypeSelect = document.getElementById('eventType');
+        const customEventType = document.getElementById('customEventType');
+        eventTypeSelect?.addEventListener('change', () => {
+            customEventType.style.display = eventTypeSelect.value === '其他' ? 'block' : 'none';
+        });
+
+        const meetingPointSelect = document.getElementById('meetingPoint');
+        const customLocation = document.getElementById('customLocation');
+        meetingPointSelect?.addEventListener('change', () => {
+            customLocation.style.display = meetingPointSelect.value === '自訂' ? 'block' : 'none';
+        });
+
+        document.getElementById('createPostForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const originalText = btnSubmit.innerText;
+            btnSubmit.innerText = "⏳..."; btnSubmit.disabled = true;
+
+            try {
+                const sportType = eventTypeSelect.value === '其他' ? customEventType.value : eventTypeSelect.value;
+                const location = meetingPointSelect.value === '自訂' ? customLocation.value : meetingPointSelect.value;
+
+                const postData = {
+                    host_email: user.email,
+                    host_name: document.getElementById('hostName').value,
+                    host_dept: document.getElementById('hostDept').value,
+                    title: document.getElementById('teamName').value,
+                    sport_type: sportType,
+                    people_needed: parseInt(document.getElementById('requiredPeople').value),
+                    event_time: document.getElementById('eventTime').value.replace('T', ' ') + ':00',
+                    deadline: document.getElementById('deadline').value.replace('T', ' ') + ':00',
+                    location: location,
+                    description: document.getElementById('description').value
+                };
+
+                const response = await fetch('/create-activity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(postData)
+                });
+
+                if (response.ok) {
+                    alert(I18n.t('common.post_success') || "Success! 🎉");
+                    window.navigateTo('my-activities');
+                } else {
+                    const err = await response.json();
+                    alert("Error: " + (err.error || "Unknown"));
+                }
+            } catch (err) { alert("Network Error: " + err.message); }
+            finally { btnSubmit.innerText = originalText; btnSubmit.disabled = false; }
+        });
+    };
+
+    const bindListListeners = () => {
+        document.getElementById('btn-list-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
+        document.getElementById('btn-filter')?.addEventListener('click', async () => {
+            const overlay = document.createElement('div');
+            overlay.innerHTML = await renderFilterPanel();
+            app.appendChild(overlay.firstElementChild);
+            bindFilterOptions();
+        });
+
+        const searchInput = document.getElementById('search-events');
+        searchInput?.addEventListener('input', (e) => {
+            activeFilters.keyword = e.target.value;
+            // Debounce or immediate update? Immediate for now as per design
+            updateView();
+        });
+
+        document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
+            window.resetFilters();
+        });
+    };
+
+    const bindFilterOptions = () => {
+        document.querySelectorAll('.filter-option').forEach(btn => {
+            btn.onclick = () => {
+                const filterType = btn.getAttribute('data-filter');
+                const value = btn.getAttribute('data-value');
+                const parsedValue = filterType === 'peopleCount' ? parseInt(value) : value;
+
+                if (activeFilters[filterType] === parsedValue) {
+                    activeFilters[filterType] = null;
+                } else {
+                    activeFilters[filterType] = parsedValue;
+                }
+                
+                const overlay = document.getElementById('filter-overlay');
+                if (overlay) {
+                    overlay.outerHTML = renderFilterPanel().then(html => {
+                        const newOverlay = document.createElement('div');
+                        newOverlay.innerHTML = html;
+                        overlay.replaceWith(newOverlay.firstElementChild);
+                        bindFilterOptions();
+                    });
+                }
+            };
+        });
+    };
+
+    window.closeFilterPanel = () => {
+        document.getElementById('filter-overlay')?.remove();
+    };
+
+    window.resetFilters = () => {
+        activeFilters = { eventType: null, dateRange: null, peopleCount: null, keyword: null };
         window.closeFilterPanel();
         updateView();
+    };
+
+    window.showEventDetail = (postId) => {
+         // Simple detail view or alert
+         alert(I18n.t('common.loading') || "Loading...");
+    };
+
+    window.openGroupChat = (activityId) => {
+        window.navigateTo(`messages?room=sports_${activityId}`);
     };
 
     updateView();

@@ -883,7 +883,7 @@ export const renderGroupBuy = () => {
 
                 <div style="position: fixed; bottom: 0; left: 0; width: 100%; padding: 1rem; background: white; border-top: 1px solid var(--border-color); display: flex; gap: 1rem; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
                     ${isAuthor ? `
-                        <button class="btn" style="flex: 1; background: #FF9800; color: white; font-weight: bold; padding: 0.8rem;" onclick="currentState='manage'; updateView();">
+                        <button class="btn" style="flex: 1; background: #FF9800; color: white; font-weight: bold; padding: 0.8rem;" onclick="window.navigateTo('my-activities');">
                              ⚙️ ${I18n.t('common.manage')}
                         </button>
                     ` : `
@@ -1094,9 +1094,7 @@ export const renderGroupBuy = () => {
                 alert('Network error.');
             } finally {
                 window.closeApplyForm();
-                currentState = 'manage';
-                updateView();
-                bindListeners();
+                window.navigateTo('my-activities');
             }
         });
     };
@@ -1143,12 +1141,19 @@ export const renderGroupBuy = () => {
 
     // Post status management
     // Generic Confirm Modal
-    window.showSimpleConfirm = (message, onConfirm) => {
+    window.showSimpleConfirm = (arg1, arg2, arg3) => {
+        // Logic to handle 2 or 3 arguments
+        // 2 args: message, onConfirm
+        // 3 args: title, message, onConfirm
+        let title = typeof arg2 === 'function' ? (I18n.t('common.confirm') || 'Confirm') : arg1;
+        let message = typeof arg2 === 'function' ? arg1 : arg2;
+        let onConfirm = typeof arg2 === 'function' ? arg2 : arg3;
+
         const existing = document.getElementById('simple-confirm-modal');
         if (existing) existing.remove();
 
         window.currentConfirmCallback = () => {
-            onConfirm();
+            if (onConfirm) onConfirm();
             document.getElementById('simple-confirm-modal').remove();
             delete window.currentConfirmCallback;
         };
@@ -1158,7 +1163,8 @@ export const renderGroupBuy = () => {
         modalDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);';
         modalDiv.innerHTML = `
             <div style="background: white; width: 85%; max-width: 320px; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15); animation: scaleIn 0.2s ease-out;">
-                <p style="font-size: 1rem; color: #333; margin-bottom: 1.5rem; line-height: 1.5;">${message}</p>
+                <h3 style="margin-top: 0; color: #333; font-size: 1.2rem;">${title}</h3>
+                <p style="font-size: 1rem; color: #666; margin-bottom: 1.5rem; line-height: 1.5;">${message}</p>
                 <div style="display: flex; gap: 0.8rem;">
                     <button onclick="document.getElementById('simple-confirm-modal').remove()" class="btn" style="flex: 1; background: #f5f5f5; color: #666; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 500;">${I18n.t('common.cancel') || 'Cancel'}</button>
                     <button onclick="window.currentConfirmCallback()" class="btn" style="flex: 1; background: #2196f3; color: white; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 500; box-shadow: 0 4px 12px rgba(33,150,243,0.3);">${I18n.t('common.confirm') || 'Confirm'}</button>
@@ -1514,9 +1520,7 @@ export const renderGroupBuy = () => {
                     if (response.ok) {
                         if (window.refreshUserProfile) await window.refreshUserProfile();
                         alert(I18n.t('housing.alert.post_created') || 'Post created successfully!');
-                        currentState = 'manage';
-                        updateView();
-                        bindListeners();
+                        window.navigateTo('my-activities');
                     } else {
                         const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
                         alert("⚠️ Error: " + (errorMsg || "Unknown"));
