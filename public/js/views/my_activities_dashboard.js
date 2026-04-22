@@ -166,9 +166,16 @@ export const renderMyActivitiesDashboard = async () => {
                         <div>📍 ${p.unified_location || 'NCNU'}</div>
                     </div>
 
-                    <button onclick="window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; padding:10px; border-radius:8px; background:linear-gradient(135deg, #42A5F5, #1976D2); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2);">
-                        💬 ${I18n.t('sports.action.join_chat') || '進入聊天室'}
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="window.navigateTo('messages?room=${p.category}_${p.id}')" style="flex: 1.5; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            💬 ${I18n.t('sports.action.join_chat') || '進入聊天室'}
+                        </button>
+                        ${isHost ? `
+                        <button onclick="window.manageParticipantsDashboard('${p.id}', '${p.category}', '${p.title.replace(/'/g, "\\'")}')" style="flex: 1; padding: 12px; border-radius: 12px; background: white; color: #1976D2; border: 1.5px solid #1976D2; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;">
+                            ⚙️ 管理 / Manage
+                        </button>
+                        ` : ''}
+                    </div>
 
                     ${manageButtons}
                 </div>
@@ -342,6 +349,111 @@ export const renderMyActivitiesDashboard = async () => {
                 overlay.remove();
             }
         });
+    };
+
+    window.manageParticipantsDashboard = async (postId, category, title) => {
+        const modalId = 'manage-participants-overlay';
+        if (document.getElementById(modalId)) return;
+
+        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        
+        // 1. Create Modal
+        const overlay = document.createElement('div');
+        overlay.id = modalId;
+        overlay.className = 'cancel-feedback-overlay'; // Reuse existing styles
+        overlay.innerHTML = `
+            <div class="cancel-feedback-modal" style="max-width: 450px; text-align: left; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
+                    <h3 style="margin: 0; color: var(--text-primary);">👥 ${isZH ? '管理成員' : 'Manage Participants'}</h3>
+                    <button onclick="document.getElementById('${modalId}').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; background: var(--bg-body); padding: 8px 12px; border-radius: 8px;">
+                    📌 ${title}
+                </div>
+                <div id="participant-list-container" style="min-height: 200px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; margin-top: 2rem;">⏳ ${isZH ? '載入中...' : 'Loading...'}</div>
+                </div>
+                <button onclick="document.getElementById('${modalId}').remove()" style="width: 100%; margin-top: 1.5rem; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-weight: bold; cursor: pointer;">
+                    ${isZH ? '關閉' : 'Close'}
+                </button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // 2. Fetch Participants
+        try {
+            const res = await api.fetch(`/api/v1/host/participants?event_type=${category}&event_id=${postId}&host_email=${encodeURIComponent(user.email)}`, { idempotency: false });
+            const listContainer = document.getElementById('participant-list-container');
+            
+            if (res.success && res.data) {
+                // Filter out host and keep only approved/accepted
+                const approvedOnes = res.data.filter(p => (p.status === 'approved' || p.status === 'accepted') && p.user_email.toLowerCase() !== user.email.toLowerCase());
+                
+                if (approvedOnes.length === 0) {
+                    listContainer.innerHTML = `<div style="text-align: center; color: #999; margin-top: 2rem;">${isZH ? '目前沒有已核准的參與者' : 'No approved participants yet.'}</div>`;
+                } else {
+                    listContainer.innerHTML = approvedOnes.map(p => {
+                        const avatar = p.snapshot_avatar_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                        return `
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;">
+                                <img src="${avatar}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: var(--shadow-sm);">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.snapshot_display_name || 'Member'}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">${p.user_email}</div>
+                                </div>
+                                <button onclick="window.removeParticipantFromDashboard('${p.id}', '${postId}', '${category}', '${p.user_email}', '${p.snapshot_display_name?.replace(/'/g, "\\'") || 'Member'}')" 
+                                        style="padding: 6px 12px; border-radius: 8px; background: #FFF5F5; color: #F44336; border: 1px solid #FFCDD2; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                    ${isZH ? '移除' : 'Remove'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else {
+                listContainer.innerHTML = `<div style="text-align: center; color: #f44336; margin-top: 2rem;">❌ ${isZH ? '載入失敗' : 'Load failed'}</div>`;
+            }
+        } catch (err) {
+            console.error('Failed to load participants:', err);
+            document.getElementById('participant-list-container').innerHTML = `<div style="text-align: center; color: #f44336; margin-top: 2rem;">❌ Error</div>`;
+        }
+    };
+
+    window.removeParticipantFromDashboard = async (rowId, postId, category, email, name) => {
+        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const msg = isZH ? `確定要將 ${name} 從此活動中移除嗎？` : `Are you sure you want to remove ${name} from this activity?`;
+        
+        if (!confirm(msg)) return;
+
+        try {
+            const res = await api.fetch('/api/v1/join/reject', {
+                method: 'POST',
+                body: {
+                    event_type: category,
+                    event_id: postId,
+                    participant_id: rowId,
+                    target_user_email: email,
+                    host_email: user.email
+                }
+            });
+
+            if (res.success) {
+                alert(isZH ? '已成功移除！' : 'Removed successfully!');
+                // Refresh modal and dashboard
+                document.getElementById('manage-participants-overlay')?.remove();
+                if (window.refreshUserProfile) await window.refreshUserProfile();
+                await fetchActivities();
+                // Re-open modal to show updated list
+                const activity = allActivities.find(a => String(a.id) === String(postId) && a.category === category);
+                if (activity) {
+                    window.manageParticipantsDashboard(postId, category, activity.title);
+                }
+            } else {
+                alert(res.message || 'Removal failed.');
+            }
+        } catch (err) {
+            console.error('Failed to remove participant:', err);
+            alert('Connection error.');
+        }
     };
 
     render();
