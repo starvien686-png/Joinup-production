@@ -323,7 +323,7 @@ export const renderCarpool = () => {
             const response = await fetch(`/carpools?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            
+
             let myStatuses = {};
             if (user && user.email) {
                 try {

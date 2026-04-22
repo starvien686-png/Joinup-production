@@ -275,7 +275,7 @@ export const renderStudy = () => {
             const response = await fetch(`/studies?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const allUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
-            
+
             let myStatuses = {};
             if (user && user.email) {
                 try {
@@ -539,12 +539,12 @@ export const renderStudy = () => {
                     alert(isZH ? "發佈成功！ 🎉" : "Success! 🎉");
                     currentState = 'manage';
                     updateView();
-                } else { 
+                } else {
                     const errorMsg = result.fields ? `${result.error}: ${result.fields.join(', ')}` : result.error;
                     alert("⚠️ " + (isZH ? "資料庫錯誤：" : "Database Error: ") + (errorMsg || "Unknown"));
                 }
-            } catch (err) { 
-                alert("❌ " + (isZH ? "連線失敗！" : "Connection failed!") + ": " + err.message); 
+            } catch (err) {
+                alert("❌ " + (isZH ? "連線失敗！" : "Connection failed!") + ": " + err.message);
             }
             finally { btnSubmit.innerText = oriText; btnSubmit.disabled = false; }
         });
