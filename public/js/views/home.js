@@ -299,18 +299,16 @@ export const renderHome = () => {
             const currentUserStr = localStorage.getItem('userProfile');
             const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
 
-            const fetchTasks = [
-                fetch('/activities'),
-                fetch('/carpools'),
-                fetch('/studies'),
-                fetch('/hangouts'),
-                fetch('/housing')
-            ];
-
-            const responses = await Promise.all(fetchTasks);
-            const [activities, carpools, studies, hangouts, housings] = await Promise.all([
-                responses[0].json(), responses[1].json(), responses[2].json(), responses[3].json(), responses[4].json()
-            ]);
+            let dbPosts = [];
+            try {
+                const latestRes = await api.fetch('/api/v1/activities/latest', { idempotency: false });
+                if (latestRes.success) {
+                    dbPosts = latestRes.data || [];
+                }
+            } catch (err) {
+                console.error('Failed to fetch latest activities:', err);
+                // Fallback: If unified endpoint fails, home feed will show empty instead of crashing
+            }
 
             // Fetch user join statuses separately so a failure here doesn't block activities
             if (currentUser.email) {
@@ -323,19 +321,6 @@ export const renderHome = () => {
                     console.warn('Could not fetch join statuses (non-blocking):', statusErr.message || statusErr);
                 }
             }
-
-            let dbPosts = [
-                ...(Array.isArray(activities) ? activities : []).map(p => ({ ...p, category: p.category || 'sports' })),
-                ...(Array.isArray(carpools) ? carpools : []).map(p => ({
-                    ...p, category: 'carpool', people_needed: p.available_seats,
-                    event_time: p.departure_time, location: p.departure_loc
-                })),
-                ...(Array.isArray(studies) ? studies : []).map(p => ({ ...p, category: 'study' })),
-                ...(Array.isArray(hangouts) ? hangouts : []).map(p => ({
-                    ...p, category: p.category || 'travel', location: p.meeting_location
-                })),
-                ...(Array.isArray(housings) ? housings : []).map(p => ({ ...p, category: 'housing' }))
-            ];
 
             const isPostActive = (p) => {
                 // 1. Check Status - Keep 'deleted' and 'cancelled' hidden as per strict constraint

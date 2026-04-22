@@ -700,7 +700,7 @@ router.get('/my-activities', async (req, res) => {
         const query = `
             /* --- PART 1: HOSTED BY ME (ALL STATUSES) --- */
             SELECT 
-                a.id, a.title, 'sports' as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                a.id, a.title, a.category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
@@ -756,7 +756,7 @@ router.get('/my-activities', async (req, res) => {
 
             /* --- PART 2: JOINED BY ME (ONLY APPROVED/ACCEPTED) --- */
             SELECT 
-                a.id, a.title, 'sports' as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                a.id, a.title, a.category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
@@ -839,6 +839,77 @@ router.get('/my-activities', async (req, res) => {
         res.json({ success: true, data: results });
     } catch (err) {
         console.error('[API] Error in /api/v1/my-activities:', err);
+        res.status(500).json({ success: false, message: 'Internal server error: ' + err.message });
+    }
+});
+
+
+// NEW: Unified Public Home Feed (Latest Activities)
+// Fetches the most recent events across all categories for the public home feed.
+router.get('/activities/latest', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                a.id, a.title, a.category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                CASE WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' ELSE a.status END as display_status
+            FROM activities a
+            LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
+            WHERE a.status NOT IN ('deleted', 'cancelled')
+
+            UNION ALL
+
+            SELECT 
+                c.id, c.title, 'carpool' as category, NULL as sport_type, c.departure_time as event_time, c.departure_loc as location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                CASE WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' ELSE c.status END as display_status
+            FROM carpools c
+            LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
+            WHERE c.status NOT IN ('deleted', 'cancelled')
+
+            UNION ALL
+
+            SELECT 
+                s.id, s.title, 'study' as category, NULL as sport_type, s.event_time as event_time, s.location, s.people_needed, s.host_email, s.status, s.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                CASE WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' ELSE s.status END as display_status
+            FROM studies s
+            LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
+            WHERE s.status NOT IN ('deleted', 'cancelled')
+
+            UNION ALL
+
+            SELECT 
+                h.id, h.title, h.category, NULL as sport_type, h.event_time as event_time, h.meeting_location as location, h.people_needed, h.host_email, h.status, h.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                CASE WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' ELSE h.status END as display_status
+            FROM hangouts h
+            LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
+            WHERE h.status NOT IN ('deleted', 'cancelled')
+
+            UNION ALL
+
+            SELECT 
+                ho.id, ho.title, 'housing' as category, NULL as sport_type, ho.deadline as event_time, ho.location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
+                CASE WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' ELSE ho.status END as display_status
+            FROM housing ho
+            LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
+            WHERE ho.status NOT IN ('deleted', 'cancelled')
+
+            ORDER BY created_at DESC
+            LIMIT 50
+        `;
+
+        const [results] = await sequelize.query(query);
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('[API] Error in /api/v1/activities/latest:', err);
         res.status(500).json({ success: false, message: 'Internal server error: ' + err.message });
     }
 });
