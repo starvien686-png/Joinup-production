@@ -995,36 +995,28 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' 
+                         ELSE a.status 
+                       END AS display_status
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-                LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
-                LEFT JOIN event_participants viewer_ep ON a.id = viewer_ep.event_id 
-                    AND viewer_ep.event_type = 'sports' 
-                    AND viewer_ep.user_id = u_viewer.id 
-                WHERE a.status IN ('open', 'full') 
-                  AND (
-                    (a.status = 'full' AND (LOWER(a.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
-                    OR
-                    (a.status = 'open' AND (
-                        (LOWER(a.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
-                        OR
-                        (viewer_ep.status = 'pending' AND a.event_time > CURDATE())
-                        OR
-                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (a.deadline > NOW() OR a.deadline IS NULL))
-                    ))
-                  )
+                WHERE a.status NOT IN ('deleted', 'cancelled')
                 ORDER BY a.created_at DESC
             `;
-            replacements = [viewerEmail, viewerEmail, viewerEmail];
+            replacements = []; // No longer need replacements for the WHERE clause logic
         } else {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' 
+                         ELSE a.status 
+                       END AS display_status
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-                WHERE a.status = 'open' 
-                  AND (a.deadline > NOW() OR a.deadline IS NULL)
+                WHERE a.status NOT IN ('deleted', 'cancelled')
                 ORDER BY a.created_at DESC
             `;
         }
@@ -1303,36 +1295,28 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' 
+                         ELSE c.status 
+                       END AS display_status
                 FROM carpools c
                 LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-                LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
-                LEFT JOIN event_participants viewer_ep ON c.id = viewer_ep.event_id 
-                    AND viewer_ep.event_type = 'carpool' 
-                    AND viewer_ep.user_id = u_viewer.id 
-                WHERE c.status IN ('open', 'full') 
-                  AND (
-                    (c.status = 'full' AND (LOWER(c.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
-                    OR
-                    (c.status = 'open' AND (
-                        (LOWER(c.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
-                        OR
-                        (viewer_ep.status = 'pending' AND c.departure_time > CURDATE())
-                        OR
-                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (c.deadline > NOW() OR c.deadline IS NULL))
-                    ))
-                  )
+                WHERE c.status NOT IN ('deleted', 'cancelled')
                 ORDER BY c.created_at DESC
             `;
-            replacements = [viewerEmail, viewerEmail, viewerEmail];
+            replacements = [];
         } else {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' 
+                         ELSE c.status 
+                       END AS display_status
                 FROM carpools c
                 LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-                WHERE c.status = 'open' 
-                  AND (c.deadline > NOW() OR c.deadline IS NULL)
+                WHERE c.status NOT IN ('deleted', 'cancelled')
                 ORDER BY c.created_at DESC
             `;
         }
@@ -1501,36 +1485,28 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' 
+                         ELSE s.status 
+                       END AS display_status
                 FROM studies s
                 LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-                LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
-                LEFT JOIN event_participants viewer_ep ON s.id = viewer_ep.event_id 
-                    AND viewer_ep.event_type = 'study' 
-                    AND viewer_ep.user_id = u_viewer.id 
-                WHERE s.status IN ('open', 'full') 
-                  AND (
-                    (s.status = 'full' AND (LOWER(s.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
-                    OR
-                    (s.status = 'open' AND (
-                        (LOWER(s.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
-                        OR
-                        (viewer_ep.status = 'pending' AND s.event_time > CURDATE())
-                        OR
-                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (s.deadline > NOW() OR s.deadline IS NULL))
-                    ))
-                  )
+                WHERE s.status NOT IN ('deleted', 'cancelled')
                 ORDER BY s.created_at DESC
             `;
-            replacements = [viewerEmail, viewerEmail, viewerEmail];
+            replacements = [];
         } else {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' 
+                         ELSE s.status 
+                       END AS display_status
                 FROM studies s
                 LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-                WHERE s.status = 'open' 
-                  AND (s.deadline > NOW() OR s.deadline IS NULL)
+                WHERE s.status NOT IN ('deleted', 'cancelled')
                 ORDER BY s.created_at DESC
             `;
         }
@@ -1699,36 +1675,28 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' 
+                         ELSE h.status 
+                       END AS display_status
                 FROM hangouts h
                 LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-                LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
-                LEFT JOIN event_participants viewer_ep ON h.id = viewer_ep.event_id 
-                    AND viewer_ep.event_type = 'hangout' 
-                    AND viewer_ep.user_id = u_viewer.id 
-                WHERE h.status IN ('open', 'full') 
-                  AND (
-                    (h.status = 'full' AND (LOWER(h.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
-                    OR
-                    (h.status = 'open' AND (
-                        (LOWER(h.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
-                        OR
-                        (viewer_ep.status = 'pending' AND h.event_time > CURDATE())
-                        OR
-                        ((viewer_ep.id IS NULL OR viewer_ep.status = 'rejected') AND (h.deadline > NOW() OR h.deadline IS NULL))
-                    ))
-                  )
+                WHERE h.status NOT IN ('deleted', 'cancelled')
                 ORDER BY h.created_at DESC
             `;
-            replacements = [viewerEmail, viewerEmail, viewerEmail];
+            replacements = [];
         } else {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' 
+                         ELSE h.status 
+                       END AS display_status
                 FROM hangouts h
                 LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-                WHERE h.status = 'open' 
-                  AND (h.deadline > NOW() OR h.deadline IS NULL)
+                WHERE h.status NOT IN ('deleted', 'cancelled')
                 ORDER BY h.created_at DESC
             `;
         }
@@ -2027,34 +1995,28 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' 
+                         ELSE ho.status 
+                       END AS display_status
                 FROM housing ho
                 LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-                LEFT JOIN users u_viewer ON LOWER(u_viewer.email) = ?
-                LEFT JOIN event_participants viewer_ep ON ho.id = viewer_ep.event_id 
-                    AND (viewer_ep.event_type = 'housing' OR viewer_ep.event_type = 'groupbuy')
-                    AND viewer_ep.user_id = u_viewer.id 
-                WHERE ho.status IN ('open', 'full') 
-                  AND (
-                    (ho.status = 'full' AND (LOWER(ho.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted')))
-                    OR
-                    (ho.status = 'open' AND (
-                        (LOWER(ho.host_email) = ? OR viewer_ep.status IN ('approved', 'accepted'))
-                        OR
-                        ((ho.deadline > NOW() OR ho.deadline IS NULL))
-                    ))
-                  )
+                WHERE ho.status NOT IN ('deleted', 'cancelled')
                 ORDER BY ho.created_at DESC
             `;
-            replacements = [viewerEmail, viewerEmail, viewerEmail];
+            replacements = [];
         } else {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
+                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       CASE 
+                         WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' 
+                         ELSE ho.status 
+                       END AS display_status
                 FROM housing ho
                 LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-                WHERE ho.status = 'open' 
-                  AND (ho.deadline > NOW() OR ho.deadline IS NULL)
+                WHERE ho.status NOT IN ('deleted', 'cancelled')
                 ORDER BY ho.created_at DESC
             `;
         }

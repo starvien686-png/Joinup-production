@@ -247,7 +247,8 @@ export const renderSports = () => {
             const response = await fetch(`/activities?user_email=${encodeURIComponent(user.email)}`);
             const dbPosts = await response.json();
             const availablePosts = dbPosts.filter(p => {
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
+                // Strictly hide deleted and cancelled posts
+                if (p.status === 'cancelled' || p.status === 'deleted') return false;
 
                 return true;
             });
@@ -266,6 +267,7 @@ export const renderSports = () => {
                 authorId: p.host_email,
                 hostName: p.host_name || 'Host',
                 hostDept: p.host_dept || '',
+                display_status: p.display_status,
                 participants: [{ userId: p.host_email, role: 'host' }],
                 createdAt: p.created_at
             })).filter(p => p.category === CATEGORY_ID);
@@ -323,8 +325,9 @@ export const renderSports = () => {
         const postsHtml = posts.length ? posts.map(p => {
             const isHost = (p.authorId === user.email);
             const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
-            const isFull = totalActiveCount >= p.maxParticipants;
-            const isExpired = new Date(p.deadline) < new Date();
+            const isFull = totalActiveCount >= p.maxParticipants || p.status === 'full';
+            const isExpired = p.display_status === 'expired';
+            const isSuccess = p.status === 'success';
             const statusKey = `${p.category || 'sports'}_${p.id}`;
             const userStatus = myStatuses[statusKey];
             const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
@@ -339,23 +342,15 @@ export const renderSports = () => {
                 >
                     💬 ${txtJoinChat}
                 </button>`;
-            } else if (isFull || p.status === 'full') {
+            } else if (isExpired || isFull || isSuccess) {
+                const label = isExpired ? txtExpired : (isFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                 actionBtn = `
                 <button 
                     class="btn btn-full" 
                     disabled 
-                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;"
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;"
                 >
-                    ${txtFull}
-                </button>`;
-            } else if (isExpired) {
-                actionBtn = `
-                <button 
-                    class="btn btn-full" 
-                    disabled 
-                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem;"
-                >
-                    ${txtExpired}
+                    ${label}
                 </button>`;
             } else {
                 actionBtn = `
@@ -369,11 +364,11 @@ export const renderSports = () => {
             }
 
             return `
-            <div class="card" style="${(isFull || p.status === 'full') || isExpired ? 'opacity: 0.8;' : ''} margin-bottom: 1rem;">
+            <div class="card" style="${isExpired ? 'opacity: 0.6;' : (isFull || isSuccess ? 'opacity: 0.8;' : '')} margin-bottom: 1rem;">
                 <div onclick="window.showEventDetail('${p.id}')" style="cursor: pointer;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.8rem; padding: 0.2rem 0.5rem; background: #FFEBEE; color: #D32F2F; border-radius: 4px;">
-                            ${p.eventType}
+                            ${p.eventType} ${isExpired ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
                         </span>
                         <span style="font-size: 0.8rem; color: var(--text-secondary);">${new Date(p.createdAt).toLocaleDateString()}</span>
                     </div>

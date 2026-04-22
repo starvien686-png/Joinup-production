@@ -338,33 +338,13 @@ export const renderHome = () => {
             ];
 
             const isPostActive = (p) => {
-                // 1. Check Status
-                if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired' || p.status === 'full' || p.status === 'deleted') return false;
+                // 1. Check Status - Keep 'deleted' and 'cancelled' hidden as per strict constraint
+                if (p.status === 'cancelled' || p.status === 'deleted') return false;
 
-                // 2. Check Deadline / Event Time
-                const refDateStr = p.deadline || p.event_time || p.departure_time;
-                if (refDateStr) {
-                    const eventDate = new Date(refDateStr);
-                    if (eventDate < new Date()) return false;
-                }
-
-                // 3. Check Participants Capacity
-                let apps = [];
-                const hangoutCats = ['travel', 'food', 'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife'];
-
-                if (p.category === 'carpool') apps = JSON.parse(localStorage.getItem('joinup_carpool_apps') || '[]');
-                else if (p.category === 'sports') apps = JSON.parse(localStorage.getItem('joinup_applications') || '[]');
-                else if (p.category === 'study') apps = JSON.parse(localStorage.getItem('joinup_study_apps') || '[]');
-                else if (hangoutCats.includes(p.category)) apps = JSON.parse(localStorage.getItem('joinup_hangout_apps') || '[]');
-                else if (p.category === 'housing' || p.category === 'groupbuy') apps = JSON.parse(localStorage.getItem('joinup_housing_apps') || '[]');
-
-                if (apps.length > 0) {
-                    const accepted = apps.filter(a => String(a.postId) === String(p.id) && a.status === 'accepted');
-                    if (accepted.length >= (p.people_needed || 999)) return false;
-                }
-
-                // 4. Static people_needed check from DB
-                if (p.people_needed !== undefined && p.people_needed <= 0) return false;
+                // 2. Time filter removed to show history on Home Page
+                
+                // 3. Static people_needed check from DB
+                if (p.people_needed !== undefined && p.people_needed <= 0 && p.status === 'open') return false;
 
                 return true;
             };
@@ -505,7 +485,7 @@ export const renderHome = () => {
             const translatedLoc = getLocTrans(p.location);
 
             return `
-                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="min-width: 280px; scroll-snap-align: center; cursor: pointer; border: 1px solid #f0f0f0; flex-shrink: 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative;">
+                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="min-width: 280px; scroll-snap-align: center; cursor: pointer; border: 1px solid #f0f0f0; flex-shrink: 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative; ${p.display_status === 'expired' ? 'opacity: 0.6;' : ''}">
                     ${(user.email && p.host_email && user.email === p.host_email) ? `
                         <button onclick="event.stopPropagation(); window.deletePost('${p.id}', '${p.category}')" 
                                 style="position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; background: #F44336; color: white; border: 2px solid white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;">
@@ -514,7 +494,7 @@ export const renderHome = () => {
                     ` : ''}
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: #FFF3E0; padding: 3px 10px; border-radius: 20px; color: #E67E22; font-weight: bold;">
-                            ${iconEmoji} ${labelName}
+                            ${iconEmoji} ${labelName} ${p.display_status === 'expired' ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
                         </span>
                         <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
                             👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peoplecount || 0}
@@ -545,6 +525,16 @@ export const renderHome = () => {
 
                     // Determine participant status
                     const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
+                    const isPast = p.display_status === 'expired';
+                    const isFull = p.status === 'full';
+                    const isSuccess = p.status === 'success';
+
+                    if (user.email && p.host_email && user.email === p.host_email) {
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
+                                💬 進入聊天室 / Enter Chat
+                            </button>`;
+                    }
+
                     if (roleStatus === 'approved' || roleStatus === 'accepted') {
                         return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
                                 💬 進入聊天室 / Enter Chat
@@ -552,6 +542,12 @@ export const renderHome = () => {
                     } else if (roleStatus === 'pending') {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
                                 ⏳ Pending...
+                            </button>`;
+                    } else if (isPast || isFull || isSuccess) {
+                        // ABSOLUTE LOCKDOWN for past/full events
+                        const lockLabel = isPast ? '已結束 / Ended' : (isFull ? '已滿 / Full' : '已完成 / Finished');
+                        return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                ${lockLabel}
                             </button>`;
                     } else {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">

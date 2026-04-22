@@ -46,13 +46,13 @@ export const renderActivities = async () => {
         ];
 
         const isPostActive = (p) => {
-            if (p.status === 'cancelled' || p.status === 'success' || p.status === 'expired') return false;
-            const refDateStr = p.deadline || p.event_time || p.departure_time;
-            if (refDateStr) {
-                const eventDate = new Date(refDateStr);
-                if (eventDate < new Date()) return false;
-            }
-            if (p.people_needed !== undefined && p.people_needed <= 0) return false;
+            // Strictly hide deleted and cancelled posts
+            if (p.status === 'cancelled' || p.status === 'deleted') return false;
+            
+            // Time filter removed to show history in Activities dashboard
+            
+            // Capacity check simplified
+            if (p.people_needed !== undefined && p.people_needed <= 0 && p.status === 'open') return false;
             return true;
         };
 
@@ -70,7 +70,8 @@ export const renderActivities = async () => {
             eventTime: p.event_time || p.departure_time || p.deadline,
             location: p.location || p.destination || p.meeting_location,
             deadline: p.deadline, description: p.description, hostEmail: p.host_email,
-            hostName: p.host_name || 'Host', hostDept: p.host_dept || '', status: 'open',
+            hostName: p.host_name || 'Host', hostDept: p.host_dept || '', status: p.status,
+            display_status: p.display_status,
             approvedCount: p.approvedCount,
             createdAt: p.created_at
         }));
@@ -144,6 +145,9 @@ export const renderActivities = async () => {
 
             const statusKey = `${p.category || 'sports'}_${p.id}`;
             const roleStatus = myStatuses[statusKey];
+            const isPast = p.display_status === 'expired';
+            const isFull = p.status === 'full';
+            const isSuccess = p.status === 'success';
 
             let actionBtn = '';
             if (user && user.email && p.hostEmail && user.email === p.hostEmail) {
@@ -152,17 +156,18 @@ export const renderActivities = async () => {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
-            } else if (p.status === 'full') {
-                actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">額滿 / FULL</button>`;
+            } else if (isPast || isFull || isSuccess) {
+                const lockLabel = isPast ? '已結束 / Ended' : (isFull ? '額滿 / Full' : '已完成 / Finished');
+                actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${lockLabel}</button>`;
             } else {
                 actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">申請加入 / Apply to Join</button>`;
             }
 
             return `
-                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1.2rem; padding: 18px;">
+                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1.2rem; padding: 18px; ${isPast ? 'opacity: 0.6;' : (isFull || isSuccess ? 'opacity: 0.8;' : '')}">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                            ${icon} ${labelName}
+                            ${icon} ${labelName} ${isPast ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
                         </span>
                         <div style="display: flex; align-items: center; gap: 10px;">
                              <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
