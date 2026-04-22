@@ -646,24 +646,28 @@ window.showAnnouncements = async () => {
     const renderPersonal = () => {
         if (personalNotifications.length === 0) return `<div style="padding: 1rem; color: #999; text-align: center;">${txtNoNotif}</div>`;
         return personalNotifications.map(n => {
-            const isAction = n.type === 'action';
-            const icon = isAction ? '⚡' : (n.type === 'success' ? '🎉' : '🔔');
-            const bgStyle = isAction ? 'background: #FFF3E0; border-left: 4px solid #FF9800;' : (n.type === 'success' ? 'background: #E8F5E9; border-left: 4px solid #4CAF50;' : '');
+            // Robust action check: legacy 'action' iconType OR original 'join_request' type
+            const isJoinRequest = n.type === 'action' || n.link?.startsWith('action:review_');
+            const icon = isJoinRequest ? '⚡' : (n.type === 'success' ? '🎉' : '🔔');
+            const bgStyle = isJoinRequest ? 'background: #FFF3E0; border-left: 4px solid #FF9800;' : (n.type === 'success' ? 'background: #E8F5E9; border-left: 4px solid #4CAF50;' : '');
 
             let actionButtons = '';
-            if (isAction && n.link && n.link.startsWith('action:review_')) {
+            if (isJoinRequest && n.link && n.link.startsWith('action:review_')) {
                 const parts = n.link.split(':');
                 // parts format: [action, type_app, appId, postId, email, name]
-                const category = parts[1].replace('review_', '').replace('_app', '');
+                const category = parts[1]?.replace('review_', '').replace('_app', '') || 'sports';
                 const appId = parts[2];
                 const postId = parts[3];
                 const applicantEmail = parts[4];
                 const teamName = decodeURIComponent(parts[5] || '');
 
+                const txtAccept = isZH ? '接受 (Accept)' : 'Accept';
+                const txtReject = isZH ? '拒絕 (Reject)' : 'Reject';
+
                 actionButtons = `
                 <div style="display: flex; gap: 8px; margin-top: 10px;" onclick="event.stopPropagation()">
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 6px; background: white; color: #F44336; border: 1px solid #F44336; border-radius: 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">Reject</button>
-                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 6px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">Accept</button>
+                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: white; color: #F44336; border: 1px solid #F44336; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtReject}</button>
+                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtAccept}</button>
                 </div>
                 `;
             }
@@ -672,11 +676,11 @@ window.showAnnouncements = async () => {
             <div class="notification-item ${n.isRead ? 'read' : 'unread'}" onclick="window.handleNotificationClick('${n.link}')" style="cursor: pointer; ${bgStyle}">
                 <div class="notif-icon">${icon}</div>
                 <div class="notif-content">
-                    <div class="notif-msg" style="${isAction ? 'font-weight: bold; color: #E65100;' : ''}">${n.message}</div>
+                    <div class="notif-msg" style="${isJoinRequest ? 'font-weight: bold; color: #E65100;' : ''}">${n.message}</div>
                     <div class="notif-time">${new Date(n.createdAt).toLocaleString()}</div>
                     ${actionButtons}
                 </div>
-                ${n.link && !isAction ? '<div class="notif-arrow">›</div>' : ''}
+                ${n.link && !isJoinRequest ? '<div class="notif-arrow">›</div>' : ''}
             </div>
             `;
         }).join('');
