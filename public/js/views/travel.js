@@ -404,7 +404,7 @@ export const renderTravel = () => {
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutChat('${p.id}', '${p.title}', '${p.host_email}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
                     } else if (isPast || isFull || isSuccess) {
-                        const lockLabel = isPast ? '已結束 / Ended' : (isFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
+                        const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
                     } else {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FFB300, #FF9800); border: none; color: white; border-radius: 8px; cursor: pointer;">${isZH ? '報名參加' : 'Join Event'}</button>`;
@@ -414,7 +414,7 @@ export const renderTravel = () => {
                         <div class="card" onclick="window.showHangoutDetail('${p.id}')" style="cursor: pointer; ${isPast ? 'opacity: 0.6;' : (isFull ? 'opacity: 0.8;' : '')} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                 <div style="background: #FFF3E0; color: #FF9800; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold;">
-                                    ${catIcon} ${catLabel} ${isPast ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
+                                    ${catIcon} ${catLabel} ${isPast ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}
                                 </div>
                                 <div style="font-size: 0.8rem; color: #999;">
                                     📅 ${new Date(p.deadline).toLocaleDateString()}

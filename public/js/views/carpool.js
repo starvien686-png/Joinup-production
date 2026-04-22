@@ -440,7 +440,7 @@ export const renderCarpool = () => {
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${txtJoinChat}</button>`;
                     } else if (isPast || isFull || isSuccess) {
-                        const lockLabel = isPast ? '已結束 / Ended' : (isFull ? txtFull : (isZH ? '已完成' : 'Finished'));
+                        const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
                     } else {
                         actionBtn = `<button class="btn join-btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #FF8C00, #E65100); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem; box-shadow: 0 2px 5px rgba(255, 140, 0, 0.3);">${txtJoin}</button>`;
@@ -458,7 +458,7 @@ export const renderCarpool = () => {
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
-                                    <div style="background: #FFF3E0; color: #E65100; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 5px;">${vIcon} ${p.vehicle_type} ${isPast ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}</div>
+                                    <div style="background: #FFF3E0; color: #E65100; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 5px;">${vIcon} ${p.vehicle_type} ${isPast ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}</div>
                                     <div style="font-size: 1.1rem; color: #E65100; font-weight: bold;">💰 ${p.price}</div>
                                 </div>
                             </div>
@@ -470,7 +470,7 @@ export const renderCarpool = () => {
                                 <div><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <br>${timeStr}</div>
                                 <div style="text-align: right;"><strong>💺 ${isZH ? '人數' : 'People'}:</strong> <br><span style="color: #FF8C00; font-size: 1.1rem; font-weight: bold;">${totalActiveCount} / ${p.available_seats}</span></div>
                             </div>
-                            <div style="margin-top: 0.5rem; margin-bottom: 10px;">${isPast ? `<span style="font-size: 0.8rem; color: white; background: #444; padding: 4px 8px; border-radius: 10px;">已結束 / Ended</span>` : (isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${txtFull}</span>` : '')}</div>
+                            <div style="margin-top: 0.5rem; margin-bottom: 10px;">${isPast ? `<span style="font-size: 0.8rem; color: #757575; background: #e0e0e0; padding: 4px 8px; border-radius: 10px;">${I18n.t('status.expired')}</span>` : (isFull ? `<span style="font-size: 0.8rem; color: #f57c00; background: #fff3e0; padding: 4px 8px; border-radius: 10px;">${txtFull}</span>` : '')}</div>
                             ${actionBtn}
                         </div>
                     `;

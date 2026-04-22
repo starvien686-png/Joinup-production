@@ -494,7 +494,7 @@ export const renderHome = () => {
                     ` : ''}
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: #FFF3E0; padding: 3px 10px; border-radius: 20px; color: #E67E22; font-weight: bold;">
-                            ${iconEmoji} ${labelName} ${p.display_status === 'expired' ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
+                            ${iconEmoji} ${labelName} ${p.display_status === 'expired' ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}
                         </span>
                         <span style="font-size: 0.8rem; color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 10px;">
                             👥 ${Math.max(1, parseInt(p.approvedCount) || 0)} / ${p.peoplecount || 0}
@@ -545,7 +545,7 @@ export const renderHome = () => {
                             </button>`;
                     } else if (isPast || isFull || isSuccess) {
                         // ABSOLUTE LOCKDOWN for past/full events
-                        const lockLabel = isPast ? '已結束 / Ended' : (isFull ? '已滿 / Full' : '已完成 / Finished');
+                        const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 ${lockLabel}
                             </button>`;

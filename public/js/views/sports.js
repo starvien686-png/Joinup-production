@@ -320,7 +320,7 @@ export const renderSports = () => {
         const txtJoin = isZH ? '加入' : 'Join';
         const txtJoinChat = isZH ? '進入聊天室' : 'Enter Chat Room';
         const txtFull = isZH ? '額滿' : 'Full';
-        const txtExpired = isZH ? '已過期' : 'Expired';
+        const txtExpired = I18n.t('status.expired');
 
         const postsHtml = posts.length ? posts.map(p => {
             const isHost = (p.authorId === user.email);
@@ -368,7 +368,7 @@ export const renderSports = () => {
                 <div onclick="window.showEventDetail('${p.id}')" style="cursor: pointer;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.8rem; padding: 0.2rem 0.5rem; background: #FFEBEE; color: #D32F2F; border-radius: 4px;">
-                            ${p.eventType} ${isExpired ? `<span style="background: #444; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem;">已結束</span>` : ''}
+                            ${p.eventType} ${isExpired ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}
                         </span>
                         <span style="font-size: 0.8rem; color: var(--text-secondary);">${new Date(p.createdAt).toLocaleDateString()}</span>
                     </div>
