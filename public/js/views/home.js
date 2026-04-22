@@ -340,7 +340,7 @@ export const renderHome = () => {
             // Filter out specific categories requested
             const allowedCats = [
                 'carpool', 'travel', 'study', 'housing', 'groupbuy', 'sports',
-                'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife', 'food'
+                'Food', 'Outdoor', 'Arts', 'Entertainment', 'Shopping', 'Sports', 'Nightlife', 'food', 'Other'
             ];
             const targetPosts = availablePosts.filter(p => allowedCats.includes(p.category));
 
@@ -456,7 +456,7 @@ export const renderHome = () => {
                     'study': 'home.cat.study', 'travel': 'home.cat.travel', 'food': 'home.cat.travel',
                     'Food': 'home.cat.travel', 'Outdoor': '户外/踏青', 'Arts': '艺文/展览',
                     'Entertainment': '娱乐/电影', 'Shopping': '逛街/购物', 'Sports': '运动/健身',
-                    'Nightlife': '夜生活'
+                    'Nightlife': '夜生活', 'Other': 'home.cat.activity', '其他': 'home.cat.activity'
                 };
                 const key = mapping[cat];
                 if (!key) return cat;

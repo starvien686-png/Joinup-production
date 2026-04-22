@@ -655,6 +655,7 @@ export const renderSports = () => {
                     host_email: user.email,
                     host_name: document.getElementById('hostName').value,
                     host_dept: document.getElementById('hostDept').value,
+                    category: 'sports',
                     title: document.getElementById('teamName').value,
                     sport_type: sportType,
                     people_needed: parseInt(document.getElementById('requiredPeople').value),

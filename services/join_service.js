@@ -700,7 +700,7 @@ router.get('/my-activities', async (req, res) => {
         const query = `
             /* --- PART 1: HOSTED BY ME (ALL STATUSES) --- */
             SELECT 
-                a.id, a.title, a.category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                a.id, a.title, COALESCE(a.category, 'sports') as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
@@ -756,7 +756,7 @@ router.get('/my-activities', async (req, res) => {
 
             /* --- PART 2: JOINED BY ME (ONLY APPROVED/ACCEPTED) --- */
             SELECT 
-                a.id, a.title, a.category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                a.id, a.title, COALESCE(a.category, 'sports') as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
@@ -850,7 +850,7 @@ router.get('/activities/latest', async (req, res) => {
     try {
         const query = `
             SELECT 
-                a.id, a.title, a.category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
+                a.id, a.title, COALESCE(a.category, 'sports') as category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' ELSE a.status END as display_status
