@@ -397,6 +397,7 @@ export const renderTravel = () => {
                     const statusKey = `hangout_${p.id}`;
                     const userStatus = myStatuses[statusKey];
                     const isPast = p.display_status === 'expired';
+                    const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
                     const isFull = p.status === 'full' || totalActiveCount >= p.people_needed;
                     const isSuccess = p.status === 'success';
 

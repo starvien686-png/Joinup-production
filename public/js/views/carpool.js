@@ -433,6 +433,7 @@ export const renderCarpool = () => {
                     const statusKey = `carpool_${p.id}`;
                     const userStatus = myStatuses[statusKey];
                     const isPast = p.display_status === 'expired';
+                    const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
                     const isFull = p.status === 'full' || availableNow <= 0;
                     const isSuccess = p.status === 'success';
 

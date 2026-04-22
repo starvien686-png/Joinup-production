@@ -592,6 +592,7 @@ export const renderGroupBuy = () => {
             const statusKey = `housing_${p.id}`;
             const userStatus = myStatuses[statusKey];
             const isPast = p.display_status === 'expired';
+            const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
             const isFull = p.status === 'full' || (p.peopleCount !== undefined && p.peopleCount <= 0);
             const isSuccess = p.status === 'success';
 
