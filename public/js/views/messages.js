@@ -1173,6 +1173,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
         
         <nav class="bottom-nav" style="background: var(--bg-card); border-top: 1px solid var(--border-color);">
             <a href="#" class="nav-item" onclick="window.navigateTo('home')"><span class="nav-icon">🏠</span><span>${I18n.t('nav.home') || 'Home'}</span></a>
+            <a href="#" class="nav-item" onclick="window.navigateTo('my-activities')"><span class="nav-icon">📋</span><span>${I18n.t('nav.activities') || 'Activities'}</span></a>
             <a href="#" class="nav-item active"><span class="nav-icon">💬</span><span>${I18n.t('nav.messages') || 'Messages'}</span></a>
             <a href="#" class="nav-item" onclick="window.navigateTo('profile')"><span class="nav-icon">👤</span><span>${I18n.t('nav.profile') || 'Profile'}</span></a>
         </nav>

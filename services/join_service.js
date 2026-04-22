@@ -687,4 +687,94 @@ router.get('/profile-user', async (req, res) => {
     }
 });
 
+// NEW: Unified Activity Dashboard Feed
+// Fetches all events where the user is either the HOST or an APPROVED participant.
+// Uses SQL UNION ALL with standardized aliases for the frontend.
+router.get('/api/v1/my-activities', async (req, res) => {
+    const { email } = req.query;
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'User email is required' });
+    }
+
+    try {
+        const query = `
+            SELECT 
+                a.id, a.title, 'sports' as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
+                u.username as host_name, u.major as host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM activities a
+            LEFT JOIN users u ON a.host_email = u.email
+            WHERE (a.host_email = :email OR EXISTS (
+                SELECT 1 FROM event_participants ep 
+                WHERE ep.event_type = 'sports' AND ep.event_id = a.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
+            ))
+
+            UNION ALL
+
+            SELECT 
+                c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
+                c.host_name, c.host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM carpools c
+            LEFT JOIN users u ON c.host_email = u.email
+            WHERE (c.host_email = :email OR EXISTS (
+                SELECT 1 FROM event_participants ep 
+                WHERE ep.event_type = 'carpool' AND ep.event_id = c.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
+            ))
+
+            UNION ALL
+
+            SELECT 
+                s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
+                s.host_name, s.host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM studies s
+            LEFT JOIN users u ON s.host_email = u.email
+            WHERE (s.host_email = :email OR EXISTS (
+                SELECT 1 FROM event_participants ep 
+                WHERE ep.event_type = 'study' AND ep.event_id = s.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
+            ))
+
+            UNION ALL
+
+            SELECT 
+                h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
+                h.host_name, h.host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM hangouts h
+            LEFT JOIN users u ON h.host_email = u.email
+            WHERE (h.host_email = :email OR EXISTS (
+                SELECT 1 FROM event_participants ep 
+                WHERE ep.event_type = 'hangout' AND ep.event_id = h.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
+            ))
+
+            UNION ALL
+
+            SELECT 
+                ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
+                ho.host_name, ho.host_dept, u.profile_pic,
+                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
+            FROM housing ho
+            LEFT JOIN users u ON ho.host_email = u.email
+            WHERE (ho.host_email = :email OR EXISTS (
+                SELECT 1 FROM event_participants ep 
+                WHERE ep.event_type = 'housing' AND ep.event_id = ho.id AND ep.user_email = :email AND ep.status IN ('approved', 'accepted')
+            ))
+
+            ORDER BY created_at DESC
+        `;
+
+        const results = await sequelize.query(query, {
+            replacements: { email },
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('[API] Error in /api/v1/my-activities:', err);
+        res.status(500).json({ success: false, message: 'Internal server error: ' + err.message });
+    }
+});
+
 module.exports = router;
+

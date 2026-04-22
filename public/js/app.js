@@ -246,6 +246,8 @@ window.navigateTo = (viewName) => {
 
         import('./views/settings.js?v=1').then(module => { module.renderSettings(); }).catch(err => { alert(I18n.t('app.err.load_fail', { error: err.message })); });
 
+    } else if (viewName === 'my-activities') {
+        import('./views/my_activities_dashboard.js?v=1').then(module => { module.renderMyActivitiesDashboard(); }).catch(err => { alert(I18n.t('app.err.load_fail', { error: err.message })); });
     } else if (viewName === 'activities') {
         import('./views/activities.js?v=21').then(module => { module.renderActivities(); }).catch(err => { alert(I18n.t('app.err.load_fail', { error: err.message })); });
     } else if (viewName.startsWith('messages?')) {

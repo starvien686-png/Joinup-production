@@ -614,10 +614,55 @@ export const renderTravel = () => {
     };
 
     const updateView = async () => {
-        if (currentState === 'landing') { app.innerHTML = renderLanding(); bindLandingListeners(); }
-        else if (currentState === 'create') { app.innerHTML = renderCreateForm(); bindCreateListeners(); }
-        else if (currentState === 'list') { app.innerHTML = await renderList(); bindListListeners(); }
-        else if (currentState === 'manage') { app.innerHTML = await renderManage(); bindManageListeners(); }
+        let html = '';
+        if (currentState === 'landing') {
+            html = renderLanding();
+        } else if (currentState === 'create') {
+            html = renderCreateForm();
+        } else if (currentState === 'list') {
+            html = await renderList();
+        } else if (currentState === 'manage') {
+            html = await renderManage();
+        }
+
+        const navHtml = `
+            <nav class="bottom-nav" style="display: flex; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 10px 0; justify-content: space-around; align-items: center; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
+                <a href="#" class="nav-item" onclick="window.navigateTo('home')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">🏠</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.home', '首頁')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('my-activities')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">📋</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.activities', '活動')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('messages')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem; position: relative;">
+                        💬
+                        <span id="unread-badge-nav" class="unread-badge" style="display: none; position: absolute; top: -5px; right: -8px; background: #FF3D00; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; border: 2px solid white; min-width: 14px; text-align: center;">0</span>
+                    </span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.messages', '訊息')}</span>
+                </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('profile')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                    <span style="font-size: 1.4rem;">👤</span>
+                    <span style="font-size: 0.75rem; font-weight: bold;">${I18n.t('nav.profile', '我的')}</span>
+                </a>
+            </nav>
+        `;
+
+        app.innerHTML = html + navHtml;
+
+        // Apply shared padding-bottom to the container
+        const container = app.querySelector('.container');
+        if (container) {
+            container.style.paddingBottom = '80px';
+        }
+
+        if (currentState === 'landing') bindLandingListeners();
+        else if (currentState === 'create') bindCreateListeners();
+        else if (currentState === 'list') bindListListeners();
+        else if (currentState === 'manage') bindManageListeners();
+
+        if (window.checkNotificationBadge) window.checkNotificationBadge();
     };
     
     // --- EXPOSE TO WINDOW (FOR INLINE ONCLICK) ---

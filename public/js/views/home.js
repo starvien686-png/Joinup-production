@@ -166,6 +166,10 @@ export const renderHome = () => {
                     <span class="nav-icon">🏠</span>
                     <span data-i18n="nav.home">${I18n.t('nav.home')}</span>
                 </a>
+                <a href="#" class="nav-item" onclick="window.navigateTo('my-activities')">
+                    <span class="nav-icon">📋</span>
+                    <span data-i18n="nav.activities">${I18n.t('nav.activities')}</span>
+                </a>
                 <a href="#" class="nav-item" onclick="window.navigateTo('messages')">
                     <span class="nav-icon">💬</span>
                     <span data-i18n="nav.messages">${I18n.t('nav.messages')}</span>
