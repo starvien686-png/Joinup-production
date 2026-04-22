@@ -30,13 +30,14 @@ export const renderMyActivitiesDashboard = async () => {
     };
 
     const applyFilter = (filter, tab) => {
-        currentFilter = filter;
-        activeTab = tab;
+        currentFilter = filter || 'all';
+        activeTab = tab || activeTab;
         
-        // Filter by role (host vs participant)
-        let tabFiltered = allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+        // 1. Filter by role (host vs participant)
+        const tabFiltered = allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
 
-        if (filter === 'all') {
+        // 2. Filter by category
+        if (currentFilter === 'all') {
             filteredActivities = tabFiltered;
         } else {
             const filterMap = {
@@ -46,7 +47,7 @@ export const renderMyActivitiesDashboard = async () => {
                 'hangout': 'hangout',
                 'housing': 'housing'
             };
-            const targetCategory = filterMap[filter] || filter;
+            const targetCategory = filterMap[currentFilter] || currentFilter;
             filteredActivities = tabFiltered.filter(a => a.category === targetCategory);
         }
         render();

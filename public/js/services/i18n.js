@@ -14,7 +14,7 @@ export const Translations = {
         'app.alert.dev_mode': '{view} is currently in development.',
         'app.alert.post_not_found': 'Activity not found',
 
-        // Common
+        'common.all': 'All',
         'common.back': 'Back',
         'common.submit': 'Submit',
         'common.cancel': 'Cancel',
@@ -715,7 +715,7 @@ export const Translations = {
         'app.alert.post_not_found': '找不到該活動',
         'login.forgot_pwd': '忘記密碼？',
 
-        // Common
+        'common.all': '全部',
         'common.back': '返回',
         'common.submit': '送出',
         'common.cancel': '取消',
