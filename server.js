@@ -2277,9 +2277,17 @@ async function syncAll() {
         console.log(`[Timezone] MySQL session: ${tzResult[0].tz}, NOW() = ${tzResult[0].server_now}`);
         console.log(`[Timezone] Node.js dayjs: ${nowTaipei().format('YYYY-MM-DD HH:mm:ss')} (Asia/Taipei)`);
 
-        // 1. Sync User Model (Create 'users' table if not exists)
+        // 1. Sync User Model
         await User.sync();
         console.log('User model synchronized.');
+
+        // 🛡️ ADMIN MIGRATION: Ensure is_admin column exists
+        const [userCols] = await sequelize.query("SHOW COLUMNS FROM users LIKE 'is_admin'");
+        if (userCols.length === 0) {
+            console.log("Adding missing 'is_admin' column to users table...");
+            await sequelize.query("ALTER TABLE users ADD COLUMN is_admin TINYINT(1) DEFAULT 0");
+            console.log("'is_admin' column added successfully.");
+        }
 
         // 2. Create tables for Raw Queries (If not exists)
         const tables = [
