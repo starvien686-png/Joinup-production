@@ -50,6 +50,10 @@ const User = sequelize.define('user', {
     violation_points: {
         type: DataTypes.INTEGER,
         defaultValue: 0
+    },
+    is_admin: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     tableName: 'users',

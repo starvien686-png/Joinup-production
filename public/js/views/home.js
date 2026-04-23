@@ -491,7 +491,10 @@ export const renderHome = () => {
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: #fbfbfb; border-radius: 8px;">
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1.5px solid #eee;">
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.85rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.host_name}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
+                                ${p.host_name}
+                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                            </div>
                             <div style="font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🎓 ${p.host_dept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                         </div>
                     </div>
@@ -502,26 +505,15 @@ export const renderHome = () => {
                     </div>
 
                     ${(() => {
-                    if (user.email && p.host_email && user.email === p.host_email) {
-                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
-                                💬 進入聊天室 / Enter Chat
-                            </button>`;
-                    }
-
                     // Determine participant status
                     const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
                     const isPast = p.display_status === 'expired';
                     const isFull = p.status === 'full';
                     const isSuccess = p.status === 'success';
 
-                    if (user.email && p.host_email && user.email === p.host_email) {
-                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">
-                                💬 進入聊天室 / Enter Chat
-                            </button>`;
-                    }
-
-                    if (roleStatus === 'approved' || roleStatus === 'accepted') {
-                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">
+                    if (user.is_admin || (user.email && p.host_email && user.email === p.host_email) || roleStatus === 'approved' || roleStatus === 'accepted') {
+                        const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
                     } else if (roleStatus === 'pending') {

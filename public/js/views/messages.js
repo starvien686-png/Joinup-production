@@ -260,7 +260,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             <div id="msg-${uniqueId}" class="chat-bubble ${isMine ? 'chat-mine' : 'chat-other'}" data-type="${message_type}">
                 ${!isMine ? `
                 <div class="chat-sender-info">
-                    <span style="color: ${msg.role === 'host' ? '#e67e22' : '#3498db'}">${crownIcon}${msg.sender_name}</span>
+                    <span style="color: ${msg.role === 'host' ? '#e67e22' : '#3498db'}; display: flex; align-items: center; gap: 4px;">
+                        ${crownIcon}${msg.sender_name}
+                        ${msg.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 900; line-height: 1;">🛡️ ADMIN</span>` : ''}
+                    </span>
                 </div>` : ''}
                 <div>${contentHtml}</div>
                 <div class="chat-time">${timeStr}</div>

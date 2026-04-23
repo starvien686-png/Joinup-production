@@ -143,8 +143,9 @@ io.on('connection', (socket) => {
         try {
             const { room_id, sender_email, sender_name, message } = data;
 
-            const [uData] = await sequelize.query(`SELECT username FROM users WHERE email = ?`, { replacements: [sender_email] });
+            const [uData] = await sequelize.query(`SELECT username, is_admin FROM users WHERE email = ?`, { replacements: [sender_email] });
             const realSenderName = (uData.length > 0 && uData[0].username) ? uData[0].username : (sender_name || 'JoinUp User');
+            const isAdmin = (uData.length > 0) ? uData[0].is_admin : 0;
 
             const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
             await sequelize.query(query, { replacements: [room_id, sender_email, realSenderName, message] });
@@ -155,6 +156,7 @@ io.on('connection', (socket) => {
                 sender_email,
                 sender_name: realSenderName,
                 message,
+                is_admin: isAdmin,
                 created_at: new Date().toISOString()
             });
 
@@ -385,14 +387,16 @@ app.post('/signup', async (req, res) => {
     try {
         const { username, email, password, major, study_year, role, is_delayed_graduation } = req.body;
 
+        const isAdminWhitelist = email.toLowerCase() === 'ncnujoinupadmin@gmail.com';
+
         const isStudentFormat = /^s\d{9}@(mail1\.)?ncnu\.edu\.tw$/.test(email);
         const isProfessorFormat = email.endsWith('@ncnu.edu.tw');
 
         const isStudentRole = ['bachelor_student', 'master_student', 'doctoral_student'].includes(role);
-        if (isStudentRole && !isStudentFormat) {
+        if (isStudentRole && !isStudentFormat && !isAdminWhitelist) {
             return res.status(400).json({ error: 'Format email mahasiswa tidak valid.' });
         }
-        if ((role === 'professor' || role === 'staff')) {
+        if ((role === 'professor' || role === 'staff') && !isAdminWhitelist) {
             if (!isProfessorFormat) return res.status(400).json({ error: 'Email Dosen/Staf harus @ncnu.edu.tw' });
             if (isStudentFormat) return res.status(403).json({ error: 'Mahasiswa dilarang mendaftar sebagai Dosen.' });
         }
@@ -404,7 +408,8 @@ app.post('/signup', async (req, res) => {
             major,
             study_year,
             role,
-            is_delayed_graduation: !!is_delayed_graduation
+            is_delayed_graduation: !!is_delayed_graduation,
+            is_admin: isAdminWhitelist
         });
 
         res.status(201).json({ message: 'User created successfully!', user: newUser });
@@ -440,7 +445,8 @@ app.post('/login', async (req, res) => {
                 credit_points: user.credit_points || 0,
                 violation_points: user.violation_points || 0,
                 creditPoints: user.credit_points || 0,
-                violationCount: user.violation_points || 0
+                violationCount: user.violation_points || 0,
+                is_admin: !!user.is_admin
             }
         });
 
@@ -966,7 +972,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
-                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
@@ -980,7 +986,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
             replacements = [currentTime, currentTime];
         } else {
             query = `
-                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
@@ -1017,14 +1023,15 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
                      ELSE a.status 
                    END AS display_status
             FROM activities a 
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
-            WHERE (LOWER(a.host_email) = ? OR ep.id IS NOT NULL)
-              AND (a.status != 'full' OR (LOWER(a.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(a.host_email) = ? OR ep.id IS NOT NULL)
+              AND (COALESCE(u_me.is_admin, 0) = 1 OR a.status != 'full' OR (LOWER(a.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail]
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1124,9 +1131,9 @@ app.get(['/chat/:activityId', '/api/v1/chat/:activityId'], async (req, res) => {
     try {
         const activityId = req.params.activityId;
         const query = `
-            SELECT c.id, c.room_id, c.sender_email, COALESCE(NULLIF(u.username, ''), c.sender_name, 'JoinUp User') AS sender_name, c.message, c.created_at 
+            SELECT c.id, c.room_id, c.sender_email, COALESCE(NULLIF(u.username, ''), c.sender_name, 'JoinUp User') AS sender_name, c.message, c.created_at, u.is_admin
             FROM chat_messages c
-            LEFT JOIN users u ON c.sender_email = u.email
+            LEFT JOIN users u ON LOWER(c.sender_email) = LOWER(u.email)
             WHERE c.room_id = ? 
             ORDER BY c.created_at ASC
         `;
@@ -1172,6 +1179,7 @@ app.get(['/activity/:id', '/api/v1/activity/:id'], async (req, res) => {
                    u.profile_pic, 
                    u.bio, 
                    u.hobby,
+                   u.is_admin,
                    u.credit_points as creditPoints,
                    u.violation_points as violationCount
             FROM activities a
@@ -1439,14 +1447,15 @@ app.get('/my-carpools/:email', async (req, res) => {
                      ELSE c.status 
                    END AS display_status
             FROM carpools c
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
-            WHERE (LOWER(c.host_email) = ? OR ep.id IS NOT NULL)
-              AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(c.host_email) = ? OR ep.id IS NOT NULL)
+              AND (COALESCE(u_me.is_admin, 0) = 1 OR c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY c.created_at DESC
         `;
         const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
         });
         res.json(results);
     } catch (error) {
@@ -1621,14 +1630,15 @@ app.get('/my-studies/:email', async (req, res) => {
                      ELSE s.status 
                    END AS display_status
             FROM studies s
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
-            WHERE (LOWER(s.host_email) = ? OR ep.id IS NOT NULL)
-              AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(s.host_email) = ? OR ep.id IS NOT NULL)
+              AND (COALESCE(u_me.is_admin, 0) = 1 OR s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY s.created_at DESC
         `;
         const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
         });
         res.json(results);
     } catch (error) {
@@ -1819,14 +1829,15 @@ app.get('/my-hangouts/:email', async (req, res) => {
                      ELSE h.status 
                    END AS display_status
             FROM hangouts h
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
-            WHERE (LOWER(h.host_email) = ? OR ep.id IS NOT NULL)
-              AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(h.host_email) = ? OR ep.id IS NOT NULL)
+              AND (COALESCE(u_me.is_admin, 0) = 1 OR h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY h.created_at DESC
         `;
         const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
         });
         res.json(results);
     } catch (error) {
@@ -1883,11 +1894,12 @@ app.get('/my-chat-rooms/:email', async (req, res) => {
                 (SELECT sender_email FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as senderEmail,
                 (SELECT created_at FROM chat_messages WHERE room_id = r.room_id ORDER BY created_at DESC LIMIT 1) as timestamp
             FROM chat_rooms r
-            JOIN chat_participants p ON r.room_id = p.room_id
-            WHERE p.user_email IN (?)
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
+            LEFT JOIN chat_participants p ON r.room_id = p.room_id
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR p.user_email IN (?))
             ORDER BY r.created_at DESC
         `;
-        const [rooms] = await sequelize.query(query, { replacements: [emails] });
+        const [rooms] = await sequelize.query(query, { replacements: [userEmail, emails] });
         res.json(rooms);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -2051,14 +2063,15 @@ app.get('/my-housing/:email', async (req, res) => {
                      ELSE ho.status 
                    END AS display_status
             FROM housing ho
+            LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.user_id = u_part.id
-            WHERE (LOWER(ho.host_email) = ? OR ep.id IS NOT NULL)
-              AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(ho.host_email) = ? OR ep.id IS NOT NULL)
+              AND (COALESCE(u_me.is_admin, 0) = 1 OR ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY ho.created_at DESC
         `;
         const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, userEmail, userEmail, userEmail] 
+            replacements: [currentTime, userEmail, userEmail, userEmail, userEmail] 
         });
         res.json(results);
     } catch (error) {

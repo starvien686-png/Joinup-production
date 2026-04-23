@@ -150,7 +150,7 @@ export const renderActivities = async () => {
             const isSuccess = p.status === 'success';
 
             let actionBtn = '';
-            if (user && user.email && p.hostEmail && user.email === p.hostEmail) {
+            if ((user && user.is_admin) || (user && user.email && p.hostEmail && user.email === p.hostEmail)) {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (roleStatus === 'approved' || roleStatus === 'accepted') {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
@@ -181,7 +181,10 @@ export const renderActivities = async () => {
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: var(--bg-body); border-radius: 10px; border: 1px solid var(--border-color);">
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${p.hostName}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                                ${p.hostName}
+                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                            </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                         </div>
                     </div>

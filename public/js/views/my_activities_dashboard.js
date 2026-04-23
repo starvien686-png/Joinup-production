@@ -35,7 +35,10 @@ export const renderMyActivitiesDashboard = async () => {
         activeTab = tab || activeTab;
         
         // 1. Filter by role (host vs participant)
-        const tabFiltered = allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+        // ADMIN BYPASS: Admin sees everything in a single list or we add a new tab?
+        // Let's keep tabs but 'hosted' means 'everything' for admin? 
+        // Or just allow admin to see everything in the current tab.
+        const tabFiltered = user.is_admin ? allActivities : allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
 
         // 2. Filter by category
         if (currentFilter === 'all') {
@@ -156,7 +159,10 @@ export const renderMyActivitiesDashboard = async () => {
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px; background: var(--bg-body); border-radius: 10px; border: 1px solid var(--border-color);">
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="flex: 1; min-width: 0; text-align: left;">
-                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${p.host_name || 'Host'}</div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                                ${p.host_name || 'Host'}
+                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 900; line-height: 1;">🛡️ ADMIN</span>` : ''}
+                            </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.host_dept || ''}</div>
                         </div>
                         <div style="font-size: 0.75rem; color: var(--text-secondary);">${dateStr}</div>

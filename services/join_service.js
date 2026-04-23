@@ -584,9 +584,18 @@ router.post('/notifications/:id/mark-as-read', async (req, res) => {
 router.get('/join/my-statuses', async (req, res) => {
     const { user_email } = req.query;
     try {
-        const [users] = await sequelize.query('SELECT id FROM users WHERE email = ?', { replacements: [user_email] });
+        const [users] = await sequelize.query('SELECT id, is_admin FROM users WHERE email = ?', { replacements: [user_email] });
         if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
-        const [parts] = await sequelize.query("SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?", { replacements: [users[0].id] });
+        
+        const user = users[0];
+        
+        // --- MASTER KEY ACCESS ---
+        if (user.is_admin) {
+            // Admin sees everything as approved so they can enter any chat
+            return res.json({ success: true, is_admin: true, message: 'Admin Master Key Active' });
+        }
+
+        const [parts] = await sequelize.query("SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?", { replacements: [user.id] });
         const statusMap = {};
         parts.forEach(p => statusMap[`${p.event_type}_${p.event_id}`] = p.status);
         res.json({ success: true, data: statusMap });
