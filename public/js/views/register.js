@@ -458,6 +458,7 @@ export const renderRegister = () => {
             const pwd = document.getElementById('reg-pwd').value;
             const repwd = document.getElementById('reg-repwd').value;
             const email = document.getElementById('reg-email').value;
+            const isAdminWhitelist = email.toLowerCase() === 'ncnujoinupadmin@gmail.com';
 
             // 1. Deteksi Mahasiswa: Wajib s + 9 angka + @mail1.ncnu.edu.tw ATAU @ncnu.edu.tw
             const isStudentFormat = /^s\d{9}@(mail1\.)?ncnu\.edu\.tw$/.test(email);
@@ -466,12 +467,12 @@ export const renderRegister = () => {
             const isProfessorFormat = email.endsWith('@ncnu.edu.tw') && !isStudentFormat;
 
             const isAnyStudent = ['bachelor_student', 'master_student', 'doctoral_student'].includes(role);
-            if (isAnyStudent) {
+            if (isAnyStudent && !isAdminWhitelist) {
                 if (!isStudentFormat) {
                     alert("Invalid format! Students must use:\ns123456789@mail1.ncnu.edu.tw OR s123456789@ncnu.edu.tw");
                     return;
                 }
-            } else if (role === 'professor' || role === 'staff') {
+            } else if ((role === 'professor' || role === 'staff') && !isAdminWhitelist) {
                 if (isStudentFormat) {
                     alert("Students cannot register as Professor/Staff! 👮‍♂️\nPlease use a valid staff email.");
                     return;
@@ -487,49 +488,54 @@ export const renderRegister = () => {
                 return;
             }
 
-            const inputYearVal = sanitizeInput(document.getElementById('reg-year').value).trim();
-            const studentId = email.substring(0, 10);
-            const entryYearStr = studentId.substring(1, 4);
-            const entryYear = parseInt(entryYearStr);
+            let finalStudyYear = 1;
+            let is_delayed_graduation = false;
 
-            const now = new Date();
-            const currentMinguoYear = now.getFullYear() - 1911;
-            const currentMonth = now.getMonth() + 1;
-            const academicYear = (currentMonth < 8) ? (currentMinguoYear - 1) : currentMinguoYear;
+            if (isAnyStudent && !isAdminWhitelist) {
+                const inputYearVal = sanitizeInput(document.getElementById('reg-year').value).trim();
+                const studentId = email.substring(0, 10);
+                const entryYearStr = studentId.substring(1, 4);
+                const entryYear = parseInt(entryYearStr);
 
-            let calculatedSeniority = academicYear - entryYear + 1;
-            if (['master_student', 'doctoral_student'].includes(role) && entryYear === currentMinguoYear && currentMonth < 8) {
-                calculatedSeniority = 1;
+                const now = new Date();
+                const currentMinguoYear = now.getFullYear() - 1911;
+                const currentMonth = now.getMonth() + 1;
+                const academicYear = (currentMonth < 8) ? (currentMinguoYear - 1) : currentMinguoYear;
+
+                let calculatedSeniority = academicYear - entryYear + 1;
+                if (['master_student', 'doctoral_student'].includes(role) && entryYear === currentMinguoYear && currentMonth < 8) {
+                    calculatedSeniority = 1;
+                }
+
+                let prefix = '大';
+                if (role === 'master_student') prefix = '碩';
+                else if (role === 'doctoral_student') prefix = '博';
+
+                const yearNames = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+                const standardGradeLabel = prefix + (yearNames[calculatedSeniority - 1] || calculatedSeniority);
+
+                let inputSeniorityNum = 0;
+                const chineseMatch = inputYearVal.match(/[一二三四五六七]/);
+                if (chineseMatch) {
+                    inputSeniorityNum = yearNames.indexOf(chineseMatch[0]) + 1;
+                } else {
+                    const numMatch = inputYearVal.match(/\d+/);
+                    if (numMatch) inputSeniorityNum = parseInt(numMatch[0]);
+                }
+
+                if (!inputSeniorityNum) {
+                    alert(typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Invalid year format! Please use formats like 大一, 碩二, or 3.");
+                    return;
+                }
+
+                if (inputSeniorityNum < calculatedSeniority) {
+                    alert((typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Year mismatch!") + ` (Min expected: ${standardGradeLabel})`);
+                    return;
+                }
+
+                is_delayed_graduation = inputSeniorityNum > calculatedSeniority;
+                finalStudyYear = inputSeniorityNum;
             }
-
-            let prefix = '大';
-            if (role === 'master_student') prefix = '碩';
-            else if (role === 'doctoral_student') prefix = '博';
-
-            const yearNames = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-            const standardGradeLabel = prefix + (yearNames[calculatedSeniority - 1] || calculatedSeniority);
-
-            let inputSeniorityNum = 0;
-            const chineseMatch = inputYearVal.match(/[一二三四五六七]/);
-            if (chineseMatch) {
-                inputSeniorityNum = yearNames.indexOf(chineseMatch[0]) + 1;
-            } else {
-                const numMatch = inputYearVal.match(/\d+/);
-                if (numMatch) inputSeniorityNum = parseInt(numMatch[0]);
-            }
-
-            if (!inputSeniorityNum) {
-                alert(typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Invalid year format! Please use formats like 大一, 碩二, or 3.");
-                return;
-            }
-
-            if (inputSeniorityNum < calculatedSeniority) {
-                alert((typeof I18n !== 'undefined' ? I18n.t('auth.err.year_mismatch') : "Year mismatch!") + ` (Min expected: ${standardGradeLabel})`);
-                return;
-            }
-
-            const is_delayed_graduation = inputSeniorityNum > calculatedSeniority;
-            let finalStudyYear = inputSeniorityNum;
 
             const btn = e.target.querySelector('button[type="submit"]');
             btn.innerText = typeof I18n !== 'undefined' ? I18n.t('reg.processing') : "Processing...";
