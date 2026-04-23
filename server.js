@@ -1220,9 +1220,11 @@ app.get(['/chat/:activityId', '/api/v1/chat/:activityId'], async (req, res) => {
     }
 });
 
-app.post('/chat', async (req, res) => {
+app.post('/chat', checkAuth, async (req, res) => {
     try {
-        const { room_id, sender_email, sender_name, message } = req.body;
+        const { room_id, message } = req.body;
+        const sender_email = req.user.email;
+        const sender_name = req.user.username || 'JoinUp User';
 
         const query = `
             INSERT INTO chat_messages 
@@ -1994,9 +1996,12 @@ app.get('/room-messages/:roomId', async (req, res) => {
 });
 
 // 4. Send Message
-app.post('/send-message', async (req, res) => {
+app.post('/send-message', checkAuth, async (req, res) => {
     try {
-        const { room_id, sender_email, sender_name, message } = req.body;
+        const { room_id, message } = req.body;
+        const sender_email = req.user.email;
+        const sender_name = req.user.username || 'JoinUp User';
+
         const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
         await sequelize.query(query, { replacements: [room_id, sender_email, sender_name, message] });
         res.status(201).json({ message: "Message sent!" });

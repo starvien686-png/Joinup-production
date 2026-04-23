@@ -234,7 +234,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     };
 
     const appendSingleMessage = (msg) => {
-        const isMine = msg.sender_email === user.email;
+        const isMine = (msg.sender_email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim();
         const date = new Date(msg.created_at);
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         const crownIcon = msg.role === 'host' ? '👑 ' : '';
@@ -300,7 +300,9 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
             if (!isInitial && rawMessages.length > lastMsgCount) {
                 const lastMsg = rawMessages[rawMessages.length - 1];
-                if (lastMsg.sender_email !== user.email) playNotificationSound();
+                const lastMsgSender = (lastMsg.sender_email || '').toLowerCase().trim();
+                const currentUserEmail = (user.email || '').toLowerCase().trim();
+                if (lastMsgSender !== currentUserEmail) playNotificationSound();
             }
 
             // Identify only NEW messages to be appended
@@ -320,7 +322,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             const latestAnnouncement = allAnnouncements.length > 0 ? allAnnouncements[allAnnouncements.length - 1] : null;
 
             newMessages.forEach(msg => {
-                const isMine = msg.sender_email === user.email;
+                const isMine = (msg.sender_email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim();
                 const date = new Date(msg.created_at);
                 const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                 const crownIcon = msg.role === 'host' ? '👑 ' : '';
@@ -1201,7 +1203,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
                 lastMessage: r.lastMessage || '', 
                 senderName: r.senderName,
                 timestamp: r.timestamp ? new Date(r.timestamp).getTime() : 0,
-                isMyMsg: r.senderEmail === user.email
+                isMyMsg: (r.senderEmail || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim()
             })).sort((a, b) => b.timestamp - a.timestamp);
 
             inboxData.sort((a, b) => b.timestamp - a.timestamp);
