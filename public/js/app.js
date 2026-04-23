@@ -1711,3 +1711,199 @@ window.addEventListener('hashchange', () => {
         window.navigateTo(hash);
     }
 });
+
+// --- Starbucks Promotional Pop-up (Gen Z Aesthetic Implementation) ---
+(function() {
+    // 1. Check if user has opted out via localStorage
+    if (localStorage.getItem('hideStarbucksPromo') === 'true') return;
+
+    const initStarbucksPromo = () => {
+        // Prevent multiple instances if script runs twice
+        if (document.getElementById('starbucks-promo-overlay')) return;
+
+        // 2. Inject Premium Scoped Styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&display=swap');
+
+            #starbucks-promo-overlay {
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0, 40, 26, 0.7); /* Deep green tinted overlay */
+                backdrop-filter: blur(12px);
+                display: flex; align-items: center; justify-content: center;
+                z-index: 2147483647;
+                font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+                padding: 16px; box-sizing: border-box;
+            }
+
+            #starbucks-promo-modal {
+                background: #FFFDF9; /* Light Cream Background */
+                width: 100%; max-width: 420px;
+                padding: 45px 24px 28px;
+                border-radius: 32px;
+                position: relative;
+                box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+                text-align: center;
+                border: 6px solid #00704A; /* Starbucks Green */
+                animation: promoBounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+
+            @keyframes promoBounceIn {
+                0% { transform: scale(0.4) translateY(100px); opacity: 0; }
+                100% { transform: scale(1) translateY(0); opacity: 1; }
+            }
+
+            #starbucks-promo-emoji {
+                font-size: 80px; display: block; margin-bottom: 12px;
+                animation: promoFloat 3s ease-in-out infinite;
+                filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+            }
+
+            @keyframes promoFloat {
+                0%, 100% { transform: translateY(0) rotate(-3deg); }
+                50% { transform: translateY(-25px) rotate(3deg); }
+            }
+
+            #starbucks-promo-title {
+                color: #00704A; font-weight: 900; font-size: 38px;
+                margin: 0; line-height: 1.1; letter-spacing: -1.5px;
+            }
+
+            #starbucks-promo-subtitle {
+                color: #888; font-size: 16px; font-weight: 700;
+                margin-top: 4px; margin-bottom: 30px;
+                text-transform: uppercase; letter-spacing: 1px;
+            }
+
+            .promo-sticker-card {
+                background: #FFFFFF; border-radius: 28px; padding: 20px;
+                margin-bottom: 20px; border: 5px solid #00704A;
+                box-shadow: 10px 10px 0px #00704A; transition: all 0.2s ease;
+            }
+
+            .sticker-host { transform: rotate(1.5deg); }
+            .sticker-join { transform: rotate(-1.5deg); }
+
+            .promo-card-cn {
+                font-weight: 900; font-size: 28px;
+                color: #e65100; /* Vibrant Orange */
+                display: block; margin-bottom: 4px;
+            }
+
+            .promo-card-en {
+                font-weight: 700; font-size: 14px;
+                color: #888; /* Visually secondary English */
+                display: block;
+            }
+
+            #starbucks-promo-deadline {
+                font-weight: 900; color: #FFF; background: #333;
+                margin: 10px 0 30px; font-size: 16px; display: inline-block;
+                padding: 10px 24px; border-radius: 50px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+
+            #starbucks-promo-cta {
+                display: block; background: #e65100; color: white !important;
+                text-decoration: none; font-weight: 900; font-size: 24px;
+                padding: 24px; border-radius: 24px; margin-bottom: 30px;
+                box-shadow: 0 15px 30px rgba(230, 81, 0, 0.4);
+                animation: promoPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                transition: transform 0.2s, filter 0.2s;
+            }
+
+            #starbucks-promo-cta:hover { filter: brightness(1.1); }
+            #starbucks-promo-cta:active { transform: scale(0.96); }
+
+            @keyframes promoPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+
+            #starbucks-promo-footer {
+                display: flex; flex-direction: column; align-items: center; gap: 20px;
+                margin-top: 10px; padding-top: 25px; border-top: 3px dashed #E0E0E0;
+            }
+
+            .promo-footer-row { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+
+            .promo-checkbox-label {
+                display: flex; align-items: center; gap: 12px;
+                font-size: 15px; color: #888; cursor: pointer;
+                font-weight: 700; user-select: none;
+            }
+
+            .promo-checkbox-label input { width: 22px; height: 22px; accent-color: #00704A; cursor: pointer; }
+
+            #starbucks-promo-close-btn {
+                background: #F0F0F0; border: none; padding: 12px 28px;
+                border-radius: 16px; font-weight: 900; color: #555;
+                cursor: pointer; transition: all 0.2s; font-size: 16px;
+            }
+
+            #starbucks-promo-close-btn:hover { background: #E5E5E5; color: #222; }
+        `;
+        document.head.appendChild(style);
+
+        // 3. Inject Modal HTML
+        const modalContainer = document.createElement('div');
+        modalContainer.id = 'starbucks-promo-overlay';
+        modalContainer.innerHTML = `
+            <div id="starbucks-promo-modal">
+                <span id="starbucks-promo-emoji">🎁</span>
+                <h1 id="starbucks-promo-title">星巴克請你喝！</h1>
+                <div id="starbucks-promo-subtitle">JoinUp! Exclusive Giveaway</div>
+                
+                <div class="promo-sticker-card sticker-host">
+                    <span class="promo-card-cn">發起活動 +2 次</span>
+                    <span class="promo-card-en">Host an event = 2 Entries</span>
+                </div>
+
+                <div class="promo-sticker-card sticker-join">
+                    <span class="promo-card-cn">參加活動 +1 次</span>
+                    <span class="promo-card-en">Join an event = 1 Entry</span>
+                </div>
+
+                <div id="starbucks-promo-deadline">⏰ 截止: 05/07 12:00 PM</div>
+
+                <a href="https://reurl.cc/O6YKYX" target="_blank" id="starbucks-promo-cta">立即前往參加抽獎！</a>
+
+                <div id="starbucks-promo-footer">
+                    <div class="promo-footer-row">
+                        <label class="promo-checkbox-label">
+                            <input type="checkbox" id="starbucks-promo-hide-checkbox">
+                            <span>不再顯示 (Don't show again)</span>
+                        </label>
+                        <button id="starbucks-promo-close-btn">關閉 Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalContainer);
+
+        // 4. Functional Logic
+        const closeBtn = document.getElementById('starbucks-promo-close-btn');
+        const hideCheckbox = document.getElementById('starbucks-promo-hide-checkbox');
+
+        const closeModal = () => {
+            if (hideCheckbox.checked) {
+                localStorage.setItem('hideStarbucksPromo', 'true');
+            }
+            modalContainer.remove();
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        modalContainer.addEventListener('click', (e) => {
+            if (e.target.id === 'starbucks-promo-overlay') closeModal();
+        });
+    };
+
+    // 5. Trigger on DOMContentLoaded safely
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStarbucksPromo);
+    } else {
+        initStarbucksPromo();
+    }
+})();
+
