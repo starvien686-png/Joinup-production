@@ -772,4 +772,98 @@ export const renderHome = () => {
         onRefresh: () => loadHomeActivities(true)
     });
 
+    // --- Starbucks Promotional Pop-up (Multilingual) ---
+    const initStarbucksPromo = () => {
+        if (localStorage.getItem('hideStarbucksPromo') === 'true') return;
+
+        // Add animations if not present
+        if (!document.getElementById('promo-animations')) {
+            const animStyle = document.createElement('style');
+            animStyle.id = 'promo-animations';
+            animStyle.innerHTML = `
+                @keyframes promoFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes promoSlideUp { 
+                    from { transform: translateY(30px); opacity: 0; } 
+                    to { transform: translateY(0); opacity: 1; } 
+                }
+            `;
+            document.head.appendChild(animStyle);
+        }
+
+        setTimeout(() => {
+            // Re-check just in case they navigated away within the delay
+            const app = document.getElementById('app');
+            if (!app || !app.querySelector('.container')) return;
+            if (document.getElementById('starbucks-promo-overlay')) return;
+
+            const promoOverlay = document.createElement('div');
+            promoOverlay.id = 'starbucks-promo-overlay';
+            promoOverlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.7); display: flex; align-items: center;
+                justify-content: center; z-index: 1000000; backdrop-filter: blur(5px);
+                animation: promoFadeIn 0.3s ease forwards;
+            `;
+
+            promoOverlay.innerHTML = `
+                <div style="background: white; width: 90%; max-width: 450px; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: promoSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; max-height: 90vh; overflow-y: auto; color: #333;">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                      <h3 style="margin-bottom: 5px; color: #d4af37;">🎉 【JoinUp! 專屬抽獎 / Exclusive Giveaway】 🎉</h3>
+                      <p style="font-weight: bold; font-size: 1.1em; margin-bottom: 2px;">星巴克禮券等豐富好禮！</p>
+                      <p style="font-size: 0.9em; color: #666; margin-top: 0;">Win Starbucks vouchers and more!</p>
+                    </div>
+
+                    <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                      <p style="margin-top: 0; font-weight: bold;">想要免費喝星巴克嗎？現在就來 JoinUp! 揪團吧！<br>
+                      <span style="font-size: 0.85em; color: #666; font-weight: normal;">Want free Starbucks? Start hosting or joining events on JoinUp! now!</span></p>
+
+                      <ul style="list-style: none; padding-left: 0; margin-bottom: 0;">
+                        <li style="margin-bottom: 12px;">🚀 <strong>發起活動 (Host an Event)</strong>：<br>
+                        獲 <strong>2 次</strong> 抽獎機會 <span style="font-size: 0.85em; color: #666;">(Get 2 entries)</span></li>
+                        
+                        <li>🏃‍♂️ <strong>參加活動 (Join an Event)</strong>：<br>
+                        獲 <strong>1 次</strong> 抽獎機會 <span style="font-size: 0.85em; color: #666;">(Get 1 entry)</span></li>
+                      </ul>
+                    </div>
+
+                    <p style="text-align: center; margin-bottom: 15px;">⏰ <strong>活動截止 (Deadline)</strong>：2026/05/07 12:00 PM</p>
+
+                    <div style="text-align: center;">
+                      <a href="https://reurl.cc/O6YKYX" target="_blank" style="display:inline-block; margin: 10px 0; color: #fff; background-color: #f2a900; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">👉 點我查看 IG 詳情 / View IG Details</a>
+                    </div>
+
+                    <hr style="margin: 15px 0; border: 0.5px solid #eee;">
+
+                    <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 0.9em; color: #555;">
+                      <input type="checkbox" id="hidePromoCheckbox">
+                      不再顯示 (Don't show again)
+                    </label>
+                    
+                    <button id="closePromoBtn" style="margin-top: 15px; width: 100%; padding: 10px; background: #e0e0e0; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">關閉 / Close</button>
+                </div>
+            `;
+
+            document.body.appendChild(promoOverlay);
+
+            const closeBtn = document.getElementById('closePromoBtn');
+            const checkbox = document.getElementById('hidePromoCheckbox');
+
+            const dismissPromo = () => {
+                if (checkbox.checked) {
+                    localStorage.setItem('hideStarbucksPromo', 'true');
+                }
+                promoOverlay.style.opacity = '0';
+                promoOverlay.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => promoOverlay.remove(), 300);
+            };
+
+            closeBtn.onclick = dismissPromo;
+            promoOverlay.onclick = (e) => {
+                if (e.target === promoOverlay) dismissPromo();
+            };
+        }, 1500);
+    };
+
+    initStarbucksPromo();
+
 };
