@@ -192,6 +192,7 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
                 </button>
                 <button id="tab-notifications" onclick="window.switchAdminTab('notifications')" style="background: none; border: none; padding: 10px; font-weight: bold; cursor: pointer; white-space: nowrap;">通知追蹤</button>
                 <button id="tab-audit" onclick="window.switchAdminTab('audit')" style="background: none; border: none; padding: 10px; font-weight: bold; cursor: pointer; white-space: nowrap;">${I18n.t('admin.tab.audit')}</button>
+                <button id="tab-directory" onclick="window.switchAdminTab('directory')" style="background: none; border: none; padding: 10px; font-weight: bold; cursor: pointer; white-space: nowrap; color: #673AB7;">👥 User Directory</button>
             </div>
 
             <div id="section-stats">
@@ -353,6 +354,24 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
                     </table>
                 </div>
             </div>
+
+            <div id="section-directory" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="margin: 0;">👥 User Directory</h3>
+                    <div style="position: relative; width: 100%; max-width: 300px;">
+                        <input type="text" id="user-search" placeholder="Search by Name, Dept, or Email..." 
+                               style="width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem; border: 2px solid #eee; border-radius: 15px; font-size: 0.9rem; outline: none; transition: 0.3s;"
+                               onkeyup="window.filterUserDirectory(this.value)">
+                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #999;">🔍</span>
+                    </div>
+                </div>
+                <div id="user-directory-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <div style="text-align: center; padding: 3rem; grid-column: 1 / -1; color: #999;">
+                        <div class="spinner"></div>
+                        <p>Loading users...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -360,12 +379,19 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
     // 4. GLOBAL UI HANDLERS
     // ==========================================
     window.switchAdminTab = (tabId) => {
-        // 👇 UPDATE FUNGSI SWITCH TAB UNTUK MEMASUKKAN 'feedback' 👇
-        ['stats', 'reports', 'feedback', 'inbox', 'notifications', 'audit'].forEach(id => {
+        // 👇 UPDATE FUNGSI SWITCH TAB UNTUK MEMASUKKAN 'directory' 👇
+        ['stats', 'reports', 'feedback', 'inbox', 'notifications', 'audit', 'directory'].forEach(id => {
             const section = document.getElementById('section-' + id);
             const tab = document.getElementById('tab-' + id);
             if (section) section.style.display = (id === tabId) ? 'block' : 'none';
-            if (tab) tab.style.borderBottom = (id === tabId) ? '3px solid var(--primary-color)' : 'none';
+            if (tab) {
+                if (id === tabId) {
+                    tab.style.borderBottom = '3px solid var(--primary-color)';
+                    if (id === 'directory') window.renderUserDirectory();
+                } else {
+                    tab.style.borderBottom = 'none';
+                }
+            }
         });
     };
 
@@ -409,6 +435,92 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
             MockStore.logAdminAction(currentAdmin, 'deduct_credit', targetUserId);
             alert('已成功扣除點數並通知用戶。');
             renderAdminDashboard();
+        }
+    };
+
+    // --- USER DIRECTORY LOGIC ---
+    let allUsers = [];
+
+    window.renderUserDirectory = async () => {
+        const container = document.getElementById('user-directory-container');
+        try {
+            if (allUsers.length === 0) {
+                const res = await fetch('/users');
+                allUsers = await res.json();
+            }
+            window.displayUsers(allUsers);
+        } catch (e) {
+            container.innerHTML = `<div style="grid-column: 1/-1; color: red; text-align: center;">Failed to load users: ${e.message}</div>`;
+        }
+    };
+
+    window.displayUsers = (users) => {
+        const container = document.getElementById('user-directory-container');
+        if (users.length === 0) {
+            container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 2rem;">No users found.</div>`;
+            return;
+        }
+
+        container.innerHTML = users.map(u => `
+            <div class="user-card bubbly-card fade-in">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: #eee; border: 3px solid #673AB7;">
+                        <img src="${u.profile_pic || 'https://via.placeholder.com/60'}" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 900; font-size: 1.1rem; color: #333;">${u.username}</div>
+                        <div style="font-size: 0.8rem; color: #666; font-weight: bold;">${u.major || 'Unknown Dept'}</div>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 0.8rem; border-radius: 12px; margin-bottom: 1.2rem; font-size: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="color: #888;">📧 Email:</span>
+                        <span style="font-weight: bold;">${u.email}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #888;">🛡️ Trust:</span>
+                        <span style="font-weight: bold; color: ${u.credit_points < 5 ? '#D32F2F' : '#2E7D32'}">${u.credit_points || 0} pts</span>
+                    </div>
+                </div>
+                <button onclick="window.handleUrgentChat('${u.email}', '${u.username}')" 
+                        class="urgent-chat-btn">
+                    Urgent Chat 💬
+                </button>
+            </div>
+        `).join('');
+    };
+
+    window.filterUserDirectory = (query) => {
+        const q = query.toLowerCase();
+        const filtered = allUsers.filter(u => 
+            u.username.toLowerCase().includes(q) || 
+            (u.major && u.major.toLowerCase().includes(q)) ||
+            u.email.toLowerCase().includes(q)
+        );
+        window.displayUsers(filtered);
+    };
+
+    window.handleUrgentChat = async (email, name) => {
+        const adminEmail = ALLOWED_ADMINS.find(a => a.name === sessionStorage.getItem('adminName'))?.email || '';
+        if (!adminEmail) {
+             alert('Error: Admin email not found in session.');
+             return;
+        }
+
+        try {
+            const res = await fetch('/api/v1/admin/private-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminEmail, targetEmail: email, targetName: name })
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.navigateTo('messages?room=' + data.roomId);
+            } else {
+                alert('Failed to initiate chat: ' + data.error);
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
         }
     };
 };

@@ -835,6 +835,75 @@ app.get('/api/v1/admin/chat/:roomId', async (req, res) => {
     }
 });
 
+// --- ADMIN PRIVATE CHAT INITIATION ---
+app.post('/api/v1/admin/private-chat', async (req, res) => {
+    try {
+        const { adminEmail, targetEmail, targetName } = req.body;
+        if (!adminEmail || !targetEmail) return res.status(400).json({ error: 'Missing emails' });
+
+        const adminEmails = getEmailVariations(adminEmail.toLowerCase().trim());
+        const [admin] = await User.findAll({ where: { email: { [Op.in]: adminEmails }, is_admin: 1 } });
+        if (!admin) return res.status(403).json({ error: 'Unauthorized' });
+
+        const targetEmails = getEmailVariations(targetEmail.toLowerCase().trim());
+        const [targetUser] = await User.findAll({ where: { email: { [Op.in]: targetEmails } } });
+        if (!targetUser) return res.status(404).json({ error: 'Target user not found' });
+
+        const roomId = `private_admin_${targetUser.id}`;
+
+        // Check if room already exists in activities
+        const [existing] = await sequelize.query(
+            `SELECT id FROM activities WHERE category = 'Private' AND host_email = ? AND title LIKE ?`,
+            { replacements: [adminEmail, `Admin Support: %`] }
+        );
+
+        let activityId;
+        if (existing.length > 0) {
+            activityId = existing[0].id;
+        } else {
+            // Create new private activity
+            const [result] = await sequelize.query(
+                `INSERT INTO activities (host_email, category, title, is_private, status, people_needed) VALUES (?, 'Private', ?, 1, 'open', 2)`,
+                { replacements: [adminEmail, `Admin Support: ${targetName || targetUser.username}`] }
+            );
+            activityId = result.insertId || result;
+            
+            // Setup Chat Room
+            await sequelize.query(
+                `INSERT IGNORE INTO chat_rooms (room_id, post_id, room_type, team_name) VALUES (?, ?, 'Private', ?)`,
+                { replacements: [roomId, activityId, `Admin Support: ${targetName || targetUser.username}`] }
+            );
+
+            // Add Admin as host
+            await sequelize.query(
+                `INSERT IGNORE INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'host')`,
+                { replacements: [roomId, admin.email, admin.username] }
+            );
+
+            // Add User as participant
+            await sequelize.query(
+                `INSERT IGNORE INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'participant')`,
+                { replacements: [roomId, targetUser.email, targetUser.username] }
+            );
+            
+            // Add to event_participants for dashboard visibility
+            await sequelize.query(
+                `INSERT IGNORE INTO event_participants (event_type, event_id, user_id, status) VALUES ('Private', ?, ?, 'approved')`,
+                { replacements: [activityId, admin.id] }
+            );
+            await sequelize.query(
+                `INSERT IGNORE INTO event_participants (event_type, event_id, user_id, status) VALUES ('Private', ?, ?, 'approved')`,
+                { replacements: [activityId, targetUser.id] }
+            );
+        }
+
+        res.json({ success: true, roomId });
+    } catch (error) {
+        console.error("Private chat error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 
 /**
@@ -981,6 +1050,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 WHERE a.status NOT IN ('deleted', 'cancelled')
+                  AND (a.is_private = 0 OR a.is_private IS NULL)
                 ORDER BY a.created_at DESC
             `;
             replacements = [currentTime, currentTime];
@@ -995,6 +1065,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
                 FROM activities a
                 LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
                 WHERE a.status NOT IN ('deleted', 'cancelled')
+                  AND (a.is_private = 0 OR a.is_private IS NULL)
                 ORDER BY a.created_at DESC
             `;
             replacements = [currentTime, currentTime];
@@ -2309,6 +2380,7 @@ async function syncAll() {
                 location VARCHAR(255),
                 description TEXT,
                 status VARCHAR(50) DEFAULT 'open',
+                is_private TINYINT(1) DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS carpools (
@@ -2528,6 +2600,9 @@ async function syncAll() {
         await addColumnSafe('housing', 'rental_period', 'VARCHAR(100) AFTER deadline');
         await addColumnSafe('housing', 'facilities', 'TEXT AFTER rental_period');
         await addColumnSafe('housing', 'habits', 'TEXT AFTER facilities');
+        
+        // Activity Private Migration
+        await addColumnSafe('activities', 'is_private', 'TINYINT(1) DEFAULT 0');
 
         // Field Type Optimizations for Flexible Input
         await modifyColumnSafe('housing', 'rent_amount', 'VARCHAR(100)');
