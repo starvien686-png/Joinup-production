@@ -122,6 +122,33 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
+// --- RATE LIMITING ---
+// Login Limiter: Max 5 attempts per 15 minutes
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: "Too many attempts. Please try again later after 15 minutes." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General API Limiter: Max 100 requests per 10 minutes
+const apiLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 100,
+    message: { error: "Terlalu banyak permintaan dari IP ini. Silakan coba lagi nanti." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply API limiter to general routes and API prefix
+app.use('/api/', apiLimiter);
+app.use([
+    '/create-activity', '/create-carpool', '/create-study',
+    '/create-hangout', '/create-housing', '/setup-chat-room',
+    '/send-message', '/chat', '/submit-feedback', '/activity/:id/close'
+], apiLimiter);
+
 
 io.on('connection', (socket) => {
     logger.info(`[Socket] User connected: ${socket.id}`);
@@ -451,7 +478,7 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/login', loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 
