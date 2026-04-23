@@ -180,14 +180,14 @@ io.on('connection', (socket) => {
 async function handleChatNotification(io, roomId, senderEmail, senderName, message) {
     try {
         const senderVariants = getEmailVariations(senderEmail).map(e => e.toLowerCase().trim());
-        
+
         // 1. Get ALL participants for this room directly from chat_participants
         // This is more reliable than event_participants for private/special rooms
         const [participants] = await sequelize.query(
             `SELECT user_email FROM chat_participants WHERE room_id = ?`,
             { replacements: [String(roomId)] }
         );
-        
+
         const recipientEmails = participants
             .map(p => p.user_email)
             .filter(email => email && !senderVariants.includes(email.toLowerCase().trim()));
@@ -219,7 +219,7 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
                     room_id: roomId,
                     link: `#messages?room=${roomId}`
                 });
-                
+
                 // Insert into in-app notifications
                 await sequelize.query(
                     `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
@@ -903,7 +903,7 @@ app.post('/api/v1/admin/private-chat', checkAuth, async (req, res) => {
                 { replacements: [adminEmail, `Admin Support: ${targetName || targetUser.username}`] }
             );
             activityId = result.insertId || result;
-            
+
             // Setup Chat Room
             await sequelize.query(
                 `INSERT IGNORE INTO chat_rooms (room_id, post_id, room_type, team_name) VALUES (?, ?, 'Private', ?)`,
@@ -921,7 +921,7 @@ app.post('/api/v1/admin/private-chat', checkAuth, async (req, res) => {
                 `INSERT IGNORE INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'participant')`,
                 { replacements: [roomId, targetUser.email, targetUser.username] }
             );
-            
+
             // Add to event_participants for dashboard visibility
             await sequelize.query(
                 `INSERT IGNORE INTO event_participants (event_type, event_id, user_id, status) VALUES ('Private', ?, ?, 'approved')`,
@@ -1047,7 +1047,7 @@ app.post('/create-activity', async (req, res) => {
             const pushTitle = `🏀 New Sport Event: ${title}`;
             const pushBody = `You got a new sport event from ${finalHostName}: Let's play ${title}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#sports?id=${insertId}`);
-            
+
             const io = req.app.get('io');
             if (io) {
                 io.emit('new_event_popup', { title, category: 'sports' });
@@ -1485,7 +1485,7 @@ app.post('/create-carpool', async (req, res) => {
             const pushTitle = `🚗 New Carpool: ${departure_loc} ➔ ${destination_loc}`;
             const pushBody = `You got a new carpool from ${finalHostName}: Let's ride to ${destination_loc}!`;
             await pushService.broadcastPushNotification(pushTitle, pushBody, `https://joinup-production.onrender.com/#carpool?id=${insertId}`);
-            
+
             const io = req.app.get('io');
             if (io) {
                 io.emit('new_event_popup', { title, category: 'carpool' });
@@ -1568,8 +1568,8 @@ app.get('/my-carpools/:email', async (req, res) => {
               AND (COALESCE(u_me.is_admin, 0) = 1 OR c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
+        const [results] = await sequelize.query(query, {
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1751,8 +1751,8 @@ app.get('/my-studies/:email', async (req, res) => {
               AND (COALESCE(u_me.is_admin, 0) = 1 OR s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
+        const [results] = await sequelize.query(query, {
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1950,8 +1950,8 @@ app.get('/my-hangouts/:email', async (req, res) => {
               AND (COALESCE(u_me.is_admin, 0) = 1 OR h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail] 
+        const [results] = await sequelize.query(query, {
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -2195,8 +2195,8 @@ app.get('/my-housing/:email', async (req, res) => {
               AND (COALESCE(u_me.is_admin, 0) = 1 OR ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY ho.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { 
-            replacements: [currentTime, userEmail, userEmail, userEmail, userEmail] 
+        const [results] = await sequelize.query(query, {
+            replacements: [currentTime, userEmail, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -2653,7 +2653,7 @@ async function syncAll() {
         await addColumnSafe('housing', 'rental_period', 'VARCHAR(100) AFTER deadline');
         await addColumnSafe('housing', 'facilities', 'TEXT AFTER rental_period');
         await addColumnSafe('housing', 'habits', 'TEXT AFTER facilities');
-        
+
         // Activity Private Migration
         await addColumnSafe('activities', 'is_private', 'TINYINT(1) DEFAULT 0');
 
@@ -2666,7 +2666,8 @@ async function syncAll() {
         const admins = [
             's112212030@mail1.ncnu.edu.tw', 's112212025@mail1.ncnu.edu.tw',
             's112212026@mail1.ncnu.edu.tw', 's112212051@mail1.ncnu.edu.tw',
-            's112212052@mail1.ncnu.edu.tw', 's112212060@mail1.ncnu.edu.tw'
+            's112212052@mail1.ncnu.edu.tw', 's112212060@mail1.ncnu.edu.tw',
+            'ncnujoinupadmin@gmail.com'
         ];
         for (const email of admins) {
             const variants = getEmailVariations(email);
@@ -2865,7 +2866,7 @@ cron.schedule('0 * * * *', async () => {
                 `, { replacements: [cat.type, event.id] });
 
                 const recipients = participants.map(p => ({ email: p.email, id: p.id }));
-                
+
                 // Also include the host if not already in participants
                 const [hostUser] = await User.findAll({ where: { email: event.host_email } });
                 if (hostUser.length > 0 && !recipients.some(r => r.id === hostUser[0].id)) {
@@ -2897,12 +2898,12 @@ cron.schedule('0 * * * *', async () => {
                         message: message
                     });
                 }
-                
+
                 // 3. Send Push Notification
                 const targetEmails = recipients.map(r => r.email);
                 const pushTitle = `⏰ Event Reminder / 活動提醒`;
                 await pushService.sendPushNotification(targetEmails, pushTitle, `You have an event tomorrow! / 你明天有個活動喔，別忘了！`, `https://joinup-production.onrender.com/#home`);
-                
+
                 console.log(`[Cron] Sent 24h reminders for ${cat.type} ${event.id} to ${recipients.length} users.`);
             }
         }

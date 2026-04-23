@@ -12,7 +12,8 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
         { email: 's112212026@mail1.ncnu.edu.tw', pwd: 'joinup26admin', name: '林詩芸' },
         { email: 's112212051@mail1.ncnu.edu.tw', pwd: 'joinup51admin', name: '鄭飛英' },
         { email: 's112212052@mail1.ncnu.edu.tw', pwd: 'joinup52admin', name: '許薇荌' },
-        { email: 's112212060@mail1.ncnu.edu.tw', pwd: 'joinup60admin', name: '楊慧賢' }
+        { email: 's112212060@mail1.ncnu.edu.tw', pwd: 'joinup60admin', name: '楊慧賢' },
+        { email: 'ncnujoinupadmin@gmail.com', pwd: 'supportadmin895!', name: 'JoinUp Admin' }
     ];
 
     // Admin Authentication Check
@@ -492,8 +493,8 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
 
     window.filterUserDirectory = (query) => {
         const q = query.toLowerCase();
-        const filtered = allUsers.filter(u => 
-            u.username.toLowerCase().includes(q) || 
+        const filtered = allUsers.filter(u =>
+            u.username.toLowerCase().includes(q) ||
             (u.major && u.major.toLowerCase().includes(q)) ||
             u.email.toLowerCase().includes(q)
         );
@@ -503,14 +504,14 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
     window.handleUrgentChat = async (email, name) => {
         const adminEmail = ALLOWED_ADMINS.find(a => a.name === sessionStorage.getItem('adminName'))?.email || '';
         if (!adminEmail) {
-             alert('Error: Admin email not found in session.');
-             return;
+            alert('Error: Admin email not found in session.');
+            return;
         }
 
         try {
             const res = await fetch('/api/v1/admin/private-chat', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-User-Email': adminEmail // Protocol Zero: satisfy checkAuth middleware
                 },
