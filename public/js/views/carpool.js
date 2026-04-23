@@ -452,8 +452,11 @@ export const renderCarpool = () => {
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
-                                    <div>
-                                        <div style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${p.host_name}</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: bold; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                                            ${p.host_name}
+                                            ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                        </div>
                                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">🎓 ${p.host_dept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
                                         ${hostHobby ? `<div style="font-size: 0.75rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
                                     </div>

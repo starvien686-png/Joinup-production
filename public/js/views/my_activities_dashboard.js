@@ -404,7 +404,10 @@ export const renderMyActivitiesDashboard = async () => {
                             <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;">
                                 <img src="${avatar}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: var(--shadow-sm);">
                                 <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.snapshot_display_name || 'Member'}</div>
+                                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
+                                        ${p.snapshot_display_name || 'Member'}
+                                        ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    </div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary);">${p.user_email}</div>
                                 </div>
                                 <button onclick="window.removeParticipantFromDashboard('${p.id}', '${postId}', '${category}', '${p.user_email}', '${p.snapshot_display_name?.replace(/'/g, "\\'") || 'Member'}')" 

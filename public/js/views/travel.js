@@ -427,7 +427,10 @@ export const renderTravel = () => {
 
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary);">
                                 <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
-                                <span>${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})</span>
+                                <span style="display: flex; align-items: center; gap: 6px;">
+                                    ${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})
+                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                </span>
                             </div>
 
                             <div style="background: var(--bg-secondary); padding: 10px; border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; display: grid; grid-template-columns: 1fr; gap: 5px;">
@@ -799,6 +802,11 @@ export const renderTravel = () => {
                         <h2 style="margin: 0 0 15px 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 700;">${p.title}</h2>
                         
                         <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); margin-top: 15px; margin-bottom: 20px; color: var(--text-primary);">
+                            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                <strong>👤 ${t('common.host', '發起人', 'Host')}:</strong> 
+                                <span style="color: var(--text-primary);">${p.host_name} (${p.host_dept})</span>
+                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                            </div>
                             <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                             <div style="margin-bottom: 10px;"><strong>🤝 ${isZH ? '身分' : 'Meeting'}:</strong> <span style="color:#2196F3; font-weight:bold;">${p.meeting_location}</span></div>
                             <div style="margin-bottom: 10px;"><strong>📍 ${isZH ? '目的地' : 'Destination'}:</strong> <span style="color:#E65100; font-weight:bold;">${p.destination}</span></div>

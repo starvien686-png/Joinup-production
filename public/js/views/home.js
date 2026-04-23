@@ -713,7 +713,10 @@ export const renderHome = () => {
                         <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-secondary); background: var(--bg-secondary); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
                             <img src="${hostAvatar}" alt="avatar" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
                             <div style="flex: 1;">
-                                <div style="color: var(--text-primary); font-weight: bold; font-size: 1rem; margin-bottom: 4px;">${hostFinalNm}</div>
+                                <div style="color: var(--text-primary); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    ${hostFinalNm}
+                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                </div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                                     ${hostFinalDp ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">🎓 ${hostFinalDp}</span>` : ''}
                                     ${studyYear ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">📅 ${studyYear}</span>` : ''}

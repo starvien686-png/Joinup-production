@@ -1281,7 +1281,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
-                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
@@ -1481,7 +1481,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
-                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
@@ -1681,7 +1681,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
-                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
@@ -1882,7 +1882,8 @@ app.post('/setup-chat-room', async (req, res) => {
 // 2. Ambil Daftar Chat Room milik seorang User (Optimized to prevent N+1 leak)
 app.get('/my-chat-rooms/:email', async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const userEmail = (req.params.email || '').toLowerCase().trim();
+        const emails = getEmailVariations(userEmail);
         const query = `
             SELECT 
                 r.room_id as id, 
@@ -2012,7 +2013,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         if (viewerEmail) {
             query = `
-                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
+                SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
                        (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
                        CASE 
                          WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
@@ -2111,7 +2112,12 @@ app.put('/update-housing-status/:id', async (req, res) => {
 app.get('/housing/:id', async (req, res) => {
     try {
         const activityId = req.params.id;
-        const query = `SELECT * FROM housing WHERE id = ?`;
+        const query = `
+            SELECT ho.*, u.is_admin
+            FROM housing ho
+            LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
+            WHERE ho.id = ?
+        `;
         const [results] = await sequelize.query(query, { replacements: [activityId] });
 
         if (results.length > 0) {

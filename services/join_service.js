@@ -135,7 +135,7 @@ router.post('/join', async (req, res) => {
 
         const emails = getEmailVariations(user_email);
         const [users] = await sequelize.query(
-            'SELECT id, username, profile_pic, bio FROM users WHERE LOWER(email) IN (?)',
+            'SELECT id, username, profile_pic, bio, is_admin FROM users WHERE LOWER(email) IN (?)',
             { replacements: [emails.map(e => e.toLowerCase())], transaction: t }
         );
         if (users.length === 0) {
@@ -234,6 +234,7 @@ router.post('/join', async (req, res) => {
             recipient_email: event.host_email,
             event_type, event_id, user_email,
             snapshot_display_name, snapshot_avatar_url, snapshot_bio,
+            is_admin: user.is_admin,
             event_title,
             actionType: 'OPEN_REVIEW_MODAL',
             targetId: event_id,
@@ -263,9 +264,10 @@ router.post('/join', async (req, res) => {
                     event_type,
                     event_id,
                     event_title,
-                    applicant_name: snapshot_display_name,
-                    applicant_email: user_email,
-                    message: pushBody
+                    snapshot_display_name,
+                    snapshot_avatar_url,
+                    snapshot_bio,
+                    is_admin
                 });
                 console.log(`[Socket] Targeted join_request emitted to: ${hostRoom}`);
             }
@@ -660,7 +662,7 @@ router.get('/host/participants', async (req, res) => {
         }
 
         let queryStr = `
-            SELECT ep.id, ep.user_id, u.email as user_email, ep.status, 
+            SELECT ep.id, ep.user_id, u.email as user_email, u.is_admin, ep.status, 
                    ep.snapshot_display_name, ep.snapshot_avatar_url, ep.snapshot_bio, 
                    ep.created_at, ep.updated_at 
             FROM event_participants ep
@@ -722,7 +724,7 @@ router.get('/my-activities', async (req, res) => {
             /* --- PART 1: HOSTED BY ME (ALL STATUSES) --- */
             SELECT 
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM activities a
@@ -733,7 +735,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
-                c.host_name, c.host_dept, u.profile_pic,
+                c.host_name, c.host_dept, u.profile_pic, u.is_admin,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM carpools c
@@ -744,7 +746,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
-                s.host_name, s.host_dept, u.profile_pic,
+                s.host_name, s.host_dept, u.profile_pic, u.is_admin,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM studies s
@@ -755,7 +757,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
-                h.host_name, h.host_dept, u.profile_pic,
+                h.host_name, h.host_dept, u.profile_pic, u.is_admin,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM hangouts h
@@ -766,7 +768,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
-                ho.host_name, ho.host_dept, u.profile_pic,
+                ho.host_name, ho.host_dept, u.profile_pic, u.is_admin,
                 'host' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM housing ho
@@ -778,7 +780,7 @@ router.get('/my-activities', async (req, res) => {
             /* --- PART 2: JOINED BY ME (ONLY APPROVED/ACCEPTED) --- */
             SELECT 
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
-                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM activities a
@@ -793,7 +795,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
-                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM carpools c
@@ -808,7 +810,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
-                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM studies s
@@ -823,7 +825,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
-                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM hangouts h
@@ -838,7 +840,7 @@ router.get('/my-activities', async (req, res) => {
 
             SELECT 
                 ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
-                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic,
+                u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
             FROM housing ho
@@ -872,7 +874,7 @@ router.get('/activities/latest', async (req, res) => {
         const query = `
             SELECT 
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' ELSE a.status END as display_status
             FROM activities a
@@ -883,7 +885,7 @@ router.get('/activities/latest', async (req, res) => {
 
             SELECT 
                 c.id, c.title, 'carpool' as category, NULL as sport_type, c.departure_time as event_time, c.departure_loc as location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' ELSE c.status END as display_status
             FROM carpools c
@@ -894,7 +896,7 @@ router.get('/activities/latest', async (req, res) => {
 
             SELECT 
                 s.id, s.title, 'study' as category, NULL as sport_type, s.event_time as event_time, s.location, s.people_needed, s.host_email, s.status, s.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' ELSE s.status END as display_status
             FROM studies s
@@ -905,7 +907,7 @@ router.get('/activities/latest', async (req, res) => {
 
             SELECT 
                 h.id, h.title, h.category, NULL as sport_type, h.event_time as event_time, h.meeting_location as location, h.people_needed, h.host_email, h.status, h.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' ELSE h.status END as display_status
             FROM hangouts h
@@ -916,7 +918,7 @@ router.get('/activities/latest', async (req, res) => {
 
             SELECT 
                 ho.id, ho.title, 'housing' as category, NULL as sport_type, ho.deadline as event_time, ho.location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
-                u.username as host_name, u.major as host_dept, u.profile_pic,
+                u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
                 (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
                 CASE WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' ELSE ho.status END as display_status
             FROM housing ho

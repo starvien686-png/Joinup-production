@@ -125,7 +125,8 @@ async function processOutbox() {
                     event_title: payload.event_title,
                     snapshot_display_name: payload.snapshot_display_name,
                     snapshot_avatar_url: payload.snapshot_avatar_url,
-                    snapshot_bio: payload.snapshot_bio
+                    snapshot_bio: payload.snapshot_bio,
+                    is_admin: payload.is_admin
                 };
 
                 await sendNotification(payload);
