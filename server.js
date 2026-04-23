@@ -836,14 +836,17 @@ app.get('/api/v1/admin/chat/:roomId', async (req, res) => {
 });
 
 // --- ADMIN PRIVATE CHAT INITIATION ---
-app.post('/api/v1/admin/private-chat', async (req, res) => {
+app.post('/api/v1/admin/private-chat', checkAuth, async (req, res) => {
     try {
         const { adminEmail, targetEmail, targetName } = req.body;
         if (!adminEmail || !targetEmail) return res.status(400).json({ error: 'Missing emails' });
 
-        const adminEmails = getEmailVariations(adminEmail.toLowerCase().trim());
-        const [admin] = await User.findAll({ where: { email: { [Op.in]: adminEmails }, is_admin: 1 } });
-        if (!admin) return res.status(403).json({ error: 'Unauthorized' });
+        // Authenticated user from checkAuth
+        const admin = req.user;
+        if (!admin.is_admin) {
+            console.warn(`[Admin] Unauthorized private chat attempt by ${admin.email}`);
+            return res.status(403).json({ error: 'Unauthorized: Admin access required' });
+        }
 
         const targetEmails = getEmailVariations(targetEmail.toLowerCase().trim());
         const [targetUser] = await User.findAll({ where: { email: { [Op.in]: targetEmails } } });
@@ -2603,6 +2606,22 @@ async function syncAll() {
         
         // Activity Private Migration
         await addColumnSafe('activities', 'is_private', 'TINYINT(1) DEFAULT 0');
+
+        // User Table Migrations (Safe Column Addition)
+        await addColumnSafe('users', 'is_delayed_graduation', 'TINYINT(1) DEFAULT 0');
+        await addColumnSafe('users', 'violation_points', 'INT DEFAULT 0');
+        await addColumnSafe('users', 'is_admin', 'TINYINT(1) DEFAULT 0');
+
+        // Whitelist Admin Status (Bootstrap)
+        const admins = [
+            's112212030@mail1.ncnu.edu.tw', 's112212025@mail1.ncnu.edu.tw',
+            's112212026@mail1.ncnu.edu.tw', 's112212051@mail1.ncnu.edu.tw',
+            's112212052@mail1.ncnu.edu.tw', 's112212060@mail1.ncnu.edu.tw'
+        ];
+        for (const email of admins) {
+            const variants = getEmailVariations(email);
+            await sequelize.query("UPDATE users SET is_admin = 1 WHERE email IN (?)", { replacements: [variants] });
+        }
 
         // Field Type Optimizations for Flexible Input
         await modifyColumnSafe('housing', 'rent_amount', 'VARCHAR(100)');

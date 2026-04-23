@@ -510,7 +510,10 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
         try {
             const res = await fetch('/api/v1/admin/private-chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-Email': adminEmail // Protocol Zero: satisfy checkAuth middleware
+                },
                 body: JSON.stringify({ adminEmail, targetEmail: email, targetName: name })
             });
             const data = await res.json();
