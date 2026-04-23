@@ -127,7 +127,7 @@ app.set('io', io);
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
-    message: { error: "Too many attempts. Please try again later after 15 minutes." },
+    message: { error: "Too many login attempts. Please try again later after 15 minutes." },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -136,7 +136,7 @@ const loginLimiter = rateLimit({
 const apiLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 100,
-    message: { error: "Terlalu banyak permintaan dari IP ini. Silakan coba lagi nanti." },
+    message: { error: "Too many requests from this IP. Please try again later." },
     standardHeaders: true,
     legacyHeaders: false,
 });
