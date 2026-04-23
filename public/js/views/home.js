@@ -772,7 +772,7 @@ export const renderHome = () => {
         onRefresh: () => loadHomeActivities(true)
     });
 
-    // --- Starbucks Promotional Pop-up (Multilingual) ---
+    // --- Starbucks Promotional Pop-up (Multilingual & Gen Z Aesthetic) ---
     const initStarbucksPromo = () => {
         if (localStorage.getItem('hideStarbucksPromo') === 'true') return;
 
@@ -785,6 +785,11 @@ export const renderHome = () => {
                 @keyframes promoSlideUp { 
                     from { transform: translateY(30px); opacity: 0; } 
                     to { transform: translateY(0); opacity: 1; } 
+                }
+                @keyframes neonPulse {
+                    0% { background: linear-gradient(135deg, rgba(168, 230, 207, 0.9) 0%, rgba(255, 211, 182, 0.9) 100%); }
+                    50% { background: linear-gradient(135deg, rgba(255, 211, 182, 0.9) 0%, rgba(168, 230, 207, 0.9) 100%); }
+                    100% { background: linear-gradient(135deg, rgba(168, 230, 207, 0.9) 0%, rgba(255, 211, 182, 0.9) 100%); }
                 }
             `;
             document.head.appendChild(animStyle);
@@ -801,45 +806,43 @@ export const renderHome = () => {
             promoOverlay.style.cssText = `
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background: rgba(0,0,0,0.7); display: flex; align-items: center;
-                justify-content: center; z-index: 1000000; backdrop-filter: blur(5px);
+                justify-content: center; z-index: 1000000; backdrop-filter: blur(10px);
                 animation: promoFadeIn 0.3s ease forwards;
             `;
 
             promoOverlay.innerHTML = `
-                <div style="background: white; width: 90%; max-width: 450px; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: promoSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; max-height: 90vh; overflow-y: auto; color: #333;">
-                    <div style="text-align: center; margin-bottom: 15px;">
-                      <h3 style="margin-bottom: 5px; color: #d4af37;">🎉 【JoinUp! 專屬抽獎 / Exclusive Giveaway】 🎉</h3>
-                      <p style="font-weight: bold; font-size: 1.1em; margin-bottom: 2px;">星巴克禮券等豐富好禮！</p>
-                      <p style="font-size: 0.9em; color: #666; margin-top: 0;">Win Starbucks vouchers and more!</p>
+                <div style="width: 90%; max-width: 500px; border-radius: 24px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: promoSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, neonPulse 6s infinite alternate; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); max-height: 90vh; overflow-y: auto; color: #fff;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                      <h1 style="color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.2); margin-bottom: 5px; font-size: 1.8rem; font-weight: 800;">🚨 【JoinUp! 爆紅抽獎】 🚨</h1>
+                      <p style="font-weight: bold; font-size: 1.2em; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); margin-top: 0;">星巴克請你喝！ <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(JoinUp! Exclusive Starbucks Giveaway!)</span></p>
                     </div>
 
-                    <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                      <p style="margin-top: 0; font-weight: bold;">想要免費喝星巴克嗎？現在就來 JoinUp! 揪團吧！<br>
-                      <span style="font-size: 0.85em; color: #666; font-weight: normal;">Want free Starbucks? Start hosting or joining events on JoinUp! now!</span></p>
-
-                      <ul style="list-style: none; padding-left: 0; margin-bottom: 0;">
-                        <li style="margin-bottom: 12px;">🚀 <strong>發起活動 (Host an Event)</strong>：<br>
-                        獲 <strong>2 次</strong> 抽獎機會 <span style="font-size: 0.85em; color: #666;">(Get 2 entries)</span></li>
-                        
-                        <li>🏃‍♂️ <strong>參加活動 (Join an Event)</strong>：<br>
-                        獲 <strong>1 次</strong> 抽獎機會 <span style="font-size: 0.85em; color: #666;">(Get 1 entry)</span></li>
-                      </ul>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                      <div style="flex: 1; min-width: 150px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">
+                        <p style="font-size: 1.1em; font-weight: bold; margin: 0 0 5px 0; color: #fff;">🚀你是揪團王！<br><span style="font-size: 0.8em; font-weight: normal;">(Host King/Queen!)</span></p>
+                        <p style="margin: 0; font-size: 0.9em; color: #fff;">發起活動 $\rightarrow$ <strong>2 次</strong> 抽獎機會 <br> <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(Get 2 Entries!)</span></p>
+                      </div>
+                      
+                      <div style="flex: 1; min-width: 150px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">
+                        <p style="font-size: 1.1em; font-weight: bold; margin: 0 0 5px 0; color: #fff;">🏃‍♂️你是行動派！<br><span style="font-size: 0.8em; font-weight: normal;">(Joiner!)</span></p>
+                        <p style="margin: 0; font-size: 0.9em; color: #fff;">參加活動 $\rightarrow$ <strong>1 次</strong> 抽獎機會 <br> <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(Get 1 Entry!)</span></p>
+                      </div>
                     </div>
 
-                    <p style="text-align: center; margin-bottom: 15px;">⏰ <strong>活動截止 (Deadline)</strong>：2026/05/07 12:00 PM</p>
+                    <p style="text-align: center; color: #fff; margin-bottom: 20px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">⏰ 截止 (Deadline)：05/07 12:00 PM</p>
 
-                    <div style="text-align: center;">
-                      <a href="https://reurl.cc/O6YKYX" target="_blank" style="display:inline-block; margin: 10px 0; color: #fff; background-color: #f2a900; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">👉 點我查看 IG 詳情 / View IG Details</a>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                      <a href="https://reurl.cc/O6YKYX" target="_blank" style="display:inline-block; padding: 12px 24px; color: #fff; background: linear-gradient(135deg, #f2a900 0%, #d48c00 100%); border-radius: 24px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(242, 169, 0, 0.4); text-transform: uppercase; transition: transform 0.2s;">👉 點我查看 IG 詳情 / View IG Details →</a>
                     </div>
 
-                    <hr style="margin: 15px 0; border: 0.5px solid #eee;">
+                    <hr style="margin: 15px 0; border: 0.5px solid rgba(255,255,255,0.2);">
 
-                    <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 0.9em; color: #555;">
-                      <input type="checkbox" id="hidePromoCheckbox">
+                    <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 0.9em; color: rgba(255,255,255,0.8);">
+                      <input type="checkbox" id="hidePromoCheckbox" style="accent-color: #f2a900; width: 18px; height: 18px;">
                       不再顯示 (Don't show again)
                     </label>
                     
-                    <button id="closePromoBtn" style="margin-top: 15px; width: 100%; padding: 10px; background: #e0e0e0; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">關閉 / Close</button>
+                    <button id="closePromoBtn" style="margin-top: 15px; width: 100%; padding: 12px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s;">關閉 / Close</button>
                 </div>
             `;
 
