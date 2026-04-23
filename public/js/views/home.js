@@ -772,7 +772,7 @@ export const renderHome = () => {
         onRefresh: () => loadHomeActivities(true)
     });
 
-    // --- Starbucks Promotional Pop-up (Multilingual & Gen Z Aesthetic) ---
+    // --- Starbucks Promotional Pop-up (Lively Animated High-Contrast) ---
     const initStarbucksPromo = () => {
         if (localStorage.getItem('hideStarbucksPromo') === 'true') return;
 
@@ -782,14 +782,19 @@ export const renderHome = () => {
             animStyle.id = 'promo-animations';
             animStyle.innerHTML = `
                 @keyframes promoFadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes promoSlideUp { 
-                    from { transform: translateY(30px); opacity: 0; } 
-                    to { transform: translateY(0); opacity: 1; } 
+                @keyframes modalBounce {
+                  0% { transform: scale(0.8); opacity: 0; }
+                  60% { transform: scale(1.05); opacity: 1; }
+                  100% { transform: scale(1); opacity: 1; }
                 }
-                @keyframes neonPulse {
-                    0% { background: linear-gradient(135deg, rgba(168, 230, 207, 0.9) 0%, rgba(255, 211, 182, 0.9) 100%); }
-                    50% { background: linear-gradient(135deg, rgba(255, 211, 182, 0.9) 0%, rgba(168, 230, 207, 0.9) 100%); }
-                    100% { background: linear-gradient(135deg, rgba(168, 230, 207, 0.9) 0%, rgba(255, 211, 182, 0.9) 100%); }
+                @keyframes buttonPulse {
+                  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 112, 74, 0.6); }
+                  70% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(0, 112, 74, 0); }
+                  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 112, 74, 0); }
+                }
+                @keyframes floatEmoji {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-6px); }
                 }
             `;
             document.head.appendChild(animStyle);
@@ -805,46 +810,83 @@ export const renderHome = () => {
             promoOverlay.id = 'starbucks-promo-overlay';
             promoOverlay.style.cssText = `
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.7); display: flex; align-items: center;
-                justify-content: center; z-index: 1000000; backdrop-filter: blur(10px);
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 1000000; backdrop-filter: blur(3px);
                 animation: promoFadeIn 0.3s ease forwards;
             `;
 
             promoOverlay.innerHTML = `
-                <div style="width: 90%; max-width: 500px; border-radius: 24px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: promoSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, neonPulse 6s infinite alternate; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); max-height: 90vh; overflow-y: auto; color: #fff;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                      <h1 style="color: #d4af37; text-shadow: 0 2px 4px rgba(0,0,0,0.2); margin-bottom: 5px; font-size: 1.8rem; font-weight: 800;">🚨 【JoinUp! 爆紅抽獎】 🚨</h1>
-                      <p style="font-weight: bold; font-size: 1.2em; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); margin-top: 0;">星巴克請你喝！ <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(JoinUp! Exclusive Starbucks Giveaway!)</span></p>
-                    </div>
+                <div style="background: #ffffff; padding: 25px 20px; border-radius: 28px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: modalBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; overflow: hidden; color: #333;">
+                  
+                  <div style="position: absolute; top: -50px; left: -50px; width: 150px; height: 150px; background: #00704A; border-radius: 50%; opacity: 0.1;"></div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                      <div style="flex: 1; min-width: 150px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">
-                        <p style="font-size: 1.1em; font-weight: bold; margin: 0 0 5px 0; color: #fff;">🚀你是揪團王！<br><span style="font-size: 0.8em; font-weight: normal;">(Host King/Queen!)</span></p>
-                        <p style="margin: 0; font-size: 0.9em; color: #fff;">發起活動 $\rightarrow$ <strong>2 次</strong> 抽獎機會 <br> <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(Get 2 Entries!)</span></p>
-                      </div>
-                      
-                      <div style="flex: 1; min-width: 150px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">
-                        <p style="font-size: 1.1em; font-weight: bold; margin: 0 0 5px 0; color: #fff;">🏃‍♂️你是行動派！<br><span style="font-size: 0.8em; font-weight: normal;">(Joiner!)</span></p>
-                        <p style="margin: 0; font-size: 0.9em; color: #fff;">參加活動 $\rightarrow$ <strong>1 次</strong> 抽獎機會 <br> <span style="font-size: 0.8em; color: rgba(255,255,255,0.7);">(Get 1 Entry!)</span></p>
-                      </div>
-                    </div>
+                  <div style="text-align: center; margin-bottom: 20px; position: relative; z-index: 1;">
+                    <div style="font-size: 2.5rem; display: inline-block; animation: floatEmoji 2s ease-in-out infinite;">🎁</div>
+                    <h2 style="color: #00704A; font-weight: 900; margin: 10px 0 5px 0; letter-spacing: -0.5px; font-size: 1.4rem;">星巴克請你喝！</h2>
+                    <p style="color: #444; font-weight: 700; font-size: 1.1rem; margin: 0;">JoinUp! 專屬抽獎活動</p>
+                    <p style="color: #888; font-size: 0.85rem; margin: 2px 0 0 0; font-weight: 500;">Win Starbucks vouchers & more!</p>
+                  </div>
 
-                    <p style="text-align: center; color: #fff; margin-bottom: 20px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">⏰ 截止 (Deadline)：05/07 12:00 PM</p>
-
-                    <div style="text-align: center; margin-bottom: 20px;">
-                      <a href="https://reurl.cc/O6YKYX" target="_blank" style="display:inline-block; padding: 12px 24px; color: #fff; background: linear-gradient(135deg, #f2a900 0%, #d48c00 100%); border-radius: 24px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(242, 169, 0, 0.4); text-transform: uppercase; transition: transform 0.2s;">👉 點我查看 IG 詳情 / View IG Details →</a>
-                    </div>
-
-                    <hr style="margin: 15px 0; border: 0.5px solid rgba(255,255,255,0.2);">
-
-                    <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 0.9em; color: rgba(255,255,255,0.8);">
-                      <input type="checkbox" id="hidePromoCheckbox" style="accent-color: #f2a900; width: 18px; height: 18px;">
-                      不再顯示 (Don't show again)
-                    </label>
+                  <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; position: relative; z-index: 1;">
                     
-                    <button id="closePromoBtn" style="margin-top: 15px; width: 100%; padding: 12px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s;">關閉 / Close</button>
+                    <div style="background: #e8f5e9; border: 2px solid #c8e6c9; border-radius: 20px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; transform: rotate(-1deg);">
+                      <div style="font-size: 2rem;">🚀</div>
+                      <div style="text-align: left;">
+                        <p style="margin: 0; color: #1b5e20; font-weight: 800; font-size: 1.05rem;">發起活動 <span style="color: #e65100; font-size: 1.1rem;">+2 次</span></p>
+                        <p style="margin: 0; color: #4caf50; font-weight: 600; font-size: 0.8rem;">Host an event = 2 Entries</p>
+                      </div>
+                    </div>
+
+                    <div style="background: #fff3e0; border: 2px solid #ffe0b2; border-radius: 20px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; transform: rotate(1deg);">
+                      <div style="font-size: 2rem;">🏃‍♂️</div>
+                      <div style="text-align: left;">
+                        <p style="margin: 0; color: #e65100; font-weight: 800; font-size: 1.05rem;">參加活動 <span style="color: #1b5e20; font-size: 1.1rem;">+1 次</span></p>
+                        <p style="margin: 0; color: #ff9800; font-weight: 600; font-size: 0.8rem;">Join an event = 1 Entry</p>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div style="text-align: center; position: relative; z-index: 1;">
+                    <p style="color: #e53935; font-weight: 800; font-size: 0.95rem; margin-bottom: 15px; background: #ffebee; display: inline-block; padding: 5px 12px; border-radius: 20px;">⏰ 截止 05/07 12:00 PM</p>
+                    
+                    <a href="https://reurl.cc/O6YKYX" target="_blank" style="display: block; width: 100%; box-sizing: border-box; background: #00704A; color: #fff; padding: 14px; border-radius: 20px; text-decoration: none; font-weight: 900; font-size: 1.1rem; animation: buttonPulse 2s infinite; letter-spacing: 0.5px;">👉 點我查看 IG 詳情 👈</a>
+                    <p style="color: #888; font-size: 0.75rem; margin-top: 5px;">View IG Details</p>
+                  </div>
+
+                  <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; border-top: 2px dashed #eee; padding-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; color: #666; font-weight: 600;">
+                      <input type="checkbox" id="hidePromoCheckbox" style="width: 16px; height: 16px; accent-color: #00704A;">
+                      不再顯示<br><span style="font-size: 0.7rem; font-weight:normal;">Don't show again</span>
+                    </label>
+                    <button id="closePromoBtn" style="background: #f1f3f5; color: #555; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: background 0.2s;">關閉 Close</button>
+                  </div>
+
                 </div>
             `;
+
+            document.body.appendChild(promoOverlay);
+
+            const closeBtn = document.getElementById('closePromoBtn');
+            const checkbox = document.getElementById('hidePromoCheckbox');
+
+            const dismissPromo = () => {
+                if (checkbox.checked) {
+                    localStorage.setItem('hideStarbucksPromo', 'true');
+                }
+                promoOverlay.style.opacity = '0';
+                promoOverlay.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => promoOverlay.remove(), 300);
+            };
+
+            closeBtn.onclick = dismissPromo;
+            promoOverlay.onclick = (e) => {
+                if (e.target === promoOverlay) dismissPromo();
+            };
+        }, 1500);
+    };
+
+    initStarbucksPromo();
 
             document.body.appendChild(promoOverlay);
 
