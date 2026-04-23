@@ -160,8 +160,8 @@ io.on('connection', (socket) => {
                 created_at: new Date().toISOString()
             });
 
-            handleChatNotification(room_id, sender_email, sender_name, message).catch(err =>
-                logger.error(`[Socket] Push Notification error: ${err.message}`)
+            handleChatNotification(io, room_id, sender_email, sender_name, message).catch(err =>
+                logger.error(`[Socket] Chat Notification error: ${err.message}`)
             );
 
         } catch (error) {
@@ -177,45 +177,78 @@ io.on('connection', (socket) => {
 /**
  * Helper to notify other group members via OneSignal when a new message arrives.
  */
-async function handleChatNotification(roomId, senderEmail, senderName, message) {
+async function handleChatNotification(io, roomId, senderEmail, senderName, message) {
     try {
-        const parts = String(roomId).split('_');
-        if (parts.length < 2) return;
-        const eventType = parts[0];
-        const eventId = parts[1];
-
-        // 1. Get Participants
-        const [participants] = await sequelize.query(
-            `SELECT DISTINCT u.email 
-             FROM event_participants ep
-             JOIN users u ON ep.user_id = u.id
-             WHERE ep.event_type = ? AND ep.event_id = ? AND ep.status IN ('approved', 'accepted')`,
-            { replacements: [eventType, eventId] }
-        );
-
-        // 2. Get Host
-        const mapping = { 'sports': 'activities', 'carpool': 'carpools', 'study': 'studies', 'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' };
-        const tableName = mapping[eventType] || 'activities';
-        const [hostData] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [eventId] });
-
-        let allEmails = participants.map(p => p.email);
-        if (hostData.length > 0) allEmails.push(hostData[0].host_email);
-
-        // 3. Exclude sender and de-duplicate
         const senderVariants = getEmailVariations(senderEmail).map(e => e.toLowerCase().trim());
-        const targetEmails = [...new Set(allEmails)]
+        
+        // 1. Get ALL participants for this room directly from chat_participants
+        // This is more reliable than event_participants for private/special rooms
+        const [participants] = await sequelize.query(
+            `SELECT user_email FROM chat_participants WHERE room_id = ?`,
+            { replacements: [String(roomId)] }
+        );
+        
+        const recipientEmails = participants
+            .map(p => p.user_email)
             .filter(email => email && !senderVariants.includes(email.toLowerCase().trim()));
 
-        if (targetEmails.length > 0) {
-            const pushTitle = `💬 You got a message from ${senderName}`;
-            const snippet = message.length > 60 ? message.substring(0, 60) + "..." : message;
-            const pushBody = snippet;
-            const url = `https://joinup-production.onrender.com/#messages/${roomId}`;
-
-            await pushService.sendPushNotification(targetEmails, pushTitle, pushBody, url);
+        if (recipientEmails.length === 0) {
+            // Fallback to legacy logic for older rooms or if chat_participants is out of sync
+            const parts = String(roomId).split('_');
+            if (parts.length >= 2) {
+                const eventType = parts[0];
+                const eventId = parts[1];
+                const mapping = { 'sports': 'activities', 'carpool': 'carpools', 'study': 'studies', 'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' };
+                const tableName = mapping[eventType] || 'activities';
+                const [hostData] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [eventId] }).catch(() => [[]]);
+                if (hostData && hostData.length > 0 && !senderVariants.includes(hostData[0].host_email.toLowerCase().trim())) {
+                    recipientEmails.push(hostData[0].host_email);
+                }
+            }
         }
+
+        const uniqueRecipients = [...new Set(recipientEmails)];
+
+        for (const email of uniqueRecipients) {
+            const [users] = await sequelize.query(`SELECT id FROM users WHERE LOWER(email) = LOWER(?)`, { replacements: [email] });
+            if (users.length > 0) {
+                const userId = users[0].id;
+                const metadata = JSON.stringify({
+                    message: `[Chat] ${senderName}: ${message.substring(0, 40)}${message.length > 40 ? '...' : ''}`,
+                    sender_name: senderName,
+                    room_id: roomId,
+                    link: `#messages?room=${roomId}`
+                });
+                
+                // Insert into in-app notifications
+                await sequelize.query(
+                    `INSERT INTO system_notifications (id, recipient_id, type, aggregate_id, metadata, action_metadata, created_at)
+                     VALUES (UUID(), ?, 'chat_message', ?, ?, '{}', NOW())`,
+                    { replacements: [userId, `chat_${roomId}_${Date.now()}`, metadata] }
+                ).catch(err => console.error("[ChatNotif] DB Insert Error:", err));
+
+                // Real-time socket signal for inbox/toast
+                if (io) {
+                    const targetRoom = `user_${email.toLowerCase().trim()}`;
+                    io.to(targetRoom).emit('new_chat_notification', {
+                        roomId,
+                        senderName,
+                        message: message.substring(0, 100)
+                    });
+                }
+            }
+        }
+
+        // 4. OneSignal Push Notification
+        if (uniqueRecipients.length > 0) {
+            const pushTitle = `💬 Message from ${senderName}`;
+            const snippet = message.length > 80 ? message.substring(0, 80) + "..." : message;
+            const url = `https://joinup-production.onrender.com/#messages?room=${roomId}`;
+            await pushService.sendPushNotification(uniqueRecipients, pushTitle, snippet, url).catch(err => console.error("[OneSignal] Error:", err));
+        }
+
     } catch (err) {
-        console.error("[OneSignal] Background notification failure:", err);
+        console.error("[ChatNotification] Critical failure:", err);
     }
 }
 
@@ -1238,6 +1271,11 @@ app.post('/chat', checkAuth, async (req, res) => {
             ]
         });
 
+        // Trigger notifications
+        handleChatNotification(io, room_id, sender_email, sender_name, message).catch(err =>
+            console.error("[ChatAPI] Notification error:", err)
+        );
+
         res.status(201).json({ message: 'Message sent successfully! 🚀' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to send message: ' + error.message });
@@ -1973,10 +2011,11 @@ app.get('/my-chat-rooms/:email', async (req, res) => {
             FROM chat_rooms r
             LEFT JOIN (SELECT is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN chat_participants p ON r.room_id = p.room_id
-            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR p.user_email IN (?))
+            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(p.user_email) IN (?))
+            GROUP BY r.room_id
             ORDER BY r.created_at DESC
         `;
-        const [rooms] = await sequelize.query(query, { replacements: [userEmail, emails] });
+        const [rooms] = await sequelize.query(query, { replacements: [userEmail, emails.map(e => e.toLowerCase())] });
         res.json(rooms);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -2004,6 +2043,12 @@ app.post('/send-message', checkAuth, async (req, res) => {
 
         const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
         await sequelize.query(query, { replacements: [room_id, sender_email, sender_name, message] });
+
+        // Trigger notifications
+        handleChatNotification(io, room_id, sender_email, sender_name, message).catch(err =>
+            console.error("[SendMsgAPI] Notification error:", err)
+        );
+
         res.status(201).json({ message: "Message sent!" });
     } catch (error) {
         res.status(500).json({ error: error.message });
