@@ -133,11 +133,15 @@ router.post('/join', async (req, res) => {
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
 
+        const emails = getEmailVariations(user_email);
         const [users] = await sequelize.query(
-            'SELECT id, username, profile_pic, bio FROM users WHERE email = ?',
-            { replacements: [user_email], transaction: t }
+            'SELECT id, username, profile_pic, bio FROM users WHERE LOWER(email) IN (?)',
+            { replacements: [emails.map(e => e.toLowerCase())], transaction: t }
         );
-        if (users.length === 0) throw { status: 404, errorCode: 'USER_NOT_FOUND', message: 'User not found' };
+        if (users.length === 0) {
+            logger.error(`[Join] User not found: ${user_email} (Variations: ${emails.join(', ')})`);
+            throw { status: 404, errorCode: 'USER_NOT_FOUND', message: 'User not found' };
+        }
 
         const user = users[0];
         const snapshot_display_name = user.username;
@@ -150,7 +154,7 @@ router.post('/join', async (req, res) => {
         const timeCol = getTimeColumn(event_type);
 
         const [events] = await sequelize.query(
-            `SELECT title, status, host_email, ${capacityCol} as capacity, deadline, 
+            `SELECT id, title, status, host_email, ${capacityCol} as capacity, deadline, 
              ${(event_type === 'housing' || event_type === 'groupbuy') ? 'deadline' : timeCol} as start_time 
              FROM ${tableName} WHERE id = ? FOR UPDATE`,
             { replacements: [event_id], transaction: t }
@@ -159,12 +163,19 @@ router.post('/join', async (req, res) => {
 
         const event = events[0];
         const event_title = event.title;
+        
+        // --- LOGGING FOR DEBUGGING ---
+        const currentTaipei = nowTaipei();
+        const deadline = event.deadline || event.start_time;
+        logger.info(`[Join] Attempt by ${user_email} to join ${event_type}:${event_id}. Event Status: ${event.status}, Deadline: ${deadline}, Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')}`);
+
         if (event.status !== 'open' && event.status !== 'active') {
+            logger.warn(`[Join] Rejecting because event status is ${event.status}`);
             throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
         }
 
-        const deadline = event.deadline || event.start_time;
-        if (deadline && nowTaipei().isAfter(dayjs(deadline))) {
+        if (deadline && currentTaipei.isAfter(dayjs(deadline))) {
+            logger.warn(`[Join] Rejecting because deadline ${deadline} has passed (Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')})`);
             throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
         }
         if (event.host_email === user_email) {

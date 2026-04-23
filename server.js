@@ -1008,9 +1008,14 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
 app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
             SELECT a.*,
-                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                   CASE 
+                     WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
+                     ELSE a.status 
+                   END AS display_status
             FROM activities a 
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON a.id = ep.event_id AND ep.event_type = 'sports' AND ep.user_id = u_part.id
@@ -1019,7 +1024,7 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
             ORDER BY a.created_at DESC
         `;
         const [results] = await sequelize.query(query, {
-            replacements: [userEmail, userEmail, userEmail]
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail]
         });
         res.json(results);
     } catch (error) {
@@ -1425,9 +1430,14 @@ app.get('/carpool/:id', async (req, res) => {
 app.get('/my-carpools/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
             SELECT c.*,
-                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                   CASE 
+                     WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
+                     ELSE c.status 
+                   END AS display_status
             FROM carpools c
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON c.id = ep.event_id AND ep.event_type = 'carpool' AND ep.user_id = u_part.id
@@ -1435,7 +1445,9 @@ app.get('/my-carpools/:email', async (req, res) => {
               AND (c.status != 'full' OR (LOWER(c.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY c.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+        });
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-carpools:", error);
@@ -1600,9 +1612,14 @@ app.put('/update-study-status/:id', async (req, res) => {
 app.get('/my-studies/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
             SELECT s.*,
-                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                   CASE 
+                     WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
+                     ELSE s.status 
+                   END AS display_status
             FROM studies s
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON s.id = ep.event_id AND ep.event_type = 'study' AND ep.user_id = u_part.id
@@ -1610,7 +1627,9 @@ app.get('/my-studies/:email', async (req, res) => {
               AND (s.status != 'full' OR (LOWER(s.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY s.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+        });
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-studies:", error);
@@ -1791,9 +1810,14 @@ app.put('/update-hangout-status/:id', async (req, res) => {
 app.get('/my-hangouts/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
             SELECT h.*,
-                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+                   (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                   CASE 
+                     WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
+                     ELSE h.status 
+                   END AS display_status
             FROM hangouts h
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON h.id = ep.event_id AND ep.event_type = 'hangout' AND ep.user_id = u_part.id
@@ -1801,7 +1825,9 @@ app.get('/my-hangouts/:email', async (req, res) => {
               AND (h.status != 'full' OR (LOWER(h.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY h.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { 
+            replacements: [currentTime, currentTime, userEmail, userEmail, userEmail] 
+        });
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-hangouts:", error);
@@ -2017,15 +2043,23 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
 app.get('/my-housing/:email', async (req, res) => {
     try {
         const userEmail = (req.params.email || '').toLowerCase().trim();
+        const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
-            SELECT ho.* FROM housing ho
+            SELECT ho.*,
+                   CASE 
+                     WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
+                     ELSE ho.status 
+                   END AS display_status
+            FROM housing ho
             LEFT JOIN users u_part ON LOWER(u_part.email) = ?
             LEFT JOIN event_participants ep ON ho.id = ep.event_id AND (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.user_id = u_part.id
             WHERE (LOWER(ho.host_email) = ? OR ep.id IS NOT NULL)
               AND (ho.status != 'full' OR (LOWER(ho.host_email) = ? OR (ep.id IS NOT NULL AND ep.status IN ('approved', 'accepted'))))
             ORDER BY ho.created_at DESC
         `;
-        const [results] = await sequelize.query(query, { replacements: [userEmail, userEmail, userEmail] });
+        const [results] = await sequelize.query(query, { 
+            replacements: [currentTime, userEmail, userEmail, userEmail] 
+        });
         res.json(results);
     } catch (error) {
         console.error("[Manage] Error in /my-housing:", error);
