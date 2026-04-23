@@ -214,6 +214,9 @@
 .announcement-body {
     padding: 20px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .announcement-item {

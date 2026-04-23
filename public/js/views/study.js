@@ -340,21 +340,21 @@ export const renderStudy = () => {
                     const userStatus = myStatuses[statusKey];
                     const isPast = p.display_status === 'expired';
                     const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
-                    const isFull = p.status === 'full' || totalActiveCount >= p.people_needed;
+                    const isStudyFull = p.status === 'full' || totalActiveCount >= p.people_needed;
                     const isSuccess = p.status === 'success';
 
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-                    } else if (isPast || isFull || isSuccess) {
-                        const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
+                    } else if (isPast || isStudyFull || isSuccess) {
+                        const lockLabel = isPast ? I18n.t('status.expired') : (isStudyFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
                     } else {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>`;
                     }
 
                     return `
-                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isPast ? 'opacity: 0.6;' : (isFull ? 'opacity: 0.8;' : '')} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card); color: var(--text-primary);">
+                        <div class="card" onclick="window.showStudyDetail('${p.id}')" style="cursor: pointer; ${isPast ? 'opacity: 0.6;' : (isStudyFull ? 'opacity: 0.8;' : '')} margin-bottom: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 1.2rem; transition: transform 0.2s; background: var(--bg-card); color: var(--text-primary);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                 <div style="background: var(--bg-secondary); color: var(--accent-color); padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--border-color);">
                                     ${p.event_type} ${isPast ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}
@@ -379,7 +379,7 @@ export const renderStudy = () => {
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <span style="font-size: 0.85rem; color: var(--text-secondary);"><strong>👥 ${isZH ? '人數' : 'People'}:</strong> <span style="color:var(--accent-color); font-weight:bold;">${totalActiveCount} / ${p.people_needed}</span></span>
-                                ${(isFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: var(--accent-color); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--border-color);">${t('common.full', '額滿', 'Full')}</span>` : ''}
+                                ${(isStudyFull || p.status === 'full') ? `<span style="font-size: 0.8rem; color: var(--accent-color); background: var(--bg-secondary); padding: 4px 8px; border-radius: 10px; border: 1px solid var(--border-color);">${t('common.full', '額滿', 'Full')}</span>` : ''}
                             </div>
 
                             ${actionBtn}

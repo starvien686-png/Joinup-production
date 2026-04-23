@@ -703,11 +703,16 @@ window.showAnnouncements = async () => {
                 <button class="announcement-close" onclick="this.closest('.announcement-overlay').remove()">×</button>
             </div>
             <div class="announcement-body">
+                <style>
+                    .notif-section { margin-bottom: 24px; }
+                    .notif-section h3 { font-size: 0.9rem; color: #888; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+                    .notif-list, .announcement-list { display: flex; flex-direction: column; gap: 12px; }
+                </style>
                 <div class="notif-section">
                     <h3>${txtPersonal}</h3>
                     <div class="notif-list">${renderPersonal()}</div>
                 </div>
-                <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
+                <div style="height: 1px; background: rgba(0,0,0,0.05); margin: 20px 0;"></div>
                 <div class="notif-section">
                     <h3>${txtSystem}</h3>
                     <div class="announcement-list">${renderSystem()}</div>

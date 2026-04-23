@@ -325,7 +325,7 @@ export const renderSports = () => {
         const postsHtml = posts.length ? posts.map(p => {
             const isHost = (p.authorId === user.email);
             const totalActiveCount = Math.max(1, parseInt(p.approvedCount) || 0);
-            const isFull = totalActiveCount >= p.maxParticipants || p.status === 'full';
+            const isSportsFull = totalActiveCount >= p.maxParticipants || p.status === 'full';
             const isExpired = p.display_status === 'expired';
             const isSuccess = p.status === 'success';
             const statusKey = `${p.category || 'sports'}_${p.id}`;
@@ -342,8 +342,8 @@ export const renderSports = () => {
                 >
                     💬 ${txtJoinChat}
                 </button>`;
-            } else if (isExpired || isFull || isSuccess) {
-                const label = isExpired ? txtExpired : (isFull ? txtFull : (isZH ? '已完成' : 'Finished'));
+            } else if (isExpired || isSportsFull || isSuccess) {
+                const label = isExpired ? txtExpired : (isSportsFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                 actionBtn = `
                 <button 
                     class="btn btn-full" 
@@ -364,7 +364,7 @@ export const renderSports = () => {
             }
 
             return `
-            <div class="card" style="${isExpired ? 'opacity: 0.6;' : (isFull || isSuccess ? 'opacity: 0.8;' : '')} margin-bottom: 1rem;">
+            <div class="card" style="${isExpired ? 'opacity: 0.6;' : (isSportsFull || isSuccess ? 'opacity: 0.8;' : '')} margin-bottom: 1rem;">
                 <div onclick="window.showEventDetail('${p.id}')" style="cursor: pointer;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
                         <span style="font-size: 0.8rem; padding: 0.2rem 0.5rem; background: #FFEBEE; color: #D32F2F; border-radius: 4px;">

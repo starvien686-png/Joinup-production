@@ -146,7 +146,7 @@ export const renderActivities = async () => {
             const statusKey = `${p.category || 'sports'}_${p.id}`;
             const roleStatus = myStatuses[statusKey];
             const isPast = p.display_status === 'expired';
-            const isFull = p.status === 'full';
+            const isEventFull = p.status === 'full';
             const isSuccess = p.status === 'success';
 
             let actionBtn = '';
@@ -156,15 +156,15 @@ export const renderActivities = async () => {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
-            } else if (isPast || isFull || isSuccess) {
-                const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
+            } else if (isPast || isEventFull || isSuccess) {
+                const lockLabel = isPast ? I18n.t('status.expired') : (isEventFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${lockLabel}</button>`;
             } else {
                 actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">申請加入 / Apply to Join</button>`;
             }
 
             return `
-                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1.2rem; padding: 18px; ${isPast ? 'opacity: 0.6;' : (isFull || isSuccess ? 'opacity: 0.8;' : '')}">
+                <div class="card" onclick="window.showUniversalDetail('${p.id}', '${p.category}')" style="cursor: pointer; margin-bottom: 1.2rem; padding: 18px; ${isPast ? 'opacity: 0.6;' : (isEventFull || isSuccess ? 'opacity: 0.8;' : '')}">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName} ${isPast ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}

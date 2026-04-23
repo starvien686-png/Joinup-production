@@ -508,7 +508,7 @@ export const renderHome = () => {
                     // Determine participant status
                     const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
                     const isPast = p.display_status === 'expired';
-                    const isFull = p.status === 'full';
+                    const isActivityFull = p.status === 'full';
                     const isSuccess = p.status === 'success';
 
                     if (user.is_admin || (user.email && p.host_email && user.email === p.host_email) || roleStatus === 'approved' || roleStatus === 'accepted') {
@@ -520,9 +520,9 @@ export const renderHome = () => {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
                                 ⏳ Pending...
                             </button>`;
-                    } else if (isPast || isFull || isSuccess) {
+                    } else if (isPast || isActivityFull || isSuccess) {
                         // ABSOLUTE LOCKDOWN for past/full events
-                        const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
+                        const lockLabel = isPast ? I18n.t('status.expired') : (isActivityFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 ${lockLabel}
                             </button>`;

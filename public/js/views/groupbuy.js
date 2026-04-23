@@ -593,21 +593,21 @@ export const renderGroupBuy = () => {
             const userStatus = myStatuses[statusKey];
             const isPast = p.display_status === 'expired';
             const isParticipant = userStatus === 'approved' || userStatus === 'accepted';
-            const isFull = p.status === 'full' || (p.peopleCount !== undefined && p.peopleCount <= 0);
+            const isPostFull = p.status === 'full' || (p.peopleCount !== undefined && p.peopleCount <= 0);
             const isSuccess = p.status === 'success';
 
             const safeTitle = (p.title || '').replace(/'/g, "\\'");
             let btnHtml = '';
             if (isHost || isParticipant) {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
-            } else if (isPast || isFull || isSuccess) {
-                const lockLabel = isPast ? I18n.t('status.expired') : (isFull ? (I18n.t('common.full') || 'FULL') : (isZH ? '已完成' : 'Finished'));
+            } else if (isPast || isPostFull || isSuccess) {
+                const lockLabel = isPast ? I18n.t('status.expired') : (isPostFull ? (I18n.t('common.full') || 'FULL') : (isZH ? '已完成' : 'Finished'));
                 btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed; background: #9E9E9E;">${lockLabel}</button>`;
             } else {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 申請加入 / Apply to Join</button>`;
             }
             return `
-            <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem; ${isPast ? 'opacity: 0.6;' : (isFull ? 'opacity: 0.8;' : '')}">
+            <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem; ${isPast ? 'opacity: 0.6;' : (isPostFull ? 'opacity: 0.8;' : '')}">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <span class="badge ${p.type !== 'off_campus' ? 'badge-primary' : 'badge-secondary'}" style="margin-bottom: 0.5rem;">
                         ${getHousingTypeDisplay(p)} ${isPast ? `<span style="background: #9E9E9E; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 5px; font-size: 0.6rem; font-weight: normal;">${I18n.t('status.expired')}</span>` : ''}
