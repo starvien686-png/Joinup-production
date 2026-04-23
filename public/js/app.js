@@ -1729,8 +1729,8 @@ window.addEventListener('hashchange', () => {
             #starbucks-promo-overlay {
                 position: fixed;
                 top: 0; left: 0; width: 100vw; height: 100vh;
-                background: rgba(0, 40, 26, 0.7); /* Deep green tinted overlay */
-                backdrop-filter: blur(12px);
+                background: rgba(0, 40, 26, 0.75); /* Deep green tinted overlay */
+                backdrop-filter: blur(10px);
                 display: flex; align-items: center; justify-content: center;
                 z-index: 2147483647;
                 font-family: 'Outfit', 'Noto Sans TC', sans-serif;
@@ -1739,13 +1739,14 @@ window.addEventListener('hashchange', () => {
 
             #starbucks-promo-modal {
                 background: #FFFDF9; /* Light Cream Background */
-                width: 100%; max-width: 420px;
-                padding: 45px 24px 28px;
+                width: 90%; max-width: 380px;
+                max-height: 85vh; overflow-y: auto;
+                padding: clamp(24px, 8vw, 40px) clamp(16px, 5vw, 24px) 24px;
                 border-radius: 32px;
                 position: relative;
                 box-shadow: 0 40px 100px rgba(0,0,0,0.6);
                 text-align: center;
-                border: 6px solid #00704A; /* Starbucks Green */
+                border: 5px solid #00704A; /* Starbucks Green */
                 animation: promoBounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             }
 
@@ -1755,59 +1756,71 @@ window.addEventListener('hashchange', () => {
             }
 
             #starbucks-promo-emoji {
-                font-size: 80px; display: block; margin-bottom: 12px;
+                font-size: clamp(2rem, 10vw, 3.5rem); 
+                display: block; margin-bottom: 12px;
                 animation: promoFloat 3s ease-in-out infinite;
                 filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
             }
 
             @keyframes promoFloat {
                 0%, 100% { transform: translateY(0) rotate(-3deg); }
-                50% { transform: translateY(-25px) rotate(3deg); }
+                50% { transform: translateY(-20px) rotate(3deg); }
             }
 
             #starbucks-promo-title {
-                color: #00704A; font-weight: 900; font-size: 38px;
-                margin: 0; line-height: 1.1; letter-spacing: -1.5px;
+                color: #00704A; font-weight: 900; 
+                font-size: clamp(1.3rem, 7vw, 1.8rem);
+                margin: 0; line-height: 1.1; letter-spacing: -1px;
             }
 
             #starbucks-promo-subtitle {
-                color: #888; font-size: 16px; font-weight: 700;
-                margin-top: 4px; margin-bottom: 30px;
+                color: #888; 
+                font-size: clamp(0.75rem, 3vw, 0.9rem);
+                font-weight: 700;
+                margin-top: 4px; margin-bottom: clamp(20px, 6vw, 30px);
                 text-transform: uppercase; letter-spacing: 1px;
             }
 
             .promo-sticker-card {
-                background: #FFFFFF; border-radius: 28px; padding: 20px;
-                margin-bottom: 20px; border: 5px solid #00704A;
-                box-shadow: 10px 10px 0px #00704A; transition: all 0.2s ease;
+                background: #FFFFFF; border-radius: 28px; 
+                padding: clamp(14px, 4vw, 20px);
+                margin-bottom: clamp(14px, 4vw, 20px); 
+                border: 4px solid #00704A;
+                box-shadow: 8px 8px 0px #00704A; transition: all 0.2s ease;
             }
 
             .sticker-host { transform: rotate(1.5deg); }
             .sticker-join { transform: rotate(-1.5deg); }
 
             .promo-card-cn {
-                font-weight: 900; font-size: 28px;
+                font-weight: 900; 
+                font-size: clamp(1.2rem, 6vw, 1.6rem);
                 color: #e65100; /* Vibrant Orange */
                 display: block; margin-bottom: 4px;
             }
 
             .promo-card-en {
-                font-weight: 700; font-size: 14px;
+                font-weight: 700; 
+                font-size: clamp(0.7rem, 2.5vw, 0.85rem);
                 color: #888; /* Visually secondary English */
                 display: block;
             }
 
             #starbucks-promo-deadline {
                 font-weight: 900; color: #FFF; background: #333;
-                margin: 10px 0 30px; font-size: 16px; display: inline-block;
-                padding: 10px 24px; border-radius: 50px;
+                margin: 10px 0 clamp(20px, 6vw, 30px); 
+                font-size: clamp(0.85rem, 3vw, 1rem); 
+                display: inline-block;
+                padding: 8px 24px; border-radius: 50px;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             }
 
             #starbucks-promo-cta {
                 display: block; background: #e65100; color: white !important;
-                text-decoration: none; font-weight: 900; font-size: 24px;
-                padding: 24px; border-radius: 24px; margin-bottom: 30px;
+                text-decoration: none; font-weight: 900; 
+                font-size: clamp(1.1rem, 5vw, 1.4rem);
+                padding: clamp(18px, 5vw, 24px); 
+                border-radius: 20px; margin-bottom: 30px;
                 box-shadow: 0 15px 30px rgba(230, 81, 0, 0.4);
                 animation: promoPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
                 transition: transform 0.2s, filter 0.2s;
@@ -1823,23 +1836,27 @@ window.addEventListener('hashchange', () => {
 
             #starbucks-promo-footer {
                 display: flex; flex-direction: column; align-items: center; gap: 20px;
-                margin-top: 10px; padding-top: 25px; border-top: 3px dashed #E0E0E0;
+                margin-top: 10px; padding-top: clamp(20px, 6vw, 25px); 
+                border-top: 3px dashed #E0E0E0;
             }
 
             .promo-footer-row { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
             .promo-checkbox-label {
-                display: flex; align-items: center; gap: 12px;
-                font-size: 15px; color: #888; cursor: pointer;
+                display: flex; align-items: center; gap: 10px;
+                font-size: clamp(0.8rem, 3vw, 0.95rem); 
+                color: #888; cursor: pointer;
                 font-weight: 700; user-select: none;
             }
 
-            .promo-checkbox-label input { width: 22px; height: 22px; accent-color: #00704A; cursor: pointer; }
+            .promo-checkbox-label input { width: 20px; height: 20px; accent-color: #00704A; cursor: pointer; }
 
             #starbucks-promo-close-btn {
-                background: #F0F0F0; border: none; padding: 12px 28px;
+                background: #F0F0F0; border: none; 
+                padding: 10px clamp(16px, 5vw, 28px);
                 border-radius: 16px; font-weight: 900; color: #555;
-                cursor: pointer; transition: all 0.2s; font-size: 16px;
+                cursor: pointer; transition: all 0.2s; 
+                font-size: clamp(0.8rem, 3vw, 0.95rem);
             }
 
             #starbucks-promo-close-btn:hover { background: #E5E5E5; color: #222; }
@@ -1906,4 +1923,5 @@ window.addEventListener('hashchange', () => {
         initStarbucksPromo();
     }
 })();
+
 
