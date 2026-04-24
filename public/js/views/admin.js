@@ -13,7 +13,7 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
         { email: 's112212051@mail1.ncnu.edu.tw', pwd: 'joinup51admin', name: '鄭飛英' },
         { email: 's112212052@mail1.ncnu.edu.tw', pwd: 'joinup52admin', name: '許薇荌' },
         { email: 's112212060@mail1.ncnu.edu.tw', pwd: 'joinup60admin', name: '楊慧賢' },
-        { email: 'ncnujoinupadmin@gmail.com', pwd: 'supportadmin895!', name: 'JoinUp Admin' }
+        { email: 'ncnujoinupadmin@gmail.com', pwd: 'supportadmin895!', name: 'JUJU' }
     ];
 
     // Admin Authentication Check
