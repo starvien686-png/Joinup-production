@@ -52,5 +52,8 @@
   },
   {
     "Tables_in_joinup": "users"
+  },
+  {
+    "Tables_in_joinup": "violation_logs"
   }
 ]

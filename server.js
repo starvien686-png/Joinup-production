@@ -160,15 +160,21 @@ io.on('connection', (socket) => {
 
     socket.on('register_user', (email) => {
         if (!email) return;
-        const privateRoom = `user_${email.toLowerCase().trim()}`;
+        // BUG 2 FIX: Store user identity on the socket object
+        socket.userEmail = email.toLowerCase().trim();
+        const privateRoom = `user_${socket.userEmail}`;
         socket.join(privateRoom);
-        logger.info(`[Socket] User ${email} (client ${socket.id}) registered to private room: ${privateRoom}`);
+        logger.info(`[Socket] User ${socket.userEmail} (client ${socket.id}) registered to private room: ${privateRoom}`);
     });
 
 
     socket.on('send_message', async (data) => {
         try {
-            const { room_id, sender_email, sender_name, message } = data;
+            const { room_id, message, sender_name } = data;
+            
+            // BUG 2 FIX: Extract sender_email from socket session or fallback strictly
+            const sender_email = socket.userEmail || data.sender_email; 
+            if (!sender_email) return logger.error("[Socket] send_message rejected: No sender_email provided.");
 
             const [uData] = await sequelize.query(`SELECT username, is_admin FROM users WHERE email = ?`, { replacements: [sender_email] });
             const realSenderName = (uData.length > 0 && uData[0].username) ? uData[0].username : (sender_name || 'JoinUp User');
@@ -220,16 +226,33 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
             .filter(email => email && !senderVariants.includes(email.toLowerCase().trim()));
 
         if (recipientEmails.length === 0) {
-            // Fallback to legacy logic for older rooms or if chat_participants is out of sync
-            const parts = String(roomId).split('_');
-            if (parts.length >= 2) {
-                const eventType = parts[0];
-                const eventId = parts[1];
-                const mapping = { 'sports': 'activities', 'carpool': 'carpools', 'study': 'studies', 'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' };
-                const tableName = mapping[eventType] || 'activities';
-                const [hostData] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [eventId] }).catch(() => [[]]);
-                if (hostData && hostData.length > 0 && !senderVariants.includes(hostData[0].host_email.toLowerCase().trim())) {
-                    recipientEmails.push(hostData[0].host_email);
+            // BUG 1 FIX: Specific logic for Private Admin Support Chats
+            if (String(roomId).startsWith('private_admin_')) {
+                const parts = String(roomId).split('_');
+                const targetUserId = parts[2];
+                const [targetUserData] = await sequelize.query(`SELECT email FROM users WHERE id = ?`, { replacements: [targetUserId] });
+                
+                if (targetUserData.length > 0) {
+                    const targetEmail = targetUserData[0].email;
+                    const adminEmail = 'ncnujoinupadmin@gmail.com';
+                    // If Admin is sender, target is user. If User is sender, target is Admin.
+                    const finalTarget = senderVariants.includes(adminEmail) ? targetEmail : adminEmail;
+                    if (!senderVariants.includes(finalTarget.toLowerCase().trim())) {
+                        recipientEmails.push(finalTarget);
+                    }
+                }
+            } else {
+                // Fallback to legacy logic for group rooms
+                const parts = String(roomId).split('_');
+                if (parts.length >= 2) {
+                    const eventType = parts[0];
+                    const eventId = parts[1];
+                    const mapping = { 'sports': 'activities', 'carpool': 'carpools', 'study': 'studies', 'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' };
+                    const tableName = mapping[eventType] || 'activities';
+                    const [hostData] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [eventId] }).catch(() => [[]]);
+                    if (hostData && hostData.length > 0 && !senderVariants.includes(hostData[0].host_email.toLowerCase().trim())) {
+                        recipientEmails.push(hostData[0].host_email);
+                    }
                 }
             }
         }
@@ -351,9 +374,10 @@ const otpRateLimiter = rateLimit({
 
 // --- AUTHENTICATION MIDDLEWARE ---
 const checkAuth = async (req, res, next) => {
-    const userEmail = req.headers['x-user-email'] || req.body.sender_email || req.body.email || req.query.email;
+    // BUG 2 FIX: Strictly use headers for identity, avoid trusting body/query for sender_email
+    const userEmail = req.headers['x-user-email']; 
     if (!userEmail) {
-        console.warn('[Auth] Missing authentication headers/body.');
+        console.warn('[Auth] Missing authentication headers.');
         return res.status(401).json({ error: 'Authentication required. Please login first.' });
     }
 

@@ -234,7 +234,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     };
 
     const appendSingleMessage = (msg) => {
-        const isMine = (msg.sender_email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim();
+        // BUG 2 FIX: Strictly evaluate POV using currentUserEmail
+        const currentUserEmail = (user.email || '').toLowerCase().trim();
+        const msgSenderEmail = (msg.sender_email || '').toLowerCase().trim();
+        const isMine = msgSenderEmail === currentUserEmail;
         const date = new Date(msg.created_at);
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         const crownIcon = msg.role === 'host' ? '👑 ' : '';
@@ -322,7 +325,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             const latestAnnouncement = allAnnouncements.length > 0 ? allAnnouncements[allAnnouncements.length - 1] : null;
 
             newMessages.forEach(msg => {
-                const isMine = (msg.sender_email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim();
+                // BUG 2 FIX: Strictly evaluate POV using currentUserEmail
+                const currentUserEmail = (user.email || '').toLowerCase().trim();
+                const msgSenderEmail = (msg.sender_email || '').toLowerCase().trim();
+                const isMine = msgSenderEmail === currentUserEmail;
                 const date = new Date(msg.created_at);
                 const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                 const crownIcon = msg.role === 'host' ? '👑 ' : '';

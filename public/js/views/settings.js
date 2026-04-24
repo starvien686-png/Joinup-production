@@ -226,10 +226,8 @@ export const renderSettings = () => {
     // 4. LOGIKA LOGOUT
     document.getElementById('btn-logout').onclick = () => {
         if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('userProfile');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('last_notif_id');
+            // BUG 2 FIX: Use clear() to ensure no residual data or tokens remain
+            localStorage.clear();
             window.location.reload();
         }
     };
