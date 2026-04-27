@@ -1129,7 +1129,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'sports' AND ep.event_id = a.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                        CASE 
                          WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE a.status 
@@ -1447,7 +1447,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'carpool' AND ep.event_id = c.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                        CASE 
                          WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
                          ELSE c.status 
@@ -1647,7 +1647,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'study' AND ep.event_id = s.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                        CASE 
                          WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
                          ELSE s.status 
@@ -1847,7 +1847,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'hangout' AND ep.event_id = h.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                        CASE 
                          WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
                          ELSE h.status 
@@ -2189,7 +2189,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants WHERE (event_type = 'housing' OR event_type = 'groupbuy') AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
+                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.event_id = ho.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                        CASE 
                          WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
                          ELSE ho.status 
@@ -2770,8 +2770,12 @@ async function startEventRetirementWorker() {
 
                 for (const event of candidates) {
                     const [parts] = await sequelize.query(`
-                        SELECT COUNT(*) as count FROM event_participants 
-                        WHERE event_type = ? AND event_id = ? AND status IN ('approved', 'accepted')
+                        SELECT COUNT(*) as count 
+                        FROM event_participants ep
+                        JOIN users u ON ep.user_id = u.id
+                        WHERE ep.event_type = ? AND ep.event_id = ? 
+                          AND ep.status IN ('approved', 'accepted')
+                          AND u.is_admin = 0 AND u.email != 'ncnujoinupadmin@gmail.com'
                     `, { replacements: [cat.type, event.id] });
                     const count = parseInt(parts[0].count, 10);
 
