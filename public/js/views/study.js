@@ -346,7 +346,7 @@ export const renderStudy = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-                    } else if (user && user.is_admin) {
+                    } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
                     } else if (isPast || isStudyFull || isSuccess) {

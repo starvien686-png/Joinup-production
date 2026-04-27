@@ -144,7 +144,7 @@ router.post('/join', async (req, res) => {
         }
 
         const user = users[0];
-        const isAdmin = !!user.is_admin;
+        const isAdmin = !!user.is_admin || user_email.toLowerCase() === 'ncnujoinupadmin@gmail.com';
         const snapshot_display_name = user.username;
         const snapshot_avatar_url = user.profile_pic;
         const snapshot_bio = user.bio;

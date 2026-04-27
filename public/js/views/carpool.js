@@ -440,7 +440,7 @@ export const renderCarpool = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${txtJoinChat}</button>`;
-                    } else if (user && user.is_admin) {
+                    } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
                     } else if (isPast || isCarFull || isSuccess) {

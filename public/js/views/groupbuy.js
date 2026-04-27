@@ -600,7 +600,7 @@ export const renderGroupBuy = () => {
             let btnHtml = '';
             if (isHost || isParticipant) {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
-            } else if (user && user.is_admin) {
+            } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // God Mode: Admin can join anything
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
             } else if (isPast || isPostFull || isSuccess) {

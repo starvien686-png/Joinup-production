@@ -516,7 +516,7 @@ export const renderHome = () => {
                         return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
-                    } else if (user.is_admin) {
+                    } else if (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com') {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 Pantau Acara 🕵️‍♀️
                             </button>`;

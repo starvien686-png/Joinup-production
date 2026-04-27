@@ -530,7 +530,7 @@ app.post('/login', loginLimiter, async (req, res) => {
                 violation_points: user.violation_points || 0,
                 creditPoints: user.credit_points || 0,
                 violationCount: user.violation_points || 0,
-                is_admin: !!user.is_admin
+                is_admin: !!user.is_admin || user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com'
             }
         });
 

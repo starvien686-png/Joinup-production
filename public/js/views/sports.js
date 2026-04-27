@@ -342,7 +342,7 @@ export const renderSports = () => {
                 >
                     💬 ${txtJoinChat}
                 </button>`;
-            } else if (user && user.is_admin) {
+            } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 actionBtn = `
                 <button 
                     class="btn" 
