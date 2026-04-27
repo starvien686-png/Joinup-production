@@ -518,7 +518,7 @@ export const renderHome = () => {
                             </button>`;
                     } else if (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com') {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                Pantau Acara 🕵️‍♀️
+                                Monitor Event 🕵️‍♀️
                             </button>`;
                     } else if (roleStatus === 'pending') {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
@@ -552,9 +552,9 @@ export const renderHome = () => {
         }
 
         const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
-        const confirmTitle = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : 'Are you sure you want to join?';
+        const confirmTitle = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : 'Are you sure you want to join?';
         const confirmDesc = isAdmin
-            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
+            ? 'You will join this activity using <strong>Superadmin Bypass</strong>. You will be automatically approved and added to the chat.'
             : 'The request will be sent to the Host. While waiting for approval, the status will be Pending.';
 
         // Custom Confirmation Modal
@@ -567,7 +567,7 @@ export const renderHome = () => {
                     </p>
                     <div style="display: flex; gap: 15px; justify-content: center;">
                         <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">${isAdmin ? 'Batal' : 'Cancel'}</button>
-                        <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">${isAdmin ? 'Konfirmasi Pantau' : 'Submit'}</button>
+                        <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">${isAdmin ? 'Monitor Event' : 'Submit'}</button>
                     </div>
                 </div>
             </div>
@@ -597,7 +597,7 @@ export const renderHome = () => {
                 document.getElementById('join-confirm-overlay').remove();
 
                 if (out.success && out.data && out.data.status === 'approved') {
-                    alert('Berhasil masuk ke mode pantau! 🕵️‍♀️');
+                    alert('Admin override success! Entering monitor mode. 🕵️‍♀️');
                     if (window.refreshHome) window.refreshHome();
                     else if (window.renderHome) window.renderHome();
                 } else {

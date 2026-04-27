@@ -602,7 +602,7 @@ export const renderGroupBuy = () => {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // God Mode: Admin can join anything
-                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
             } else if (isPast || isPostFull || isSuccess) {
                 const lockLabel = isPast ? I18n.t('status.expired') : (isPostFull ? (I18n.t('common.full') || 'FULL') : (isZH ? '已完成' : 'Finished'));
                 btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed; background: #9E9E9E;">${lockLabel}</button>`;
@@ -1565,9 +1565,9 @@ export const renderGroupBuy = () => {
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
-        const msgConfirm = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Application');
+        const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Application');
         const msgDesc = isAdmin
-            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
+            ? 'You will join this activity using <strong>Superadmin Bypass</strong>. You will be automatically approved and added to the chat.'
             : (isZH
                 ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？<br><small style="color:#888">發起人將收到您的個人資料並決定是否接受</small>`
                 : `Apply to join <strong>${teamName}</strong>?<br><small style="color:#888">The host will review your profile and decide</small>`);
@@ -1583,7 +1583,7 @@ export const renderGroupBuy = () => {
                             ${isAdmin ? 'Batal' : (isZH ? '取消' : 'Cancel')}
                         </button>
                         <button id="btn-housing-confirm-join" style="flex:1;padding:0.8rem;background:linear-gradient(135deg,#FF8C00,#FF6D00);color:white;border-radius:8px;border:none;cursor:pointer;font-weight:bold;">
-                            ${isAdmin ? 'Konfirmasi Pantau' : (isZH ? '確認送出' : 'Submit')}
+                            ${isAdmin ? 'Monitor Event' : (isZH ? '確認送出' : 'Submit')}
                         </button>
                     </div>
                 </div>
@@ -1612,7 +1612,7 @@ export const renderGroupBuy = () => {
 
                 if (out.success) {
                     if (out.data && (out.data.status === 'approved' || out.data.status === 'accepted')) {
-                        alert(isAdmin ? 'Berhasil masuk ke mode pantau! 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
+                        alert(isAdmin ? 'Admin override success! Entering monitor mode. 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
                         if (ov) ov.remove();
                         updateView();
                         return;
