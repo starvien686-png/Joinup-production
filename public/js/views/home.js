@@ -327,7 +327,7 @@ export const renderHome = () => {
                 if (p.status === 'cancelled' || p.status === 'deleted') return false;
 
                 // 2. Time filter removed to show history on Home Page
-                
+
                 // 3. Static people_needed check from DB
                 if (p.people_needed !== undefined && p.people_needed <= 0 && p.status === 'open') return false;
 
@@ -518,7 +518,7 @@ export const renderHome = () => {
                             </button>`;
                     } else if (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com') {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                Pantau Acara 🕵️‍♀️
+                                Monitor Event 🕵️‍♀️
                             </button>`;
                     } else if (roleStatus === 'pending') {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
@@ -554,8 +554,8 @@ export const renderHome = () => {
 
             const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
             const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : 'Are you sure you want to join?';
-            const confirmDesc = isAdmin 
-                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.' 
+            const confirmDesc = isAdmin
+                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
                 : 'The request will be sent to the Host. While waiting for approval, the status will be Pending.';
 
             // Custom Confirmation Modal

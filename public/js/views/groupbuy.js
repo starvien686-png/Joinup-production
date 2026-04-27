@@ -588,7 +588,7 @@ export const renderGroupBuy = () => {
             const sTags = normalizeTags(p.scheduleTags);
             const hTags = normalizeTags(p.habitTags);
             const isHost = (p.host_email || p.authorId) === user.email;
-            
+
             const statusKey = `housing_${p.id}`;
             const userStatus = myStatuses[statusKey];
             const isPast = p.display_status === 'expired';
@@ -602,7 +602,7 @@ export const renderGroupBuy = () => {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // God Mode: Admin can join anything
-                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
             } else if (isPast || isPostFull || isSuccess) {
                 const lockLabel = isPast ? I18n.t('status.expired') : (isPostFull ? (I18n.t('common.full') || 'FULL') : (isZH ? '已完成' : 'Finished'));
                 btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed; background: #9E9E9E;">${lockLabel}</button>`;
@@ -1520,7 +1520,7 @@ export const renderGroupBuy = () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(postData)
                     });
-                    
+
                     const result = await response.json();
 
                     if (response.ok) {
@@ -1566,7 +1566,7 @@ export const renderGroupBuy = () => {
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Application');
-        const msgDesc = isAdmin 
+        const msgDesc = isAdmin
             ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
             : (isZH
                 ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？<br><small style="color:#888">發起人將收到您的個人資料並決定是否接受</small>`

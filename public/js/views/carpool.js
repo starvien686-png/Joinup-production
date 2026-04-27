@@ -442,7 +442,7 @@ export const renderCarpool = () => {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${txtJoinChat}</button>`;
                     } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
                     } else if (isPast || isCarFull || isSuccess) {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isCarFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
@@ -722,7 +722,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
     const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
 
     const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
-    const msgDesc = isAdmin 
+    const msgDesc = isAdmin
         ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
         : t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
     const txtFinancial = t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues');
@@ -765,7 +765,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
                 if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
                     alert(isAppZH() ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
                     document.getElementById('join-overlay').remove();
-                    window.location.reload(); 
+                    window.location.reload();
                     return;
                 }
 
@@ -780,7 +780,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
 
                 alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
                 document.getElementById('join-overlay').remove();
-                window.location.reload(); 
+                window.location.reload();
             } else {
                 alert(isAppZH() ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                 btnSubmit.disabled = false;

@@ -48,9 +48,9 @@ export const renderActivities = async () => {
         const isPostActive = (p) => {
             // Strictly hide deleted and cancelled posts
             if (p.status === 'cancelled' || p.status === 'deleted') return false;
-            
+
             // Time filter removed to show history in Activities dashboard
-            
+
             // Capacity check simplified
             if (p.people_needed !== undefined && p.people_needed <= 0 && p.status === 'open') return false;
             return true;
@@ -155,7 +155,7 @@ export const renderActivities = async () => {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // Admin God Mode Override
-                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Pantau Acara 🕵️‍♀️</button>`;
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Monitor Event 🕵️‍♀️</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
             } else if (isPast || isEventFull || isSuccess) {
@@ -262,8 +262,8 @@ export const renderActivities = async () => {
 
             const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
             const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
-            const confirmDesc = isAdmin 
-                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.' 
+            const confirmDesc = isAdmin
+                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
                 : (I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.');
 
             const confirmHtml = `
@@ -289,7 +289,7 @@ export const renderActivities = async () => {
                 try {
                     const out = await api.fetch('/api/v1/join', { method: 'POST', body: { event_type: category || 'sports', event_id: eventId, user_email: u.email } });
                     document.getElementById('join-confirm-overlay').remove();
-                    
+
                     if (out.success && out.data && out.data.status === 'approved') {
                         alert('Admin Override: Joined successfully! / 管理員已進入。');
                         if (window.renderActivities) window.renderActivities();
@@ -321,7 +321,7 @@ export const renderActivities = async () => {
             const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
             const totalNeeded = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
             const capacityFraction = `${approvedCnt} / ${totalNeeded}`;
-            
+
             const evTimeStr = p.eventtime || p.eventTime || p.event_time || p.departure_time || p.deadline || p.created_at;
             const dTime = new Date(evTimeStr);
             const timeStr = dTime.toLocaleString('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });

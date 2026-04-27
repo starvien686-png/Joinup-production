@@ -406,7 +406,7 @@ export const renderTravel = () => {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutChat('${p.id}', '${p.title}', '${p.host_email}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
                     } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? '查看報名表' : 'View Applications'}</button>`;
                     } else if (isPast || isTravelFull || isSuccess) {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isTravelFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
@@ -687,7 +687,7 @@ export const renderTravel = () => {
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認報名參加' : 'Confirm Request');
-        const msgDesc = isAdmin 
+        const msgDesc = isAdmin
             ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
             : (isZH ? `您確定要報名參加 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`);
 

@@ -348,7 +348,7 @@ export const renderStudy = () => {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
                     } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
                     } else if (isPast || isStudyFull || isSuccess) {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isStudyFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
@@ -621,7 +621,7 @@ export const renderStudy = () => {
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Request');
-        const msgDesc = isAdmin 
+        const msgDesc = isAdmin
             ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
             : (isZH ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`);
 
@@ -657,6 +657,7 @@ export const renderStudy = () => {
                     body: { event_type: 'study', event_id: postId, user_email: userProfile.email }
                 });
 
+                if (result.success) {
                     if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
                         alert(isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
                         document.getElementById('join-overlay').remove();
@@ -667,7 +668,7 @@ export const renderStudy = () => {
                                 renderList().then(html => {
                                     postList.innerHTML = html;
                                     // re-bind listeners might be needed but for now let's hope it works or just use navigate
-                                    window.location.reload(); 
+                                    window.location.reload();
                                 });
                             } else {
                                 window.location.reload();
@@ -689,45 +690,45 @@ export const renderStudy = () => {
 
                     alert(isZH ? '申請已送出！' : 'Request sent!');
                     document.getElementById('join-overlay').remove();
-                    window.location.reload(); 
+                    window.location.reload();
                 } else {
                     alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                     btnSubmit.disabled = false;
                     btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
                 }
-            } catch (e) {
-                console.error("Join Request Error:", e);
-                alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
-                btnSubmit.disabled = false;
-                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
-            }
-        };
+        } catch (e) {
+            console.error("Join Request Error:", e);
+            alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
+        }
     };
+};
 
 
 
 
-    // --- POPUP DETAIL STUDY ---
-    window.showStudyDetail = async (id) => {
-        try {
-            const response = await fetch('/studies');
-            const data = await response.json();
-            const p = data.find(item => String(item.id) === String(id));
-            if (!p) return;
+// --- POPUP DETAIL STUDY ---
+window.showStudyDetail = async (id) => {
+    try {
+        const response = await fetch('/studies');
+        const data = await response.json();
+        const p = data.find(item => String(item.id) === String(id));
+        if (!p) return;
 
-            const existingOverlay = document.getElementById('study-detail-overlay');
-            if (existingOverlay) existingOverlay.remove();
+        const existingOverlay = document.getElementById('study-detail-overlay');
+        if (existingOverlay) existingOverlay.remove();
 
-            const isZH = isAppZH();
-            const dTime = new Date(p.event_time);
-            const timeStr = isZH
-                ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
-                : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+        const isZH = isAppZH();
+        const dTime = new Date(p.event_time);
+        const timeStr = isZH
+            ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
+            : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
-            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
-            const activeFrac = `${approvedCnt} / ${p.people_needed}`;
+        const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+        const activeFrac = `${approvedCnt} / ${p.people_needed}`;
 
-            const modalHtml = `
+        const modalHtml = `
                 <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
                     <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
                         <button onclick="document.getElementById('study-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--text-secondary);">✕</button>
@@ -757,23 +758,23 @@ export const renderStudy = () => {
                     </div>
                 </div>
             `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        } catch (e) { console.error(e); }
-    };
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    } catch (e) { console.error(e); }
+};
 
 
 
-    // Taruh di bagian bawah file carpool.js dan study.js
-    window.openGroupChat = (activityId) => {
-        const userProfileStr = localStorage.getItem('userProfile');
-        if (!userProfileStr) {
-            alert(I18n.t('auth.err.login_required') || "Please login first!");
-            return;
-        }
-        window.navigateTo(`messages?room=study_${activityId}`);
-    };
+// Taruh di bagian bawah file carpool.js dan study.js
+window.openGroupChat = (activityId) => {
+    const userProfileStr = localStorage.getItem('userProfile');
+    if (!userProfileStr) {
+        alert(I18n.t('auth.err.login_required') || "Please login first!");
+        return;
+    }
+    window.navigateTo(`messages?room=study_${activityId}`);
+};
 
-    updateView();
+updateView();
 };
 
 window.showReviewStudyAppModal = (appId, postId, applicantEmail, teamName) => {

@@ -349,7 +349,7 @@ export const renderSports = () => {
                     onclick="event.stopPropagation(); window.openJoinForm('${p.id}', '${p.teamName}');" 
                     style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
                 >
-                    🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}
+                    🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}
                 </button>`;
             } else if (isExpired || isSportsFull || isSuccess) {
                 const label = isExpired ? txtExpired : (isSportsFull ? txtFull : (isZH ? '已完成' : 'Finished'));
@@ -453,7 +453,7 @@ export const renderSports = () => {
         const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認加入' : 'Confirm Join');
-        const msgDesc = isAdmin 
+        const msgDesc = isAdmin
             ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
             : (isZH ? `您確定要報名參與 <strong>${teamName}</strong> 嗎？發起人將會收到您的申請。` : `Are you sure you want to apply for <strong>${teamName}</strong>? The host will receive your request.`);
         const msgCancel = isZH ? '取消' : 'Cancel';
@@ -649,7 +649,7 @@ export const renderSports = () => {
         if (currentState === 'landing') bindLandingListeners();
         else if (currentState === 'create') bindCreateListeners();
         else if (currentState === 'list') bindListListeners();
-        
+
         if (window.checkNotificationBadge) window.checkNotificationBadge();
     };
 
@@ -661,7 +661,7 @@ export const renderSports = () => {
 
     const bindCreateListeners = () => {
         document.querySelector('.btn-back')?.addEventListener('click', () => { currentState = 'landing'; updateView(); });
-        
+
         const eventTypeSelect = document.getElementById('eventType');
         const customEventType = document.getElementById('customEventType');
         eventTypeSelect?.addEventListener('change', () => {
@@ -749,7 +749,7 @@ export const renderSports = () => {
                 } else {
                     activeFilters[filterType] = parsedValue;
                 }
-                
+
                 const overlay = document.getElementById('filter-overlay');
                 if (overlay) {
                     overlay.outerHTML = renderFilterPanel().then(html => {
@@ -774,8 +774,8 @@ export const renderSports = () => {
     };
 
     window.showEventDetail = (postId) => {
-         // Simple detail view or alert
-         alert(I18n.t('common.loading') || "Loading...");
+        // Simple detail view or alert
+        alert(I18n.t('common.loading') || "Loading...");
     };
 
     window.openGroupChat = (activityId) => {
