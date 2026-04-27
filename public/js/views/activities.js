@@ -150,10 +150,12 @@ export const renderActivities = async () => {
             const isSuccess = p.status === 'success';
 
             let actionBtn = '';
-            if ((user && user.is_admin) || (user && user.email && p.hostEmail && user.email === p.hostEmail)) {
-                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#1976D2; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
-            } else if (roleStatus === 'approved' || roleStatus === 'accepted') {
-                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#4CAF50; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);">💬 進入聊天室 / Enter Chat</button>`;
+            if ((user && user.email && p.hostEmail && user.email === p.hostEmail) || roleStatus === 'approved' || roleStatus === 'accepted') {
+                const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
+                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 進入聊天室 / Enter Chat</button>`;
+            } else if (user && user.is_admin) {
+                // Admin God Mode Override
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Pantau Acara 🕵️‍♀️</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
             } else if (isPast || isEventFull || isSuccess) {
@@ -281,8 +283,15 @@ export const renderActivities = async () => {
                 try {
                     const out = await api.fetch('/api/v1/join', { method: 'POST', body: { event_type: category || 'sports', event_id: eventId, user_email: u.email } });
                     document.getElementById('join-confirm-overlay').remove();
-                    alert(I18n.t('common.join_sent') || 'Application sent! Please wait for approval.');
-                    btn.innerText = "⏳ Pending..."; btn.style.background = "#9E9E9E"; btn.style.cursor = "not-allowed"; btn.onclick = (e) => e.stopPropagation();
+                    
+                    if (out.success && out.data && out.data.status === 'approved') {
+                        alert('Admin Override: Joined successfully! / 管理員已進入。');
+                        if (window.renderActivities) window.renderActivities();
+                        else if (window.refreshHome) window.refreshHome();
+                    } else {
+                        alert(I18n.t('common.join_sent') || 'Application sent! Please wait for approval.');
+                        btn.innerText = "⏳ Pending..."; btn.style.background = "#9E9E9E"; btn.style.cursor = "not-allowed"; btn.onclick = (e) => e.stopPropagation();
+                    }
                     if (window.syncNotifications) window.syncNotifications();
                 } catch (e) {
                     alert('Error: ' + (e.message || 'Unknown error'));

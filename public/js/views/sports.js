@@ -342,6 +342,15 @@ export const renderSports = () => {
                 >
                     💬 ${txtJoinChat}
                 </button>`;
+            } else if (user && user.is_admin) {
+                actionBtn = `
+                <button 
+                    class="btn" 
+                    onclick="event.stopPropagation(); window.openJoinForm('${p.id}', '${p.teamName}');" 
+                    style="width: 100%; margin-top: 0.8rem; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer; transition: transform 0.2s; font-size: 0.95rem;"
+                >
+                    🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}
+                </button>`;
             } else if (isExpired || isSportsFull || isSuccess) {
                 const label = isExpired ? txtExpired : (isSportsFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                 actionBtn = `
@@ -479,6 +488,23 @@ export const renderSports = () => {
 
             // PENYEDOT FOTO UNIVERSAL (Agar Foto Profil yang muncul di Account Settings tidak hilang)
             const finalAvatar = user.profile_pic || user.profilePic || user.avatar || user.picture || '';
+
+            // --- BACKEND INTEGRATION ---
+            try {
+                const result = await api.fetch('/api/v1/join', {
+                    method: 'POST',
+                    body: { event_type: 'sports', event_id: postId, user_email: user.email }
+                });
+
+                if (result.success && result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
+                    alert(isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
+                    document.getElementById('join-overlay').remove();
+                    updateView(); // Refresh list to show "Enter Chat"
+                    return;
+                }
+            } catch (e) {
+                console.error("Backend join error:", e);
+            }
 
             const appId = window.AppEngine.saveApp({
                 postId: postId,

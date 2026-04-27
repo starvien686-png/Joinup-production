@@ -346,6 +346,9 @@ export const renderStudy = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                    } else if (user && user.is_admin) {
+                        // God Mode: Admin can join anything
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
                     } else if (isPast || isStudyFull || isSuccess) {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isStudyFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
@@ -649,7 +652,27 @@ export const renderStudy = () => {
                     body: { event_type: 'study', event_id: postId, user_email: userProfile.email }
                 });
 
-                if (result.success) {
+                    if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
+                        alert(isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
+                        document.getElementById('join-overlay').remove();
+                        // Refresh the view to show "Enter Chat"
+                        if (typeof renderList === 'function') {
+                            const postList = document.querySelector('.post-list');
+                            if (postList) {
+                                renderList().then(html => {
+                                    postList.innerHTML = html;
+                                    // re-bind listeners might be needed but for now let's hope it works or just use navigate
+                                    window.location.reload(); 
+                                });
+                            } else {
+                                window.location.reload();
+                            }
+                        } else {
+                            window.location.reload();
+                        }
+                        return;
+                    }
+
                     // 2. Legacy Local Fallback
                     window.StudyAppEngine.saveApp({
                         postId: postId,
@@ -661,6 +684,7 @@ export const renderStudy = () => {
 
                     alert(isZH ? '申請已送出！' : 'Request sent!');
                     document.getElementById('join-overlay').remove();
+                    window.location.reload(); 
                 } else {
                     alert(isZH ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                     btnSubmit.disabled = false;

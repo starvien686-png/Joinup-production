@@ -511,10 +511,14 @@ export const renderHome = () => {
                     const isActivityFull = p.status === 'full';
                     const isSuccess = p.status === 'success';
 
-                    if (user.is_admin || (user.email && p.host_email && user.email === p.host_email) || roleStatus === 'approved' || roleStatus === 'accepted') {
+                    if ((user.email && p.host_email && user.email === p.host_email) || roleStatus === 'approved' || roleStatus === 'accepted') {
                         const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
                         return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 💬 進入聊天室 / Enter Chat
+                            </button>`;
+                    } else if (user.is_admin) {
+                        return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                Pantau Acara 🕵️‍♀️
                             </button>`;
                     } else if (roleStatus === 'pending') {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
@@ -587,11 +591,17 @@ export const renderHome = () => {
 
                     document.getElementById('join-confirm-overlay').remove();
 
-                    alert('申請已送出！ / Application sent!');
-                    btn.innerText = "⏳ Pending...";
-                    btn.style.background = "#9E9E9E";
-                    btn.style.cursor = "not-allowed";
-                    btn.onclick = (e) => e.stopPropagation();
+                    if (out.success && out.data && out.data.status === 'approved') {
+                        alert('Admin Override: Joined successfully! / 管理員已進入。');
+                        if (window.refreshHome) window.refreshHome();
+                        else if (window.renderHome) window.renderHome();
+                    } else {
+                        alert('申請已送出！ / Application sent!');
+                        btn.innerText = "⏳ Pending...";
+                        btn.style.background = "#9E9E9E";
+                        btn.style.cursor = "not-allowed";
+                        btn.onclick = (e) => e.stopPropagation();
+                    }
 
                     if (window.syncNotifications) window.syncNotifications();
                 } catch (e) {

@@ -440,6 +440,9 @@ export const renderCarpool = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${txtJoinChat}</button>`;
+                    } else if (user && user.is_admin) {
+                        // God Mode: Admin can join anything
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Pantau Acara' : 'Admin Override'}</button>`;
                     } else if (isPast || isCarFull || isSuccess) {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isCarFull ? txtFull : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
@@ -752,6 +755,14 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
             });
 
             if (result.success) {
+                // If the user is an admin, they might be immediately approved
+                if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
+                    alert(isAppZH() ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
+                    document.getElementById('join-overlay').remove();
+                    window.location.reload(); 
+                    return;
+                }
+
                 // 2. Legacy Local Fallback
                 window.CarpoolAppEngine.saveApp({
                     postId: postId,
@@ -763,6 +774,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
 
                 alert(t('cp.alert.sent', '申請已送出！請等待車主確認。', 'Request sent! Please wait for host confirmation.'));
                 document.getElementById('join-overlay').remove();
+                window.location.reload(); 
             } else {
                 alert(isAppZH() ? ("申請失敗：" + (result.message || "未知錯誤")) : ("Request failed: " + (result.message || "Unknown error")));
                 btnSubmit.disabled = false;

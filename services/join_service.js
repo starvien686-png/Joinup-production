@@ -144,6 +144,7 @@ router.post('/join', async (req, res) => {
         }
 
         const user = users[0];
+        const isAdmin = !!user.is_admin;
         const snapshot_display_name = user.username;
         const snapshot_avatar_url = user.profile_pic;
         const snapshot_bio = user.bio;
@@ -167,40 +168,42 @@ router.post('/join', async (req, res) => {
         // --- LOGGING FOR DEBUGGING ---
         const currentTaipei = nowTaipei();
         const deadline = event.deadline || event.start_time;
-        logger.info(`[Join] Attempt by ${user_email} to join ${event_type}:${event_id}. Event Status: ${event.status}, Deadline: ${deadline}, Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')}`);
+        logger.info(`[Join] Attempt by ${user_email} to join ${event_type}:${event_id}. Admin: ${isAdmin}, Event Status: ${event.status}, Deadline: ${deadline}, Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')}`);
 
-        if (event.status !== 'open' && event.status !== 'active') {
-            logger.warn(`[Join] Rejecting because event status is ${event.status}`);
-            throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
-        }
+        // --- BYPASS LOGIC FOR ADMIN ---
+        if (!isAdmin) {
+            if (event.status !== 'open' && event.status !== 'active') {
+                logger.warn(`[Join] Rejecting because event status is ${event.status}`);
+                throw { status: 400, errorCode: 'EVENT_LOCKED', message: 'Event is no longer open for registration' };
+            }
 
-        if (deadline && currentTaipei.isAfter(dayjs(deadline))) {
-            logger.warn(`[Join] Rejecting because deadline ${deadline} has passed (Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')})`);
-            throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
-        }
-        if (event.host_email === user_email) {
-            throw { status: 400, errorCode: 'SELF_JOIN_FORBIDDEN', message: 'Host cannot join their own event' };
-        }
+            if (deadline && currentTaipei.isAfter(dayjs(deadline))) {
+                logger.warn(`[Join] Rejecting because deadline ${deadline} has passed (Now: ${currentTaipei.format('YYYY-MM-DD HH:mm:ss')})`);
+                throw { status: 400, errorCode: 'EVENT_CLOSED', message: 'Registration deadline has passed' };
+            }
 
-        const [approved] = await sequelize.query(
-            "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
-            { replacements: [event_type, event_id], transaction: t }
-        );
+            if (event.host_email === user_email) {
+                throw { status: 400, errorCode: 'SELF_JOIN_FORBIDDEN', message: 'Host cannot join their own event' };
+            }
 
-        // --- CAPACITY CHECK ---
-        const approvedCount = parseInt(approved[0].count, 10);
-        // Host-Inclusive Rule: Host is included in the total capacity for all modules.
-        // The DB count (approvedCount) already includes the auto-joined host.
-        const currentCount = approvedCount;
+            const [approved] = await sequelize.query(
+                "SELECT COUNT(*) as count FROM event_participants WHERE event_type = ? AND event_id = ? AND status = 'approved' FOR UPDATE",
+                { replacements: [event_type, event_id], transaction: t }
+            );
 
-        if (currentCount >= event.capacity) {
-            throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
+            // --- CAPACITY CHECK ---
+            const approvedCount = parseInt(approved[0].count, 10);
+            if (approvedCount >= event.capacity) {
+                throw { status: 409, errorCode: 'EVENT_FULL', message: 'Event has reached maximum capacity' };
+            }
         }
 
         const [parts] = await sequelize.query(
             "SELECT id, status FROM event_participants WHERE event_type = ? AND event_id = ? AND user_id = ? FOR UPDATE",
             { replacements: [event_type, event_id, user_id], transaction: t }
         );
+
+        const targetStatus = isAdmin ? 'approved' : 'pending';
 
         if (parts.length > 0) {
             const current = parts[0];
@@ -209,44 +212,59 @@ router.post('/join', async (req, res) => {
             }
             await sequelize.query(
                 `UPDATE event_participants 
-                 SET status = 'pending', version = version + 1, 
+                 SET status = ?, version = version + 1, 
                      snapshot_display_name = ?, snapshot_avatar_url = ?, snapshot_bio = ?,
                      updated_at = NOW()
                  WHERE id = ?`,
-                { replacements: [snapshot_display_name, snapshot_avatar_url, snapshot_bio, current.id], transaction: t }
+                { replacements: [targetStatus, snapshot_display_name, snapshot_avatar_url, snapshot_bio, current.id], transaction: t }
             );
         } else {
             await sequelize.query(
                 `INSERT INTO event_participants 
                  (event_type, event_id, user_id, status, snapshot_display_name, snapshot_avatar_url, snapshot_bio, created_at, updated_at) 
-                 VALUES (?, ?, ?, 'pending', ?, ?, ?, NOW(), NOW())`,
-                { replacements: [event_type, event_id, user_id, snapshot_display_name, snapshot_avatar_url, snapshot_bio], transaction: t }
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                { replacements: [event_type, event_id, user_id, targetStatus, snapshot_display_name, snapshot_avatar_url, snapshot_bio], transaction: t }
+            );
+        }
+
+        // --- AUTO CHAT JOIN FOR ADMIN ---
+        if (isAdmin) {
+            const roomId = `${event_type}_${event_id}`;
+            await sequelize.query(
+                "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member') ON DUPLICATE KEY UPDATE role = 'member'",
+                { replacements: [roomId, user_email, snapshot_display_name], transaction: t }
             );
         }
 
         await sequelize.query(
             `INSERT INTO audit_logs (id, actor_id, event_id, action, new_state, request_id, timestamp) 
-             VALUES (UUID(), ?, ?, 'JOIN_REQUEST', 'pending', ?, NOW())`,
-            { replacements: [user_id, event_id, req.requestId], transaction: t }
+             VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
+            { replacements: [user_id, event_id, isAdmin ? 'ADMIN_JOIN_OVERRIDE' : 'JOIN_REQUEST', targetStatus, req.requestId], transaction: t }
         );
 
-        const outboxPayload = JSON.stringify({
-            recipient_email: event.host_email,
-            event_type, event_id, user_email,
-            snapshot_display_name, snapshot_avatar_url, snapshot_bio,
-            is_admin: user.is_admin,
-            event_title,
-            actionType: 'OPEN_REVIEW_MODAL',
-            targetId: event_id,
-            version: '1'
-        });
-        await sequelize.query(
-            `INSERT INTO outbox_events (id, idempotency_key, aggregate_type, aggregate_id, type, payload, created_at) 
-             VALUES (UUID(), ?, 'participant', ?, 'join_request', ?, NOW())`,
-            { replacements: [req.idempotencyKey || req.requestId, `join_${event_type}_${event_id}_${user_id}`, outboxPayload], transaction: t }
-        );
+        if (!isAdmin) {
+            const outboxPayload = JSON.stringify({
+                recipient_email: event.host_email,
+                event_type, event_id, user_email,
+                snapshot_display_name, snapshot_avatar_url, snapshot_bio,
+                is_admin: user.is_admin,
+                event_title,
+                actionType: 'OPEN_REVIEW_MODAL',
+                targetId: event_id,
+                version: '1'
+            });
+            await sequelize.query(
+                `INSERT INTO outbox_events (id, idempotency_key, aggregate_type, aggregate_id, type, payload, created_at) 
+                 VALUES (UUID(), ?, 'participant', ?, 'join_request', ?, NOW())`,
+                { replacements: [req.idempotencyKey || req.requestId, `join_${event_type}_${event_id}_${user_id}`, outboxPayload], transaction: t }
+            );
+        }
 
         await t.commit();
+
+        if (isAdmin) {
+            return res.status(200).json({ success: true, message: 'Admin Override: Joined successfully', data: { status: 'approved' }, requestId: req.requestId });
+        }
 
         try {
             const hostEmail = event.host_email;
@@ -267,7 +285,7 @@ router.post('/join', async (req, res) => {
                     snapshot_display_name,
                     snapshot_avatar_url,
                     snapshot_bio,
-                    is_admin
+                    is_admin: isAdmin
                 });
                 console.log(`[Socket] Targeted join_request emitted to: ${hostRoom}`);
             }
