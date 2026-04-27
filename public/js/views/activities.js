@@ -155,7 +155,7 @@ export const renderActivities = async () => {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // Admin God Mode Override
-                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Pantau Acara 🕵️‍♀️</button>`;
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Monitor Event 🕵️‍♀️</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
             } else if (isPast || isEventFull || isSuccess) {
@@ -260,7 +260,7 @@ export const renderActivities = async () => {
         if (!u.email) { alert("Please login first!"); return; }
 
         const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
-        const confirmTitle = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
+        const confirmTitle = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
         const confirmDesc = isAdmin
             ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
             : (I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.');
@@ -275,7 +275,7 @@ export const renderActivities = async () => {
                     </p>
                     <div style="display: flex; gap: 12px;">
                         <button onclick="document.getElementById('join-confirm-overlay').remove()" style="flex: 1; padding: 12px; border-radius: 12px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">${isAdmin ? 'Batal' : 'Cancel'}</button>
-                        <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">${isAdmin ? 'Konfirmasi Pantau' : 'Confirm'}</button>
+                        <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">${isAdmin ? 'Monitor Event' : 'Confirm'}</button>
                     </div>
                 </div>
             </div>`;
@@ -290,7 +290,7 @@ export const renderActivities = async () => {
                 document.getElementById('join-confirm-overlay').remove();
 
                 if (out.success && out.data && out.data.status === 'approved') {
-                    alert('Berhasil masuk ke mode pantau! 🕵️‍♀️');
+                    alert('You are now monitoring this event! 🕵️‍♀️');
                     if (window.renderActivities) window.renderActivities();
                     else if (window.refreshHome) window.refreshHome();
                 } else {

@@ -620,9 +620,9 @@ export const renderStudy = () => {
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
-        const msgConfirm = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Request');
+        const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Request');
         const msgDesc = isAdmin
-            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
+            ? 'You will join this activity using <strong>Superadmin Bypass</strong>. You will be automatically approved and added to the chat.'
             : (isZH ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`);
 
         const formHtml = `
@@ -635,7 +635,7 @@ export const renderStudy = () => {
                             ${t('common.cancel', '取消', 'Cancel')}
                         </button>
                         <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: linear-gradient(135deg, #FFB300, #FF9800); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
-                            ${isAdmin ? 'Konfirmasi Pantau' : t('common.submit', '確認送出', 'Submit')}
+                            ${isAdmin ? 'Monitor Event' : t('common.submit', '確認送出', 'Submit')}
                         </button>
                     </div>
                 </div>
@@ -659,7 +659,7 @@ export const renderStudy = () => {
 
                 if (result.success) {
                     if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
-                        alert(isAdmin ? 'Berhasil masuk ke mode pantau! 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
+                        alert(isAdmin ? 'You are now monitoring this event! 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
                         document.getElementById('join-overlay').remove();
                         // Refresh the view to show "Enter Chat"
                         if (typeof renderList === 'function') {
@@ -696,39 +696,39 @@ export const renderStudy = () => {
                     btnSubmit.disabled = false;
                     btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
                 }
-        } catch (e) {
-            console.error("Join Request Error:", e);
-            alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
-        }
+            } catch (e) {
+                console.error("Join Request Error:", e);
+                alert(isZH ? "伺服器連線失敗。" : "Server connection failed.");
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = t('common.submit', '確認送出', 'Submit');
+            }
+        };
     };
-};
 
 
 
 
-// --- POPUP DETAIL STUDY ---
-window.showStudyDetail = async (id) => {
-    try {
-        const response = await fetch('/studies');
-        const data = await response.json();
-        const p = data.find(item => String(item.id) === String(id));
-        if (!p) return;
+    // --- POPUP DETAIL STUDY ---
+    window.showStudyDetail = async (id) => {
+        try {
+            const response = await fetch('/studies');
+            const data = await response.json();
+            const p = data.find(item => String(item.id) === String(id));
+            if (!p) return;
 
-        const existingOverlay = document.getElementById('study-detail-overlay');
-        if (existingOverlay) existingOverlay.remove();
+            const existingOverlay = document.getElementById('study-detail-overlay');
+            if (existingOverlay) existingOverlay.remove();
 
-        const isZH = isAppZH();
-        const dTime = new Date(p.event_time);
-        const timeStr = isZH
-            ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
-            : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+            const isZH = isAppZH();
+            const dTime = new Date(p.event_time);
+            const timeStr = isZH
+                ? `${dTime.getFullYear()}-${(dTime.getMonth() + 1).toString().padStart(2, '0')}-${dTime.getDate().toString().padStart(2, '0')} ${dTime.getHours().toString().padStart(2, '0')}:${dTime.getMinutes().toString().padStart(2, '0')}`
+                : `${dTime.toLocaleDateString()} ${dTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
 
-        const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
-        const activeFrac = `${approvedCnt} / ${p.people_needed}`;
+            const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
+            const activeFrac = `${approvedCnt} / ${p.people_needed}`;
 
-        const modalHtml = `
+            const modalHtml = `
                 <div id="study-detail-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 100000; animation: fadeIn 0.3s; backdrop-filter: blur(4px);">
                     <div style="background: var(--bg-card); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 20px 20px 0 0; padding: 25px; overflow-y: auto; position: relative; animation: slideUp 0.3s ease; border: 1px solid var(--border-color); border-bottom: none;">
                         <button onclick="document.getElementById('study-detail-overlay').remove()" style="position: absolute; top: 15px; right: 15px; background: var(--bg-secondary); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--text-secondary);">✕</button>
@@ -758,23 +758,23 @@ window.showStudyDetail = async (id) => {
                     </div>
                 </div>
             `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    } catch (e) { console.error(e); }
-};
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        } catch (e) { console.error(e); }
+    };
 
 
 
-// Taruh di bagian bawah file carpool.js dan study.js
-window.openGroupChat = (activityId) => {
-    const userProfileStr = localStorage.getItem('userProfile');
-    if (!userProfileStr) {
-        alert(I18n.t('auth.err.login_required') || "Please login first!");
-        return;
-    }
-    window.navigateTo(`messages?room=study_${activityId}`);
-};
+    // Taruh di bagian bawah file carpool.js dan study.js
+    window.openGroupChat = (activityId) => {
+        const userProfileStr = localStorage.getItem('userProfile');
+        if (!userProfileStr) {
+            alert(I18n.t('auth.err.login_required') || "Please login first!");
+            return;
+        }
+        window.navigateTo(`messages?room=study_${activityId}`);
+    };
 
-updateView();
+    updateView();
 };
 
 window.showReviewStudyAppModal = (appId, postId, applicantEmail, teamName) => {
