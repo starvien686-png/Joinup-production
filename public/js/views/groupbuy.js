@@ -1562,10 +1562,15 @@ export const renderGroupBuy = () => {
         if (existingOverlay) existingOverlay.remove();
 
         const isZH = localStorage.getItem('language')?.includes('zh') !== false;
-        const msgConfirm = isZH ? '確認申請加入' : 'Confirm Application';
-        const msgDesc = isZH
-            ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？<br><small style="color:#888">發起人將收到您的個人資料並決定是否接受</small>`
-            : `Apply to join <strong>${teamName}</strong>?<br><small style="color:#888">The host will review your profile and decide</small>`;
+        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+        const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
+
+        const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Application');
+        const msgDesc = isAdmin 
+            ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
+            : (isZH
+                ? `您確定要申請加入 <strong>${teamName}</strong> 嗎？<br><small style="color:#888">發起人將收到您的個人資料並決定是否接受</small>`
+                : `Apply to join <strong>${teamName}</strong>?<br><small style="color:#888">The host will review your profile and decide</small>`);
 
         const formHtml = `
             <div id="housing-join-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(4px);">

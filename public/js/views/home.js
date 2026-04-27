@@ -552,17 +552,23 @@ export const renderHome = () => {
                 return;
             }
 
+            const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+            const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : 'Are you sure you want to join?';
+            const confirmDesc = isAdmin 
+                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.' 
+                : 'The request will be sent to the Host. While waiting for approval, the status will be Pending.';
+
             // Custom Confirmation Modal
             const confirmHtml = `
                 <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; animation: fadeIn 0.2s;">
                     <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                        <h3 style="margin-top: 0; color: #333;">Are you sure you want to join?</h3>
+                        <h3 style="margin-top: 0; color: #333;">${confirmTitle}</h3>
                         <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px;">
-                            The request will be sent to the Host. While waiting for approval, the status will be Pending.
+                            ${confirmDesc}
                         </p>
                         <div style="display: flex; gap: 15px; justify-content: center;">
                             <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
-                            <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">Submit</button>
+                            <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">${isAdmin ? 'Confirm Bypass' : 'Submit'}</button>
                         </div>
                     </div>
                 </div>

@@ -448,8 +448,14 @@ export const renderSports = () => {
             return isZH ? fallbackZH : fallbackEN;
         };
 
-        const msgConfirm = isZH ? '確認加入' : 'Confirm Join';
-        const msgDesc = isZH ? `您確定要報名參與 <strong>${teamName}</strong> 嗎？發起人將會收到您的申請。` : `Are you sure you want to apply for <strong>${teamName}</strong>? The host will receive your request.`;
+        const currentUserStr = localStorage.getItem('userProfile');
+        let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+
+        const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認加入' : 'Confirm Join');
+        const msgDesc = isAdmin 
+            ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
+            : (isZH ? `您確定要報名參與 <strong>${teamName}</strong> 嗎？發起人將會收到您的申請。` : `Are you sure you want to apply for <strong>${teamName}</strong>? The host will receive your request.`);
         const msgCancel = isZH ? '取消' : 'Cancel';
         const msgSubmit = isZH ? '確認送出' : 'Submit';
 

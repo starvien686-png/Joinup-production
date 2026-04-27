@@ -260,17 +260,23 @@ export const renderActivities = async () => {
             let u = currentUserStr ? JSON.parse(currentUserStr) : {};
             if (!u.email) { alert("Please login first!"); return; }
 
+            const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+            const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
+            const confirmDesc = isAdmin 
+                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.' 
+                : (I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.');
+
             const confirmHtml = `
                 <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
                     <div style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🤝</div>
-                        <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">${I18n.t('common.confirm_join') || 'Confirm Join?'}</h3>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">${isAdmin ? '🕵️‍♀️' : '🤝'}</div>
+                        <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">${confirmTitle}</h3>
                         <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
-                            ${I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.'}
+                            ${confirmDesc}
                         </p>
                         <div style="display: flex; gap: 12px;">
                             <button onclick="document.getElementById('join-confirm-overlay').remove()" style="flex: 1; padding: 12px; border-radius: 12px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
-                            <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">Confirm</button>
+                            <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">${isAdmin ? 'Confirm Bypass' : 'Confirm'}</button>
                         </div>
                     </div>
                 </div>`;

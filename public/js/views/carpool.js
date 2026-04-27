@@ -717,8 +717,14 @@ export const renderCarpool = () => {
 window.openCarpoolJoinForm = async (postId, teamName) => {
     const isZH = isAppZH();
 
-    const msgConfirm = t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
-    const msgDesc = t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
+    const currentUserStr = localStorage.getItem('userProfile');
+    let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+    const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+
+    const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
+    const msgDesc = isAdmin 
+        ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
+        : t('cp.join.ask', `您確定要申請搭乘 <strong>${teamName}</strong> 嗎？車主將會收到您的申請。`, `Request to join the ride <strong>${teamName}</strong>? The host will be notified.`);
     const txtFinancial = t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues');
 
     const formHtml = `

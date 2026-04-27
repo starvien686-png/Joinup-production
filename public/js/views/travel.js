@@ -683,8 +683,13 @@ export const renderTravel = () => {
     // --- POP-UP JOIN CONFIRMATION ---
     window.openHangoutJoinForm = async (postId, teamName) => {
         const isZH = isAppZH();
-        const msgConfirm = isZH ? '確認報名參加' : 'Confirm Request';
-        const msgDesc = isZH ? `您確定要報名參加 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`;
+        const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+        const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
+
+        const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認報名參加' : 'Confirm Request');
+        const msgDesc = isAdmin 
+            ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
+            : (isZH ? `您確定要報名參加 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`);
 
         const formHtml = `
             <div id="join-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(4px);">
