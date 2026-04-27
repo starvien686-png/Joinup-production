@@ -214,6 +214,11 @@ router.post('/join', async (req, res) => {
         if (parts.length > 0) {
             const current = parts[0];
             if (['pending', 'approved'].includes(current.status)) {
+                // If Admin is already in, just return success instead of throwing error
+                if (isAdmin) {
+                    await t.commit();
+                    return res.status(200).json({ success: true, message: 'Admin Override: Already joined', data: { status: 'approved' }, requestId: req.requestId });
+                }
                 throw { status: 400, errorCode: 'ALREADY_APPLIED', message: `Already applied. Status: ${current.status}` };
             }
             await sequelize.query(
@@ -622,15 +627,14 @@ router.get('/join/my-statuses', async (req, res) => {
         const user = users[0];
         
         // --- MASTER KEY ACCESS ---
-        if (user.is_admin) {
-            // Admin sees everything as approved so they can enter any chat
-            return res.json({ success: true, is_admin: true, message: 'Admin Master Key Active' });
-        }
+        // We still want to return the status map so the UI shows "Enter Chat" correctly.
+        // But we add a flag so the frontend knows this is an Admin.
+        const isAdmin = !!user.is_admin;
 
         const [parts] = await sequelize.query("SELECT event_type, event_id, status FROM event_participants WHERE user_id = ?", { replacements: [user.id] });
         const statusMap = {};
         parts.forEach(p => statusMap[`${p.event_type}_${p.event_id}`] = p.status);
-        res.json({ success: true, data: statusMap });
+        res.json({ success: true, data: statusMap, is_admin: isAdmin });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

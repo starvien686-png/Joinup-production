@@ -518,7 +518,7 @@ export const renderHome = () => {
                             </button>`;
                     } else if (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com') {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                Monitor Event 🕵️‍♀️
+                                Pantau Acara 🕵️‍♀️
                             </button>`;
                     } else if (roleStatus === 'pending') {
                         return `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">
@@ -542,82 +542,80 @@ export const renderHome = () => {
     };
 
     // Quick Apply Function directly bridging the API
-    if (!window.quickApply) {
-        window.quickApply = async (eventId, category, btn) => {
-            const currentUserStr = localStorage.getItem('userProfile');
-            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+    window.quickApply = async (eventId, category, btn) => {
+        const currentUserStr = localStorage.getItem('userProfile');
+        let u = currentUserStr ? JSON.parse(currentUserStr) : {};
 
-            if (!u.email) {
-                alert("Please login first!");
-                return;
-            }
+        if (!u.email) {
+            alert("Please login first!");
+            return;
+        }
 
-            const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
-            const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : 'Are you sure you want to join?';
-            const confirmDesc = isAdmin
-                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
-                : 'The request will be sent to the Host. While waiting for approval, the status will be Pending.';
+        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+        const confirmTitle = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : 'Are you sure you want to join?';
+        const confirmDesc = isAdmin
+            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
+            : 'The request will be sent to the Host. While waiting for approval, the status will be Pending.';
 
-            // Custom Confirmation Modal
-            const confirmHtml = `
-                <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; animation: fadeIn 0.2s;">
-                    <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                        <h3 style="margin-top: 0; color: #333;">${confirmTitle}</h3>
-                        <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px;">
-                            ${confirmDesc}
-                        </p>
-                        <div style="display: flex; gap: 15px; justify-content: center;">
-                            <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
-                            <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">${isAdmin ? 'Confirm Bypass' : 'Submit'}</button>
-                        </div>
+        // Custom Confirmation Modal
+        const confirmHtml = `
+            <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; animation: fadeIn 0.2s;">
+                <div style="background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                    <h3 style="margin-top: 0; color: #333;">${confirmTitle}</h3>
+                    <p style="color: #666; font-size: 0.95rem; margin-bottom: 25px;">
+                        ${confirmDesc}
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="join-cancel-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">${isAdmin ? 'Batal' : 'Cancel'}</button>
+                        <button id="join-submit-btn" style="flex: 1; padding: 10px; border-radius: 8px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer;">${isAdmin ? 'Konfirmasi Pantau' : 'Submit'}</button>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
 
-            document.body.insertAdjacentHTML('beforeend', confirmHtml);
+        document.body.insertAdjacentHTML('beforeend', confirmHtml);
 
-            document.getElementById('join-cancel-btn').onclick = () => {
-                document.getElementById('join-confirm-overlay').remove();
-            };
-
-            document.getElementById('join-submit-btn').onclick = async () => {
-                const submitBtn = document.getElementById('join-submit-btn');
-                submitBtn.innerText = "Loading...";
-                submitBtn.disabled = true;
-
-                try {
-                    const out = await api.fetch('/api/v1/join', {
-                        method: 'POST',
-                        body: {
-                            event_type: category || 'sports',
-                            event_id: eventId,
-                            user_email: u.email
-                        }
-                    });
-
-                    document.getElementById('join-confirm-overlay').remove();
-
-                    if (out.success && out.data && out.data.status === 'approved') {
-                        alert('Admin Override: Joined successfully! / 管理員已進入。');
-                        if (window.refreshHome) window.refreshHome();
-                        else if (window.renderHome) window.renderHome();
-                    } else {
-                        alert('申請已送出！ / Application sent!');
-                        btn.innerText = "⏳ Pending...";
-                        btn.style.background = "#9E9E9E";
-                        btn.style.cursor = "not-allowed";
-                        btn.onclick = (e) => e.stopPropagation();
-                    }
-
-                    if (window.syncNotifications) window.syncNotifications();
-                } catch (e) {
-                    alert('Failed: ' + (e.message || 'Unknown error'));
-                    submitBtn.innerText = "申請加入 / Apply to Join";
-                    submitBtn.disabled = false;
-                }
-            };
+        document.getElementById('join-cancel-btn').onclick = () => {
+            document.getElementById('join-confirm-overlay').remove();
         };
-    }
+
+        document.getElementById('join-submit-btn').onclick = async () => {
+            const submitBtn = document.getElementById('join-submit-btn');
+            submitBtn.innerText = "Loading...";
+            submitBtn.disabled = true;
+
+            try {
+                const out = await api.fetch('/api/v1/join', {
+                    method: 'POST',
+                    body: {
+                        event_type: category || 'sports',
+                        event_id: eventId,
+                        user_email: u.email
+                    }
+                });
+
+                document.getElementById('join-confirm-overlay').remove();
+
+                if (out.success && out.data && out.data.status === 'approved') {
+                    alert('Berhasil masuk ke mode pantau! 🕵️‍♀️');
+                    if (window.refreshHome) window.refreshHome();
+                    else if (window.renderHome) window.renderHome();
+                } else {
+                    alert('申請已送出！ / Application sent!');
+                    btn.innerText = "⏳ Pending...";
+                    btn.style.background = "#9E9E9E";
+                    btn.style.cursor = "not-allowed";
+                    btn.onclick = (e) => e.stopPropagation();
+                }
+
+                if (window.syncNotifications) window.syncNotifications();
+            } catch (e) {
+                alert('Failed: ' + (e.message || 'Unknown error'));
+                submitBtn.innerText = "申請加入 / Apply to Join";
+                submitBtn.disabled = false;
+            }
+        };
+    };
 
     // Inject universal detail script if it doesn't exist
     if (!window.showUniversalDetail) {

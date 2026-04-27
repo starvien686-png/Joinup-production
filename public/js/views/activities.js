@@ -155,7 +155,7 @@ export const renderActivities = async () => {
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 進入聊天室 / Enter Chat</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // Admin God Mode Override
-                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Monitor Event 🕵️‍♀️</button>`;
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Pantau Acara 🕵️‍♀️</button>`;
             } else if (roleStatus === 'pending') {
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);">⏳ Pending...</button>`;
             } else if (isPast || isEventFull || isSuccess) {
@@ -254,58 +254,56 @@ export const renderActivities = async () => {
         document.head.appendChild(style);
     }
 
-    if (!window.quickApply) {
-        window.quickApply = async (eventId, category, btn) => {
-            const currentUserStr = localStorage.getItem('userProfile');
-            let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-            if (!u.email) { alert("Please login first!"); return; }
+    window.quickApply = async (eventId, category, btn) => {
+        const currentUserStr = localStorage.getItem('userProfile');
+        let u = currentUserStr ? JSON.parse(currentUserStr) : {};
+        if (!u.email) { alert("Please login first!"); return; }
 
-            const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
-            const confirmTitle = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
-            const confirmDesc = isAdmin
-                ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
-                : (I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.');
+        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+        const confirmTitle = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
+        const confirmDesc = isAdmin
+            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
+            : (I18n.t('common.confirm_join_desc') || 'Your request will be sent to the Host for review.');
 
-            const confirmHtml = `
-                <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
-                    <div style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">${isAdmin ? '🕵️‍♀️' : '🤝'}</div>
-                        <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">${confirmTitle}</h3>
-                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
-                            ${confirmDesc}
-                        </p>
-                        <div style="display: flex; gap: 12px;">
-                            <button onclick="document.getElementById('join-confirm-overlay').remove()" style="flex: 1; padding: 12px; border-radius: 12px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">Cancel</button>
-                            <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">${isAdmin ? 'Confirm Bypass' : 'Confirm'}</button>
-                        </div>
+        const confirmHtml = `
+            <div id="join-confirm-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+                <div style="background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">${isAdmin ? '🕵️‍♀️' : '🤝'}</div>
+                    <h3 style="margin: 0 0 10px 0; color: var(--text-primary);">${confirmTitle}</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">
+                        ${confirmDesc}
+                    </p>
+                    <div style="display: flex; gap: 12px;">
+                        <button onclick="document.getElementById('join-confirm-overlay').remove()" style="flex: 1; padding: 12px; border-radius: 12px; background: #f1f5f9; border: none; color: #64748b; font-weight: bold; cursor: pointer;">${isAdmin ? 'Batal' : 'Cancel'}</button>
+                        <button id="join-submit-btn" style="flex: 1; padding: 12px; border-radius: 12px; background: linear-gradient(135deg,#FF8C00,#FF6D00); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,109,0,0.25);">${isAdmin ? 'Konfirmasi Pantau' : 'Confirm'}</button>
                     </div>
-                </div>`;
-            document.body.insertAdjacentHTML('beforeend', confirmHtml);
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', confirmHtml);
 
-            document.getElementById('join-submit-btn').onclick = async () => {
-                const submitBtn = document.getElementById('join-submit-btn');
-                submitBtn.innerText = "Processing...";
-                submitBtn.disabled = true;
-                try {
-                    const out = await api.fetch('/api/v1/join', { method: 'POST', body: { event_type: category || 'sports', event_id: eventId, user_email: u.email } });
-                    document.getElementById('join-confirm-overlay').remove();
+        document.getElementById('join-submit-btn').onclick = async () => {
+            const submitBtn = document.getElementById('join-submit-btn');
+            submitBtn.innerText = "Processing...";
+            submitBtn.disabled = true;
+            try {
+                const out = await api.fetch('/api/v1/join', { method: 'POST', body: { event_type: category || 'sports', event_id: eventId, user_email: u.email } });
+                document.getElementById('join-confirm-overlay').remove();
 
-                    if (out.success && out.data && out.data.status === 'approved') {
-                        alert('Admin Override: Joined successfully! / 管理員已進入。');
-                        if (window.renderActivities) window.renderActivities();
-                        else if (window.refreshHome) window.refreshHome();
-                    } else {
-                        alert(I18n.t('common.join_sent') || 'Application sent! Please wait for approval.');
-                        btn.innerText = "⏳ Pending..."; btn.style.background = "#9E9E9E"; btn.style.cursor = "not-allowed"; btn.onclick = (e) => e.stopPropagation();
-                    }
-                    if (window.syncNotifications) window.syncNotifications();
-                } catch (e) {
-                    alert('Error: ' + (e.message || 'Unknown error'));
-                    submitBtn.innerText = "Confirm"; submitBtn.disabled = false;
+                if (out.success && out.data && out.data.status === 'approved') {
+                    alert('Berhasil masuk ke mode pantau! 🕵️‍♀️');
+                    if (window.renderActivities) window.renderActivities();
+                    else if (window.refreshHome) window.refreshHome();
+                } else {
+                    alert(I18n.t('common.join_sent') || 'Application sent! Please wait for approval.');
+                    btn.innerText = "⏳ Pending..."; btn.style.background = "#9E9E9E"; btn.style.cursor = "not-allowed"; btn.onclick = (e) => e.stopPropagation();
                 }
-            };
+                if (window.syncNotifications) window.syncNotifications();
+            } catch (e) {
+                alert('Error: ' + (e.message || 'Unknown error'));
+                submitBtn.innerText = "Confirm"; submitBtn.disabled = false;
+            }
         };
-    }
+    };
 
     if (!window.showUniversalDetail) {
         window.showUniversalDetail = async (id, category) => {

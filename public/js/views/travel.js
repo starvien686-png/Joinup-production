@@ -686,9 +686,9 @@ export const renderTravel = () => {
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
-        const msgConfirm = isAdmin ? 'Admin Override Mode 🕵️‍♀️' : (isZH ? '確認報名參加' : 'Confirm Request');
+        const msgConfirm = isAdmin ? 'Mode Pantau Admin 🕵️‍♀️' : (isZH ? '確認報名參加' : 'Confirm Request');
         const msgDesc = isAdmin
-            ? 'You are about to join this activity with <strong>Superadmin Bypass</strong>. You will be approved immediately and added to the chat.'
+            ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
             : (isZH ? `您確定要報名參加 <strong>${teamName}</strong> 嗎？` : `Request to join <strong>${teamName}</strong>?`);
 
         const formHtml = `
@@ -701,7 +701,7 @@ export const renderTravel = () => {
                             ${t('common.cancel', '取消', 'Cancel')}
                         </button>
                         <button id="btn-confirm-join" class="btn btn-primary" style="flex: 1; padding: 0.8rem; background: linear-gradient(135deg, #FFB300, #FF9800); color: white; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;">
-                            ${t('common.submit', '確認送出', 'Submit')}
+                            ${isAdmin ? 'Konfirmasi Pantau' : t('common.submit', '確認送出', 'Submit')}
                         </button>
                     </div>
                 </div>
@@ -726,7 +726,7 @@ export const renderTravel = () => {
                 if (result.success) {
                     // If the user is an admin, they might be immediately approved
                     if (result.data && (result.data.status === 'approved' || result.data.status === 'accepted')) {
-                        alert(isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.');
+                        alert(isAdmin ? 'Berhasil masuk ke mode pantau! 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
                         document.getElementById('join-overlay').remove();
                         updateView(); // Refresh view to show "Enter Chat"
                         return;
