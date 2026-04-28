@@ -3,6 +3,20 @@ import { I18n } from '../services/i18n.js';
 import { openRatingModal } from './rating.js';
 import api from '../utils/api.js';
 
+// --- SENSOR BAHASA ULTIMATE ---
+const isAppZH = () => {
+    try {
+        if (typeof window.I18n !== 'undefined' && typeof window.I18n.getLanguage === 'function') {
+            const lang = window.I18n.getLanguage();
+            if (lang && lang.includes('en')) return false;
+            if (lang && lang.includes('zh')) return true;
+        }
+    } catch (e) { }
+    const ls = (localStorage.getItem('app_language') || localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
+    if (ls.includes('en')) return false;
+    return true;
+};
+
 // --- MESIN PENDAFTARAN HOUSING ---
 window.HousingAppEngine = {
     saveApp: (appData) => {
@@ -29,6 +43,7 @@ window.HousingAppEngine = {
 
 export const renderGroupBuy = () => {
     const app = document.getElementById('app');
+    const isZH = isAppZH();
     const userProfileStr = localStorage.getItem('userProfile');
 
     if (!userProfileStr) {
@@ -473,6 +488,7 @@ export const renderGroupBuy = () => {
 
 
     const renderList = async () => {
+        const isZH = isAppZH();
         // 1. KEMBALI PAKAI MOCKSTORE (Karena data Housing sangat kompleks)
         let posts = [];
         try {
@@ -1561,7 +1577,7 @@ export const renderGroupBuy = () => {
         const existingOverlay = document.getElementById('housing-join-overlay');
         if (existingOverlay) existingOverlay.remove();
 
-        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const isZH = isAppZH();
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 
@@ -1613,7 +1629,7 @@ export const renderGroupBuy = () => {
                 if (out.success) {
                     if (out.data && (out.data.status === 'approved' || out.data.status === 'accepted')) {
                         alert(isAdmin ? 'Admin override success! Entering monitor mode. 🕵️‍♀️' : (isZH ? '已成功進入監看模式！🕵️‍♀️' : 'Admin override success! Entering monitor mode.'));
-                        if (ov) ov.remove();
+                        document.getElementById('housing-join-overlay')?.remove();
                         updateView();
                         return;
                     }
@@ -1632,7 +1648,7 @@ export const renderGroupBuy = () => {
 
     // --- HOUSING ACCEPT / REJECT (HANDLED GLOBALLY IN app.js) ---
 
-    window.openGroupChat = (activityId) => {
+    window.openHousingChat = (activityId) => {
         const userProfileStr = localStorage.getItem('userProfile');
         if (!userProfileStr) {
             alert(I18n.t('auth.err.login_required') || "Please login first!");
@@ -1643,6 +1659,9 @@ export const renderGroupBuy = () => {
 
 
     // Initial Render
+    const langChangeHandler = () => { updateView(); };
+    window.addEventListener('languageChanged', langChangeHandler);
+
     updateView();
     bindListeners();
 };

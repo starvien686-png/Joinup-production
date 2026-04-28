@@ -347,7 +347,7 @@ export const renderStudy = () => {
 
                     let actionBtn = '';
                     if (isHost || isParticipant) {
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
                     } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
@@ -767,7 +767,7 @@ export const renderStudy = () => {
 
 
     // Taruh di bagian bawah file carpool.js dan study.js
-    window.openGroupChat = (activityId) => {
+    window.openStudyChat = (activityId) => {
         const userProfileStr = localStorage.getItem('userProfile');
         if (!userProfileStr) {
             alert(I18n.t('auth.err.login_required') || "Please login first!");
