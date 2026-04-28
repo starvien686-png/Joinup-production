@@ -2458,8 +2458,8 @@ async function syncAll() {
         console.log(`[Timezone] MySQL session: ${tzResult[0].tz}, NOW() = ${tzResult[0].server_now}`);
         console.log(`[Timezone] Node.js dayjs: ${nowTaipei().format('YYYY-MM-DD HH:mm:ss')} (Asia/Taipei)`);
 
-        // 1. Sync User Model
-        await User.sync();
+        // 1. Sync User Model (alter: false to prevent duplicate index creation on TiDB)
+        await User.sync({ alter: false });
         console.log('User model synchronized.');
 
         // 🛡️ ADMIN MIGRATION: Ensure is_admin column exists
