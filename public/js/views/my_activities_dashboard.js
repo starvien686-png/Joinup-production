@@ -78,13 +78,14 @@ export const renderMyActivitiesDashboard = async () => {
             { id: 'housing', label: I18n.t('home.cat.groupbuy') || '租屋' }
         ];
 
+        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
         const tabsHtml = `
             <div style="display: flex; background: var(--bg-body); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);">
                 <button onclick="window.setDashboardTab('hosted')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'hosted' ? 'white' : 'transparent'}; color: ${activeTab === 'hosted' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'hosted' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
-                    我發起的
+                    ${isZH ? '我發起的' : 'Initiated by Me'}
                 </button>
                 <button onclick="window.setDashboardTab('joined')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'joined' ? 'white' : 'transparent'}; color: ${activeTab === 'joined' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'joined' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
-                    我參與的
+                    ${isZH ? '我參與的' : 'Joined by Me'}
                 </button>
             </div>
         `;
@@ -174,7 +175,7 @@ export const renderMyActivitiesDashboard = async () => {
 
                     <div style="display: flex; gap: 10px;">
                         <button onclick="window.navigateTo('messages?room=${p.category}_${p.id}')" style="flex: 1.5; padding: 12px; border-radius: 12px; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            💬 ${I18n.t('sports.action.join_chat') || '進入聊天室'}
+                            💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}
                         </button>
                         ${isHost ? `
                         <button onclick="window.manageParticipantsDashboard('${p.id}', '${p.category}', '${p.title.replace(/'/g, "\\'")}')" style="flex: 1; padding: 12px; border-radius: 12px; background: white; color: #1976D2; border: 1.5px solid #1976D2; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;">

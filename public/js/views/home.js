@@ -611,7 +611,7 @@ export const renderHome = () => {
                 if (window.syncNotifications) window.syncNotifications();
             } catch (e) {
                 alert('Failed: ' + (e.message || 'Unknown error'));
-                submitBtn.innerText = "申請加入 / Apply to Join";
+                submitBtn.innerText = isZH ? "申請加入" : "Apply to Join";
                 submitBtn.disabled = false;
             }
         };

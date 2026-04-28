@@ -599,7 +599,7 @@ export const renderGroupBuy = () => {
             const safeTitle = (p.title || '').replace(/'/g, "\\'");
             let btnHtml = '';
             if (isHost || isParticipant) {
-                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 進入聊天室 / Enter Chat</button>`;
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // God Mode: Admin can join anything
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
@@ -607,7 +607,7 @@ export const renderGroupBuy = () => {
                 const lockLabel = isPast ? I18n.t('status.expired') : (isPostFull ? (I18n.t('common.full') || 'FULL') : (isZH ? '已完成' : 'Finished'));
                 btnHtml = `<button onclick="event.stopPropagation();" disabled class="btn btn-full" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:none;color:white;font-weight:bold;cursor:not-allowed; background: #9E9E9E;">${lockLabel}</button>`;
             } else {
-                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 申請加入 / Apply to Join</button>`;
+                btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#FF8C00,#FF6D00);border:none;color:white;font-weight:bold;cursor:pointer;">🏠 ${isZH ? '申請加入' : 'Apply to Join'}</button>`;
             }
             return `
             <div class="card fade-in" onclick="window.viewPost('${p.id}')" style="cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; position: relative; margin-bottom: 1rem; ${isPast ? 'opacity: 0.6;' : (isPostFull ? 'opacity: 0.8;' : '')}">

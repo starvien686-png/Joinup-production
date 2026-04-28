@@ -74,7 +74,7 @@ export const renderStudy = () => {
                 <div style="text-align: center; margin-bottom: 2rem;">
                     <span style="font-size: 3.5rem;">📚</span>
                     <h1 style="color: #FFB300; margin-top: 1rem;">${t('study.title', '一起合租吧 (學習)', 'Study Together')}</h1>
-                    <p style="color: var(--text-secondary);">${t('study.sub', '尋找學伴，一起進步！', 'Find study buddies and learn together!')}</p>
+                    <p style="color: var(--text-secondary);">${t('study.sub', '尋找學伴，一起進步！', 'Find study partners, improve together!')}</p>
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
@@ -121,7 +121,7 @@ export const renderStudy = () => {
                     <div style="color: #888888; font-size: 11px; text-align: center; margin-bottom: 1.5rem;">此平台不負責任何金錢問題<br>(This platform is not responsible for financial issues)</div>
                     
                     <div class="input-group">
-                        <label>${t('study.topic', '主題標題 *', 'Topic Title *')}</label>
+                        <label>${t('study.topic', '主題標題 *', 'Subject Title *')}</label>
                         <input type="text" id="stTitle" placeholder="${t('study.ph.topic', '例如: 微積分期中複習、多益讀書會', 'e.g. Calculus Review, TOEIC Study Group')}" required>
                     </div>
 
@@ -137,7 +137,7 @@ export const renderStudy = () => {
                     </div>
                     
                     <div class="input-group">
-                        <label>${t('study.subject', '科目/詳細內容 *', 'Subject/Details *')}</label>
+                        <label>${t('study.subject', '科目/詳細內容 *', 'Subject / Details *')}</label>
                         <input type="text" id="stSubject" placeholder="${t('study.ph.subj', '例如: Calculus Ch1-3, TOEIC Listening', 'e.g. Calculus Ch1-3, TOEIC Listening')}" required>
                     </div>
 
@@ -154,7 +154,7 @@ export const renderStudy = () => {
                     </div>
 
                     <div class="input-group">
-                        <label>${t('study.people', '需要人數 *', 'People Needed *')}</label>
+                        <label>${t('study.people', '需要人數 *', 'Required People *')}</label>
                         <input type="number" id="stPeople" min="2" max="20" value="4" required>
                     </div>
 
@@ -175,13 +175,13 @@ export const renderStudy = () => {
                             <input type="text" value="${user.displayName || user.name || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                         <div class="input-group">
-                            <label>${t('study.dept', '系級 *', 'Department *')}</label>
+                            <label>${t('study.dept', '系級 *', 'Department & Grade *')}</label>
                             <input type="text" value="${user.department || user.major || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label>${t('study.notes', '備註說明', 'Notes')}</label>
+                        <label>${t('study.notes', '備註說明', 'Remarks')}</label>
                         <textarea id="stNotes" rows="3" placeholder="${t('study.ph.notes', '例如: 自備課本、僅限大一...', 'e.g. Bring own textbook, Freshmen only...')}" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;"></textarea>
                     </div>
 
@@ -353,7 +353,7 @@ export const renderStudy = () => {
                         const lockLabel = isPast ? I18n.t('status.expired') : (isStudyFull ? (isZH ? '額滿' : 'Full') : (isZH ? '已完成' : 'Finished'));
                         actionBtn = `<button class="btn btn-full" disabled style="width: 100%; padding: 0.7rem; font-weight: bold; border: none; color: white; border-radius: 8px; cursor: not-allowed; font-size: 0.95rem; background: #9E9E9E;">${lockLabel}</button>`;
                     } else {
-                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Join Event')}</button>`;
+                        actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; color: white; border-radius: 8px; cursor: pointer;">${t('study.join', '申請加入', 'Apply to Join')}</button>`;
                     }
 
                     return `

@@ -162,7 +162,7 @@ export const renderCarpool = () => {
                     </div>
 
                     <div class="input-group">
-                        <label>搭乘費用 * (Price)</label>
+                        <label>搭乘費用 * (Cost)</label>
                         <input type="number" id="cpPrice" min="0" value="0" required>
                     </div>
 
@@ -203,11 +203,11 @@ export const renderCarpool = () => {
     const renderFilterPanel = () => {
         const isZH = isAppZH();
         const txtFilterTitle = isZH ? '篩選共乘' : 'Filter Activities';
-        const txtVehicle = isZH ? '車輛類型' : 'Vehicle';
+        const txtVehicle = isZH ? '車輛類型' : 'Vehicle Type';
         const txtPickup = isZH ? '出發地' : 'Pick-up';
-        const txtPrice = isZH ? '費用' : 'Price';
+        const txtPrice = isZH ? '費用' : 'Cost';
         const txtDate = isZH ? '日期' : 'Date';
-        const txtSeats = isZH ? '需要座位數' : 'People Needed';
+        const txtSeats = isZH ? '需要座位數' : 'Seats Needed';
         const txtClear = isZH ? '清除篩選' : 'Clear Filters';
         const txtConfirm = isZH ? '確認' : 'Confirm';
 
@@ -304,7 +304,7 @@ export const renderCarpool = () => {
         const txtTitle = isZH ? '活動列表' : 'Activity List';
         const txtNoData = isZH ? '沒有符合的活動。' : 'No matching activities found.';
         const txtHost = isZH ? '發起人' : 'Host';
-        const txtJoin = isZH ? '申請加入' : 'Join Ride';
+        const txtJoin = isZH ? '申請加入' : 'Apply to Join';
         const txtJoinChat = isZH ? '進入聊天室' : 'Enter Chat Room';
         const txtFull = isZH ? '額滿' : 'Full';
         const txtHobbyLabel = isZH ? '興趣' : 'Hobby';
@@ -833,7 +833,7 @@ window.showCarpoolDetail = async (id) => {
         const txtDepart = isZH ? '出發地' : 'Departure';
         const txtDest = isZH ? '目的地' : 'Destination';
         const txtTime = isZH ? '時間' : 'Time';
-        const txtPrice = isZH ? '費用' : 'Price';
+        const txtPrice = isZH ? '費用' : 'Cost';
         const txtSeats = isZH ? '空位' : 'Available Seats';
         const txtSeatsLeft = isZH ? '個空位' : 'Seats Left';
         const txtNotes = isZH ? '備註' : 'Notes';

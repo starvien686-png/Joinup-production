@@ -97,7 +97,7 @@ export const renderTravel = () => {
                 <div style="text-align: center; margin-bottom: 2rem;">
                     <span style="font-size: 3.5rem;">🎉</span>
                     <h1 style="color: #FF9800; margin-top: 1rem;">${t('ho.title', '揪團/交友', 'Hang Out')}</h1>
-                    <p style="color: var(--text-secondary);">${t('ho.sub', '看電影、吃飯、夜衝，尋找志同道合的夥伴！', 'Movies, dining, night rides, find your crew!')}</p>
+                    <p style="color: var(--text-secondary);">${t('ho.sub', '看電影、吃飯、夜衝，尋找志同道合的夥伴！', 'Watch movies, eat, night rides, find like-minded partners!')}</p>
                 </div>
 
                 <div style="display: grid; gap: 1rem;">
@@ -149,7 +149,7 @@ export const renderTravel = () => {
                     </div>
 
                     <div class="input-group">
-                        <label>${t('ho.cat', '活動類別 *', 'Category *')}</label>
+                        <label>${t('ho.cat', '活動類別 *', 'Activity Type *')}</label>
                         <select id="hoCategory" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);" required>
                             <option value="" disabled selected>請選擇...</option>
                             <option value="Food">🍽️ ${isZH ? '聚餐/美食' : 'Food/Dining'}</option>
@@ -164,7 +164,7 @@ export const renderTravel = () => {
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
-                            <label>${t('ho.realname', '真實姓名 *', 'Real Name *')}</label>
+                            <label>${t('ho.realname', '真實姓名 *', 'Full Name *')}</label>
                             <input type="text" id="hoName" value="${user.displayName || user.name || ''}" required>
                         </div>
                         <div class="input-group">
@@ -174,7 +174,7 @@ export const renderTravel = () => {
                     </div>
 
                     <div class="input-group">
-                        <label>${t('ho.people', '需要人數 *', 'People Needed *')}</label>
+                        <label>${t('ho.people', '需要人數 *', 'Required People *')}</label>
                         <input type="number" id="hoPeople" min="2" max="50" value="4" required>
                     </div>
 
