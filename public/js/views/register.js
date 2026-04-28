@@ -33,7 +33,8 @@ const departmentsData = [
             { zh: '管理學院學士班', en: 'Interdisciplinary Program of College of Management' },
             { zh: '經營管理碩士學位學程在職專班', en: 'Executive Master Program of Administration' },
             { zh: '新興產業策略與發展碩士/博士學位學程', en: 'Strategy and Development of Emerging Industries' },
-            { zh: '區域發展重點產業碩士專班', en: 'Industry-Academy Collaborated Master Program on Regional Development Focuses' }
+            { zh: '區域發展重點產業碩士專班', en: 'Industry-Academy Collaborated Master Program on Regional Development Focuses' },
+            { zh: '商業管理及資訊科技創新應用全英語碩士學位學程', en: 'Business Administration and Information Technology Innovation and Application (BAITIA)' }
         ]
     },
     {
