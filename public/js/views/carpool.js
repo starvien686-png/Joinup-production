@@ -5,11 +5,13 @@ import { I18n } from '../services/i18n.js';
 // --- SENSOR BAHASA ULTIMATE ---
 const isAppZH = () => {
     try {
-        const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-        if (langObj.includes('en')) return false;
-        if (langObj.includes('zh')) return true;
+        if (typeof window.I18n !== 'undefined' && typeof window.I18n.getLanguage === 'function') {
+            const lang = window.I18n.getLanguage();
+            if (lang && lang.includes('en')) return false;
+            if (lang && lang.includes('zh')) return true;
+        }
     } catch (e) { }
-    const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW').toLowerCase();
+    const ls = (localStorage.getItem('app_language') || localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
     if (ls.includes('en')) return false;
     return true;
 };
@@ -118,18 +120,18 @@ export const renderCarpool = () => {
 
                 <form id="createCarpoolForm" style="background: var(--bg-card); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
                     
-                    <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF8C00; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.2rem;">🚙 詳細說明</h3>
-                    <div style="color: #888; font-size: 12px; text-align: center; margin-bottom: 1.5rem;">⚠️ 本平台不對任何財務問題負責<br>(This platform is not responsible for any financial issues)</div>
+                    <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #FF8C00; border-bottom: 2px solid #FFE0B2; padding-bottom: 0.5rem; font-size: 1.2rem;">🚙 ${t('cp.form.details', '詳細說明', 'Details')}</h3>
+                    <div style="color: #888; font-size: 12px; text-align: center; margin-bottom: 1.5rem;">⚠️ ${t('common.finance', '本平台不對任何財務問題負責', 'This platform is not responsible for any financial issues')}</div>
                     
                     <div class="input-group">
-                        <label>行程標題 * (Trip Title)</label>
+                        <label>${t('cp.form.trip_title', '行程標題 *', 'Trip Title *')}</label>
                         <input type="text" id="cpTitle" placeholder="${isZH ? '例如: 週末返鄉、台中一日遊' : 'e.g. Weekend trip to Taichung'}" required>
                     </div>
 
                     <div class="input-group">
-                        <label>交通工具 * (Vehicle Type)</label>
+                        <label>${t('cp.form.vehicle', '交通工具 *', 'Vehicle Type *')}</label>
                         <select id="cpVehicle" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
-                            <option value="" disabled selected>請選擇...</option>
+                            <option value="" disabled selected>${t('common.select', '請選擇...', 'Select...')}</option>
                             <option value="Taxi">🚕 ${isZH ? '計程車' : 'Taxi'}</option>
                             <option value="Uber">🚙 Uber</option>
                             <option value="Private">🚗 ${isZH ? '自家車' : 'Private'}</option>
@@ -140,60 +142,60 @@ export const renderCarpool = () => {
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
-                            <label>出發地 * (Departure)</label>
+                            <label>${t('cp.form.departure', '出發地 *', 'Departure *')}</label>
                             <select id="cpDepartSelect" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;" required>
-                                <option value="暨大校門口">暨大校門口 (Main Gate)</option>
-                                <option value="宿舍">宿舍 (Dorms)</option>
-                                <option value="埔里車站">埔里車站 (Puli Station)</option>
-                                <option value="自訂">自訂... (Custom)</option>
+                                <option value="暨大校門口">${isZH ? '暨大校門口' : 'NCNU Main Gate'}</option>
+                                <option value="宿舍">${isZH ? '宿舍' : 'Dorms'}</option>
+                                <option value="埔里車站">${isZH ? '埔里車站' : 'Puli Station'}</option>
+                                <option value="自訂">${isZH ? '自訂...' : 'Custom...'}</option>
                             </select>
                             <input type="text" id="cpDepartCustom" style="margin-top: 0.5rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd; display: none;" placeholder="${isZH ? '請輸入出發地...' : 'Enter departure location...'}">
                         </div>
                         
                         <div class="input-group">
-                            <label>目的地 * (Destination)</label>
+                            <label>${t('cp.form.destination', '目的地 *', 'Destination *')}</label>
                             <input type="text" id="cpDest" required>
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label>總座位數 (含司機) * (Total Seats incl. Driver)</label>
+                        <label>${t('cp.form.seats', '總座位數 (含司機) *', 'Total Seats (incl. Driver) *')}</label>
                         <input type="number" id="cpSeats" min="2" max="10" value="4" required>
                     </div>
 
                     <div class="input-group">
-                        <label>搭乘費用 * (Cost)</label>
+                        <label>${t('cp.form.cost', '搭乘費用 *', 'Cost *')}</label>
                         <input type="number" id="cpPrice" min="0" value="0" required>
                     </div>
 
                     <div class="input-group">
-                        <label>出發時間 * (Departure Time)</label>
+                        <label>${t('cp.form.depart_time', '出發時間 *', 'Departure Time *')}</label>
                         <input type="datetime-local" id="cpTime" required>
                     </div>
 
                     <div class="input-group">
-                        <label>截止時間 * (Deadline)</label>
+                        <label>${t('cp.form.deadline', '截止時間 *', 'Deadline *')}</label>
                         <input type="datetime-local" id="cpDeadline" required>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="input-group">
-                            <label>發起人 * (Host)</label>
+                            <label>${t('cp.form.host', '發起人 *', 'Host *')}</label>
                             <input type="text" value="${user.displayName || user.name || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                         <div class="input-group">
-                            <label>系所 * (Dept)</label>
+                            <label>${t('cp.form.dept', '系所 *', 'Dept *')}</label>
                             <input type="text" value="${user.department || user.major || ''}" readonly style="background: var(--bg-secondary); color: var(--text-secondary);">
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label>備註 / 其他說明 (Notes)</label>
+                        <label>${t('cp.form.notes', '備註 / 其他說明', 'Notes')}</label>
                         <textarea id="cpNotes" rows="3" placeholder="${isZH ? '例如: 自備零錢、可帶小行李等...' : 'e.g. Bring exact change, small luggage allowed...'}" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #ddd;"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; font-size: 1.1rem; border-radius: 8px; background: linear-gradient(135deg, #FF8C00, #E65100); border: none; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 140, 0, 0.3);">
-                        確認發佈 (Publish)
+                        ${t('cp.form.publish', '確認發佈', 'Publish')}
                     </button>
                 </form>
             </div>
@@ -710,6 +712,10 @@ export const renderCarpool = () => {
     };
 
     // HANDLED GLOBALLY IN app.js (window.handleReviewAction)
+
+    // --- LANGUAGE CHANGE LISTENER: Auto re-render when user switches language ---
+    const langChangeHandler = () => { updateView(); };
+    window.addEventListener('languageChanged', langChangeHandler);
 
     updateView();
 };

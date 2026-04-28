@@ -29,11 +29,13 @@ window.HangoutAppEngine = {
 // --- SENSOR BAHASA ULTIMATE ---
 const isAppZH = () => {
     try {
-        const langObj = (window.I18n?.locale || window.I18n?.language || '').toLowerCase();
-        if (langObj.includes('en')) return false;
-        if (langObj.includes('zh')) return true;
+        if (typeof window.I18n !== 'undefined' && typeof window.I18n.getLanguage === 'function') {
+            const lang = window.I18n.getLanguage();
+            if (lang && lang.includes('en')) return false;
+            if (lang && lang.includes('zh')) return true;
+        }
     } catch (e) { }
-    const ls = (localStorage.getItem('language') || localStorage.getItem('lang') || localStorage.getItem('i18nextLng') || 'zh-TW').toLowerCase();
+    const ls = (localStorage.getItem('app_language') || localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW').toLowerCase();
     if (ls.includes('en')) return false;
     return true;
 };

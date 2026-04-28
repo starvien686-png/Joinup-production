@@ -598,7 +598,7 @@ export const renderRegister = () => {
         };
 
         updateTexts();
-        renderDepartmentDropdown(typeof I18n !== 'undefined' && I18n.getLanguage ? I18n.getLanguage() : (localStorage.getItem('language') || 'en'));
+        renderDepartmentDropdown(typeof I18n !== 'undefined' && I18n.getLanguage ? I18n.getLanguage() : (localStorage.getItem('app_language') || localStorage.getItem('language') || 'en'));
         startClock();
     };
 

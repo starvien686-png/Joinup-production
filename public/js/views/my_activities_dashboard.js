@@ -78,7 +78,7 @@ export const renderMyActivitiesDashboard = async () => {
             { id: 'housing', label: I18n.t('home.cat.groupbuy') || '租屋' }
         ];
 
-        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const tabsHtml = `
             <div style="display: flex; background: var(--bg-body); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);">
                 <button onclick="window.setDashboardTab('hosted')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'hosted' ? 'white' : 'transparent'}; color: ${activeTab === 'hosted' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'hosted' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
@@ -362,7 +362,7 @@ export const renderMyActivitiesDashboard = async () => {
         const modalId = 'manage-participants-overlay';
         if (document.getElementById(modalId)) return;
 
-        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         
         // 1. Create Modal
         const overlay = document.createElement('div');
@@ -429,7 +429,7 @@ export const renderMyActivitiesDashboard = async () => {
     };
 
     window.removeParticipantFromDashboard = async (rowId, postId, category, email, name) => {
-        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const msg = isZH ? `確定要將 ${name} 從此活動中移除嗎？` : `Are you sure you want to remove ${name} from this activity?`;
         
         if (!confirm(msg)) return;

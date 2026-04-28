@@ -627,7 +627,7 @@ export const renderHome = () => {
             const existing = document.getElementById('univ-detail-overlay');
             if (existing) existing.remove();
 
-            const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
+            const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
 
             const peopleCnt = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);
             const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);

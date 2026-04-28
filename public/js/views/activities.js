@@ -152,7 +152,7 @@ export const renderActivities = async () => {
             let actionBtn = '';
             if ((user && user.email && p.hostEmail && user.email === p.hostEmail) || roleStatus === 'approved' || roleStatus === 'accepted') {
                 const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
-                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 ${(localStorage.getItem('language') || 'zh-TW').includes('zh') ? '進入聊天室' : 'Enter Chat Room'}</button>`;
+                actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 ${(localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh') ? '進入聊天室' : 'Enter Chat Room'}</button>`;
             } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
                 // Admin God Mode Override
                 actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Monitor Event 🕵️‍♀️</button>`;
@@ -162,7 +162,7 @@ export const renderActivities = async () => {
                 const lockLabel = isPast ? I18n.t('status.expired') : (isEventFull ? I18n.t('common.full') : I18n.t('outing.status.success'));
                 actionBtn = `<button onclick="event.stopPropagation();" disabled style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:#9E9E9E; border:none; color:white; font-weight:bold; cursor:not-allowed; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${lockLabel}</button>`;
             } else {
-                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">${(localStorage.getItem('language') || 'zh-TW').includes('zh') ? '申請加入' : 'Apply to Join'}</button>`;
+                actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">${(localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh') ? '申請加入' : 'Apply to Join'}</button>`;
             }
 
             return `
@@ -314,7 +314,7 @@ export const renderActivities = async () => {
             const existing = document.getElementById('univ-detail-overlay');
             if (existing) existing.remove();
 
-            const isZH = (localStorage.getItem('language') || '').includes('zh') || true;
+            const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
             const hostAvatar = p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
             const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
             const totalNeeded = p.peoplecount !== undefined ? p.peoplecount : (p.peopleNeeded !== undefined ? p.peopleNeeded : p.people_needed);

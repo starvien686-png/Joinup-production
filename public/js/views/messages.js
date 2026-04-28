@@ -108,7 +108,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                     <button id="btn-chat-options" class="btn-icon">⋮</button>
                     <div id="chat-options-menu" style="display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); z-index: 200; min-width: 170px; overflow: hidden;">
                         ${(() => {
-            const isZH = localStorage.getItem('language')?.includes('zh') || false;
+            const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
             const txtKick = isZH ? '🛡️ 管理成員' : '🛡️ Kick Members';
             return `
                             <button onclick="window.showKickMemberModal('${roomId}')" style="width: 100%; text-align: left; padding: 12px; background: #fff5f5; border: none; border-bottom: 1px solid #eee; cursor: pointer; color: #E64A19; font-weight: bold;">

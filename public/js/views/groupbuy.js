@@ -1561,7 +1561,7 @@ export const renderGroupBuy = () => {
         const existingOverlay = document.getElementById('housing-join-overlay');
         if (existingOverlay) existingOverlay.remove();
 
-        const isZH = localStorage.getItem('language')?.includes('zh') !== false;
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
         const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
 

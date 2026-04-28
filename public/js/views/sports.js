@@ -313,7 +313,7 @@ export const renderSports = () => {
         }
 
         // Sensor Bahasa List View
-        const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+        const currentLang = localStorage.getItem('app_language') || localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
         const isZH = currentLang.toLowerCase().includes('zh');
 
         const txtHost = isZH ? '發起人' : 'Host';
@@ -437,7 +437,7 @@ export const renderSports = () => {
         const existingOverlay = document.getElementById('join-overlay');
         if (existingOverlay) existingOverlay.remove();
 
-        const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
+        const currentLang = localStorage.getItem('app_language') || localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
         const isZH = currentLang.toLowerCase().includes('zh');
 
         const t = (key, fallbackZH, fallbackEN) => {
@@ -620,7 +620,7 @@ export const renderSports = () => {
         else if (currentState === 'create') html = renderCreatePost();
         else if (currentState === 'list') html = await renderList();
 
-        const isZH = (localStorage.getItem('language') || 'zh-TW').includes('zh');
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const navHtml = `
             <nav class="bottom-nav" style="display: flex; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 10px 0; justify-content: space-around; align-items: center; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
                 <a href="#" class="nav-item" onclick="window.navigateTo('home')" style="text-decoration: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
