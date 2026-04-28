@@ -85,6 +85,10 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     } catch (e) { console.error("Auto-Setup room error", e); }
 
     // PASTIKAN BARIS INI TIDAK TERHAPUS:
+    // --- PREPARE UI FOR FULLSCREEN CHAT ---
+    document.body.style.paddingBottom = '0';
+    document.body.style.overflow = 'hidden';
+
     appElement.innerHTML = `
         <div class="chat-container fade-in">
             <header class="chat-header">
@@ -141,7 +145,6 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
                 <button id="btn-location" class="btn-icon" title="${I18n.t('chat.send_location') || 'Location'}">📍</button>
                 <input type="text" id="chat-input-msg" class="chat-input-box" placeholder="${I18n.t('messages.input.placeholder') || 'Type a message...'}" value="${prefill || ''}">
                 <button id="btn-send-msg" class="btn-send">➤</button>
-            </div>
             </div>
         </div>
     `;
@@ -552,6 +555,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     messageArea.addEventListener('touchcancel', cancelPress);
 
     document.getElementById('btn-back-messages').addEventListener('click', () => {
+        document.body.style.paddingBottom = '80px';
+        document.body.style.overflow = '';
         window.location.hash = 'messages';
         renderMessages();
     });
@@ -1029,7 +1034,26 @@ export const renderMessages = (roomId = null, prefill = null) => {
         const style = document.createElement('style');
         style.id = 'chat-fullscreen-styles';
         style.innerHTML = `
-            .chat-container { display: flex; flex-direction: column; height: 100vh; background: var(--bg-primary); transition: background-color 0.3s ease; }
+            .chat-container { 
+                display: flex; 
+                flex-direction: column; 
+                height: 100vh; 
+                height: 100dvh; 
+                background: var(--bg-primary); 
+                transition: background-color 0.3s ease; 
+                max-width: 500px; 
+                margin: 0 auto; 
+                position: relative;
+                box-shadow: 0 0 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            @media (max-width: 768px) {
+                .chat-container { 
+                    max-width: 100%; 
+                    margin: 0; 
+                    box-shadow: none;
+                }
+            }
             .chat-header { background: var(--bg-card); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.3s ease, border-color 0.3s ease; }
             .chat-message-area { flex: 1; padding: 20px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: url("https://www.transparenttextures.com/patterns/cubes.png"); }
             .chat-input-area { background: var(--bg-secondary); padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color); padding-bottom: calc(10px + env(safe-area-inset-bottom)); transition: background-color 0.3s ease, border-color 0.3s ease; }
@@ -1042,7 +1066,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
             .chat-announcement { background: #fff3cd; color: #856404; text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin: 10px auto; width: 80%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: bold; border: 1px solid #ffeeba; }
             .btn-icon { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); padding: 5px; transition: transform 0.2s, color 0.3s ease; }
             .btn-icon:hover { transform: scale(1.1); color: var(--primary-color); }
-            .chat-input-box { flex: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid var(--border-color); outline: none; font-size: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: var(--chat-input-bg); color: var(--chat-input-text); transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+            .chat-input-box { flex: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid var(--border-color); outline: none; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: var(--chat-input-bg); color: var(--chat-input-text); transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
             .chat-input-box::placeholder { color: var(--text-secondary); opacity: 0.7; }
             .btn-send { background: var(--primary-color); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
             

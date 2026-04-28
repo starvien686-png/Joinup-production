@@ -190,6 +190,10 @@ window.navigateTo = (viewName) => {
         console.log('[System] Cleared active view interval to prevent zombie poller.');
     }
 
+    // Reset global layout styles that might have been changed by full-screen views (like chat)
+    document.body.style.paddingBottom = '80px';
+    document.body.style.overflow = '';
+
     if (viewName === 'home') {
 
         state.isLoggedIn = true;
