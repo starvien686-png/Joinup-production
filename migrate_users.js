@@ -27,9 +27,6 @@ async function migrate() {
         await addColumnSafe('users', 'is_admin', 'TINYINT(1) DEFAULT 0');
 
         const admins = [
-            's112212030@mail1.ncnu.edu.tw', 's112212025@mail1.ncnu.edu.tw',
-            's112212026@mail1.ncnu.edu.tw', 's112212051@mail1.ncnu.edu.tw',
-            's112212052@mail1.ncnu.edu.tw', 's112212060@mail1.ncnu.edu.tw',
             'ncnujoinupadmin@gmail.com'
         ];
         for (const email of admins) {

@@ -816,7 +816,7 @@ router.get('/my-activities', async (req, res) => {
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.event_time as unified_event_time, a.location as unified_location, a.people_needed, a.host_email, a.status, a.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'sports' AND ep.event_id = a.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount
             FROM activities a
             JOIN event_participants ep ON (ep.event_type = 'sports' AND ep.event_id = a.id)
             JOIN users u_me ON ep.user_id = u_me.id
@@ -831,7 +831,7 @@ router.get('/my-activities', async (req, res) => {
                 c.id, c.title, 'carpool' as category, c.departure_time as unified_event_time, c.departure_loc as unified_location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'carpool' AND ep.event_id = c.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount
             FROM carpools c
             JOIN event_participants ep ON (ep.event_type = 'carpool' AND ep.event_id = c.id)
             JOIN users u_me ON ep.user_id = u_me.id
@@ -846,7 +846,7 @@ router.get('/my-activities', async (req, res) => {
                 s.id, s.title, 'study' as category, s.event_time as unified_event_time, s.location as unified_location, s.people_needed, s.host_email, s.status, s.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'study' AND ep.event_id = s.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount
             FROM studies s
             JOIN event_participants ep ON (ep.event_type = 'study' AND ep.event_id = s.id)
             JOIN users u_me ON ep.user_id = u_me.id
@@ -861,7 +861,7 @@ router.get('/my-activities', async (req, res) => {
                 h.id, h.title, 'hangout' as category, h.event_time as unified_event_time, h.meeting_location as unified_location, h.people_needed, h.host_email, h.status, h.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'hangout' AND ep.event_id = h.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount
             FROM hangouts h
             JOIN event_participants ep ON (ep.event_type = 'hangout' AND ep.event_id = h.id)
             JOIN users u_me ON ep.user_id = u_me.id
@@ -876,7 +876,7 @@ router.get('/my-activities', async (req, res) => {
                 ho.id, ho.title, 'housing' as category, ho.deadline as unified_event_time, ho.location as unified_location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
                 u_host.username as host_name, u_host.major as host_dept, u_host.profile_pic, u_host.is_admin,
                 'participant' as user_role,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'housing' AND ep.event_id = ho.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount
             FROM housing ho
             JOIN event_participants ep ON (ep.event_type = 'housing' AND ep.event_id = ho.id)
             JOIN users u_me ON ep.user_id = u_me.id
@@ -909,7 +909,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'sports' AND event_id = a.id AND status IN ('approved', 'accepted')) as approvedCount,
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'sports' AND ep.event_id = a.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                 CASE WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' ELSE a.status END as display_status
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
@@ -920,7 +920,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 c.id, c.title, 'carpool' as category, NULL as sport_type, c.departure_time as event_time, c.departure_loc as location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'carpool' AND event_id = c.id AND status IN ('approved', 'accepted')) as approvedCount,
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'carpool' AND ep.event_id = c.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                 CASE WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' ELSE c.status END as display_status
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
@@ -931,7 +931,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 s.id, s.title, 'study' as category, NULL as sport_type, s.event_time as event_time, s.location, s.people_needed, s.host_email, s.status, s.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'study' AND event_id = s.id AND status IN ('approved', 'accepted')) as approvedCount,
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'study' AND ep.event_id = s.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                 CASE WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' ELSE s.status END as display_status
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
@@ -942,7 +942,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 h.id, h.title, h.category, NULL as sport_type, h.event_time as event_time, h.meeting_location as location, h.people_needed, h.host_email, h.status, h.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'hangout' AND event_id = h.id AND status IN ('approved', 'accepted')) as approvedCount,
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE ep.event_type = 'hangout' AND ep.event_id = h.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                 CASE WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' ELSE h.status END as display_status
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
@@ -953,7 +953,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 ho.id, ho.title, 'housing' as category, NULL as sport_type, ho.deadline as event_time, ho.location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants WHERE event_type = 'housing' AND event_id = ho.id AND status IN ('approved', 'accepted')) as approvedCount,
+                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE (ep.event_type = 'housing' OR ep.event_type = 'groupbuy') AND ep.event_id = ho.id AND ep.status IN ('approved', 'accepted') AND u_ghost.is_admin = 0 AND u_ghost.email != 'ncnujoinupadmin@gmail.com') as approvedCount,
                 CASE WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' ELSE ho.status END as display_status
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)

@@ -1,18 +1,17 @@
-
 const sequelize = require('./database');
 
-async function listAdmins() {
+async function checkUsers() {
     try {
-        const [users] = await sequelize.query("SELECT email, is_admin FROM users WHERE is_admin = 1");
-        console.log("Admins in DB:", users);
+        const [users] = await sequelize.query("SELECT email, is_admin FROM users LIMIT 10");
+        console.log("Users:", users);
         
-        const [allUsers] = await sequelize.query("SELECT email FROM users LIMIT 10");
-        console.log("Some users in DB:", allUsers);
+        const [allAdmins] = await sequelize.query("SELECT email, is_admin FROM users WHERE is_admin = 1");
+        console.log("All Admins:", allAdmins);
     } catch (error) {
-        console.error("Error listing admins:", error);
+        console.error("Error:", error);
     } finally {
         process.exit();
     }
 }
 
-listAdmins();
+checkUsers();
