@@ -7,12 +7,6 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
 
     // Allowed Admin Credentials
     const ALLOWED_ADMINS = [
-        { email: 's112212030@mail1.ncnu.edu.tw', pwd: 'joinup30admin', name: '張棣惠' },
-        { email: 's112212025@mail1.ncnu.edu.tw', pwd: 'joinup25admin', name: '陳冠蓁' },
-        { email: 's112212026@mail1.ncnu.edu.tw', pwd: 'joinup26admin', name: '林詩芸' },
-        { email: 's112212051@mail1.ncnu.edu.tw', pwd: 'joinup51admin', name: '鄭飛英' },
-        { email: 's112212052@mail1.ncnu.edu.tw', pwd: 'joinup52admin', name: '許薇荌' },
-        { email: 's112212060@mail1.ncnu.edu.tw', pwd: 'joinup60admin', name: '楊慧賢' },
         { email: 'ncnujoinupadmin@gmail.com', pwd: 'supportadmin895!', name: 'JUJU' }
     ];
 
