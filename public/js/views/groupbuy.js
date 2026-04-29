@@ -616,7 +616,7 @@ export const renderGroupBuy = () => {
             let btnHtml = '';
             if (isHost || isParticipant) {
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingChat('${p.id}', '${safeTitle}')" class="btn btn-primary" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:#1976D2;border:none;color:white;font-weight:bold;cursor:pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-            } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+            } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {
                 // God Mode: Admin can join anything
                 btnHtml = `<button onclick="event.stopPropagation(); window.openHousingJoinForm('${p.id}', '${safeTitle}')" class="btn" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#607D8B,#455A64);border:none;color:white;font-weight:bold;cursor:pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
             } else if (isPast || isPostFull || isSuccess) {
@@ -638,7 +638,7 @@ export const renderGroupBuy = () => {
                 <h3 style="margin: 0; color: var(--primary-dark);">${p.title}</h3>
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">
                     <span>👤 ${p.authorName} (${p.authorDept})</span>
-                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                    ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.9rem;">
                     ${p.type !== 'off_campus' ? `
@@ -809,7 +809,7 @@ export const renderGroupBuy = () => {
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('common.host')}</span>
                             <span onclick="window.showUserProfile('${post.authorId}')" style="cursor: pointer; text-decoration: underline; color: #1976D2;">${post.authorName} (${post.authorDept})</span>
-                            ${post.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                            ${post.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                         </div>
                         <div>
                             <span style="color: var(--text-secondary); display: block; font-size: 0.8rem;">${I18n.t('common.people_needed')}</span>
@@ -1579,7 +1579,7 @@ export const renderGroupBuy = () => {
 
         const isZH = isAppZH();
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Application');
         const msgDesc = isAdmin

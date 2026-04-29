@@ -493,7 +493,7 @@ export const renderHome = () => {
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
                                 ${p.host_name}
-                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🎓 ${p.host_dept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                         </div>
@@ -516,7 +516,7 @@ export const renderHome = () => {
                         return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
-                    } else if (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com') {
+                    } else if (user.email === 'ncnujoinupadmin@gmail.com') {
                         return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 Monitor Event 🕵️‍♀️
                             </button>`;
@@ -551,7 +551,7 @@ export const renderHome = () => {
             return;
         }
 
-        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = u.email === 'ncnujoinupadmin@gmail.com';
         const confirmTitle = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : 'Are you sure you want to join?';
         const confirmDesc = isAdmin
             ? 'You will join this activity using <strong>Superadmin Bypass</strong>. You will be automatically approved and added to the chat.'
@@ -729,7 +729,7 @@ export const renderHome = () => {
                             <div style="flex: 1;">
                                 <div style="color: var(--text-primary); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                                     ${hostFinalNm}
-                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                                     ${hostFinalDp ? `<span style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">🎓 ${hostFinalDp}</span>` : ''}

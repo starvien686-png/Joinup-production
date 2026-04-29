@@ -153,7 +153,7 @@ export const renderActivities = async () => {
             if ((user && user.email && p.hostEmail && user.email === p.hostEmail) || roleStatus === 'approved' || roleStatus === 'accepted') {
                 const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 ${(localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh') ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-            } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+            } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {
                 // Admin God Mode Override
                 actionBtn = `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:10px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Monitor Event 🕵️‍♀️</button>`;
             } else if (roleStatus === 'pending') {
@@ -185,7 +185,7 @@ export const renderActivities = async () => {
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
                                 ${p.hostName}
-                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    ${p.hostEmail === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                         </div>
@@ -259,7 +259,7 @@ export const renderActivities = async () => {
         let u = currentUserStr ? JSON.parse(currentUserStr) : {};
         if (!u.email) { alert("Please login first!"); return; }
 
-        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = u.email === 'ncnujoinupadmin@gmail.com';
         const confirmTitle = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (I18n.t('common.confirm_join') || 'Confirm Join?');
         const confirmDesc = isAdmin
             ? 'Anda akan bergabung dengan aktivitas ini menggunakan <strong>Superadmin Bypass</strong>. Anda akan langsung disetujui dan ditambahkan ke obrolan.'
@@ -342,7 +342,7 @@ export const renderActivities = async () => {
                             <div style="flex: 1;">
                                 <div style="color: var(--text-primary); font-weight: 700; font-size: 1.1rem; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
                                     ${p.hostName}
-                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    ${p.hostEmail === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </div>
                                 <div style="font-size: 0.85rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
                             </div>

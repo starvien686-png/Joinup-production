@@ -406,7 +406,7 @@ export const renderTravel = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutChat('${p.id}', '${p.title}', '${p.host_email}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #42A5F5, #1976D2); border: none; color: white; border-radius: 8px; cursor: pointer;">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-                    } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+                    } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openHangoutJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? '查看報名表' : 'View Applications'}</button>`;
                     } else if (isPast || isTravelFull || isSuccess) {
@@ -434,7 +434,7 @@ export const renderTravel = () => {
                                 <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
                                 <span style="display: flex; align-items: center; gap: 6px;">
                                     ${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})
-                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </span>
                             </div>
 
@@ -686,7 +686,7 @@ export const renderTravel = () => {
     window.openHangoutJoinForm = async (postId, teamName) => {
         const isZH = isAppZH();
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認報名參加' : 'Confirm Request');
         const msgDesc = isAdmin
@@ -823,7 +823,7 @@ export const renderTravel = () => {
                             <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
                                 <strong>👤 ${t('common.host', '發起人', 'Host')}:</strong> 
                                 <span style="color: var(--text-primary);">${p.host_name} (${p.host_dept})</span>
-                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="margin-bottom: 10px;"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> ${timeStr}</div>
                             <div style="margin-bottom: 10px;"><strong>🤝 ${isZH ? '身分' : 'Meeting'}:</strong> <span style="color:#2196F3; font-weight:bold;">${p.meeting_location}</span></div>

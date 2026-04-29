@@ -342,7 +342,7 @@ export const renderSports = () => {
                 >
                     💬 ${txtJoinChat}
                 </button>`;
-            } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+            } else if (user.email === 'ncnujoinupadmin@gmail.com') {
                 actionBtn = `
                 <button 
                     class="btn" 
@@ -384,7 +384,7 @@ export const renderSports = () => {
                     <h3 style="margin-bottom: 0.5rem;">${p.teamName}</h3>
                     <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 6px;">
                         <span>🏷️ ${txtHost}: ${p.hostName} (${p.hostDept})</span>
-                        ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                        ${p.authorId === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                     </div>
                     <div style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
                         <span>👥 ${totalActiveCount} / ${p.maxParticipants}</span>
@@ -450,7 +450,7 @@ export const renderSports = () => {
 
         const currentUserStr = localStorage.getItem('userProfile');
         let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-        const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = u.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認加入' : 'Confirm Join');
         const msgDesc = isAdmin

@@ -39,7 +39,7 @@ export const renderProfile = () => {
                     </div>
                     <h2 id="profile-username" style="margin: 0; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px;">
                         ${userData.username || userData.displayName || '...'}
-                        ${userData.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                        ${userData.email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                     </h2>
                     <p id="profile-email-display" style="color: #666; margin: 5px 0 0;">${userData.email}</p>
                     

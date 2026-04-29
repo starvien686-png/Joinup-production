@@ -38,7 +38,7 @@ export const renderMyActivitiesDashboard = async () => {
         // ADMIN BYPASS: Admin sees everything in a single list or we add a new tab?
         // Let's keep tabs but 'hosted' means 'everything' for admin? 
         // Or just allow admin to see everything in the current tab.
-        const tabFiltered = user.is_admin ? allActivities : allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+        const tabFiltered = user.email === 'ncnujoinupadmin@gmail.com' ? allActivities : allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
 
         // 2. Filter by category
         if (currentFilter === 'all') {
@@ -162,7 +162,7 @@ export const renderMyActivitiesDashboard = async () => {
                         <div style="flex: 1; min-width: 0; text-align: left;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
                                 ${p.host_name || 'Host'}
-                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 900; line-height: 1;">🛡️ ADMIN</span>` : ''}
+                                ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 900; line-height: 1;">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.host_dept || ''}</div>
                         </div>
@@ -407,7 +407,7 @@ export const renderMyActivitiesDashboard = async () => {
                                 <div style="flex: 1; min-width: 0;">
                                     <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
                                         ${p.snapshot_display_name || 'Member'}
-                                        ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                        ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                     </div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary);">${p.user_email}</div>
                                 </div>

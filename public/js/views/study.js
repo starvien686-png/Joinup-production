@@ -348,7 +348,7 @@ export const renderStudy = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyChat('${p.id}');">💬 ${isZH ? '進入聊天室' : 'Enter Chat Room'}</button>`;
-                    } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+                    } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openStudyJoinForm('${p.id}', '${p.title}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
                     } else if (isPast || isStudyFull || isSuccess) {
@@ -376,7 +376,7 @@ export const renderStudy = () => {
                                 <img src="${hostAvatar}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
                                 <span style="display: flex; align-items: center; gap: 6px;">
                                     ${t('common.host', '發起人', 'Host')}: <strong style="color: var(--text-primary);">${p.host_name}</strong> (${p.host_dept})
-                                    ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                    ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </span>
                             </div>
 
@@ -620,7 +620,7 @@ export const renderStudy = () => {
     window.openStudyJoinForm = async (postId, teamName) => {
         const isZH = isAppZH();
         const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-        const isAdmin = userProfile.is_admin || userProfile.email === 'ncnujoinupadmin@gmail.com';
+        const isAdmin = userProfile.email === 'ncnujoinupadmin@gmail.com';
 
         const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : (isZH ? '確認申請加入' : 'Confirm Request');
         const msgDesc = isAdmin
@@ -746,7 +746,7 @@ export const renderStudy = () => {
                             <div style="margin-bottom: 10px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
                                 <strong>👤 ${t('common.host', '發起人', 'Host')}:</strong> 
                                 <span style="color: var(--text-primary);">${p.host_name} (${p.host_dept})</span>
-                                ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>📍 ${isZH ? '地點' : 'Location'}:</strong> <span style="color: var(--text-primary);">${p.location}</span></div>
                             <div style="margin-bottom: 10px; color: var(--text-secondary);"><strong>🕒 ${isZH ? '時間' : 'Time'}:</strong> <span style="color: var(--text-primary);">${timeStr}</span></div>

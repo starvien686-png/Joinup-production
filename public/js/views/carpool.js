@@ -442,7 +442,7 @@ export const renderCarpool = () => {
                     let actionBtn = '';
                     if (isHost || isParticipant) {
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openGroupChat('${p.id}');">💬 ${txtJoinChat}</button>`;
-                    } else if (user && (user.is_admin || user.email === 'ncnujoinupadmin@gmail.com')) {
+                    } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {
                         // God Mode: Admin can join anything
                         actionBtn = `<button class="btn" onclick="event.stopPropagation(); window.openCarpoolJoinForm('${p.id}', '${cpDisplayTitle}')" style="width: 100%; padding: 0.7rem; font-weight: bold; background: linear-gradient(135deg, #607D8B, #455A64); border: none; color: white; border-radius: 8px; cursor: pointer;">🕵️‍♀️ ${isZH ? 'Monitor Event' : 'Admin Override'}</button>`;
                     } else if (isPast || isCarFull || isSuccess) {
@@ -460,7 +460,7 @@ export const renderCarpool = () => {
                                     <div style="flex: 1;">
                                         <div style="font-weight: bold; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 6px;">
                                             ${p.host_name}
-                                            ${p.is_admin ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                            ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                         </div>
                                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">🎓 ${p.host_dept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
                                         ${hostHobby ? `<div style="font-size: 0.75rem; color: #2196F3; margin-top: 4px;">🎯 ${txtHobbyLabel}: ${hostHobby}</div>` : ''}
@@ -725,7 +725,7 @@ window.openCarpoolJoinForm = async (postId, teamName) => {
 
     const currentUserStr = localStorage.getItem('userProfile');
     let u = currentUserStr ? JSON.parse(currentUserStr) : {};
-    const isAdmin = u.is_admin || u.email === 'ncnujoinupadmin@gmail.com';
+    const isAdmin = u.email === 'ncnujoinupadmin@gmail.com';
 
     const msgConfirm = isAdmin ? 'Admin Monitor Event 🕵️‍♀️' : t('cp.join.confirm', '確認申請共乘', 'Confirm Ride Request');
     const msgDesc = isAdmin
