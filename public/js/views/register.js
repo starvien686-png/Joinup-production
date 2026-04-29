@@ -93,6 +93,7 @@ export const renderRegister = () => {
     const app = document.getElementById('app');
     let activeTab = 'login';
     let clockInterval = null;
+    let googleUserPendingData = null; // Store Google info for new users
 
     if (!document.getElementById('auth-style')) {
         const link = document.createElement('link');
@@ -193,6 +194,14 @@ export const renderRegister = () => {
                                 </div>
                                 <button type="submit" class="btn-primary" data-i18n="login.submit">Login</button>
                             </form>
+                            
+                            <div class="divider">
+                                <span data-i18n="login.or">OR</span>
+                            </div>
+                            
+                            <div id="google-login-container" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                                <div id="google-btn-login"></div>
+                            </div>
                         </div>
 
                         <div id="view-register" style="display: ${activeTab === 'register' ? 'block' : 'none'};">
@@ -243,6 +252,14 @@ export const renderRegister = () => {
                                 </div>
                                 <button type="submit" class="btn-primary" style="margin-top: 10px;" data-i18n="reg.submit">Register</button>
                             </form>
+
+                            <div class="divider">
+                                <span data-i18n="auth.or">OR</span>
+                            </div>
+                            
+                            <div id="google-reg-container" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                                <div id="google-btn-reg"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -549,7 +566,8 @@ export const renderRegister = () => {
                 major: sanitizeInput(document.getElementById('reg-major').value),
                 study_year: finalStudyYear,
                 role: role,
-                is_delayed_graduation: is_delayed_graduation
+                is_delayed_graduation: is_delayed_graduation,
+                profile_pic: googleUserPendingData ? googleUserPendingData.picture : ''
             };
 
             try {
@@ -597,9 +615,86 @@ export const renderRegister = () => {
             }
         };
 
+        // --- GOOGLE AUTH LOGIC ---
+        const handleGoogleResponse = async (response) => {
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                const result = await res.json();
+
+                if (result.isNewUser) {
+                    // New User: Switch to Register tab and pre-fill
+                    googleUserPendingData = result.googleData;
+                    activeTab = 'register';
+                    render(); // Re-render to show register tab
+
+                    // Fill fields
+                    setTimeout(() => {
+                        document.getElementById('reg-email').value = googleUserPendingData.email;
+                        document.getElementById('reg-email').readOnly = true;
+                        document.getElementById('reg-displayName').value = googleUserPendingData.name;
+                        document.getElementById('reg-realName').value = googleUserPendingData.name;
+                        
+                        // Set a random password for Google users to satisfy DB constraint
+                        const randomPwd = Math.random().toString(36).slice(-10) + "G!";
+                        document.getElementById('reg-pwd').value = randomPwd;
+                        document.getElementById('reg-repwd').value = randomPwd;
+                        
+                        // Hide password fields to keep it clean, but keep them in DOM
+                        document.getElementById('reg-pwd').closest('.form-group').style.display = 'none';
+                        document.getElementById('reg-repwd').closest('.form-group').style.display = 'none';
+                        
+                        alert("Google Account verified! 🛡️ Please complete your Major and Year to finish registration.");
+                    }, 100);
+                } else if (result.user) {
+                    // Existing User: Success Login
+                    alert('Login Successful! Welcome back, ' + result.user.username);
+                    localStorage.setItem('userProfile', JSON.stringify(result.user));
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.hash = '#home';
+                    window.location.reload();
+                } else {
+                    alert("Error: " + (result.error || "Failed to authenticate with Google"));
+                }
+            } catch (err) {
+                console.error("Google Auth Error:", err);
+                alert("Connection error during Google login.");
+            }
+        };
+
+        const initGoogleSignIn = () => {
+            if (typeof google === 'undefined') {
+                setTimeout(initGoogleSignIn, 500);
+                return;
+            }
+            
+            google.accounts.id.initialize({
+                client_id: "188345013634-hhgf4i3octm6j5dqtgdp0p56grbufvbb.apps.googleusercontent.com",
+                callback: handleGoogleResponse
+            });
+
+            const btnOptions = {
+                theme: "outline",
+                size: "large",
+                width: "300",
+                text: activeTab === 'login' ? "signin_with" : "signup_with",
+                shape: "pill"
+            };
+
+            const containerId = activeTab === 'login' ? 'google-btn-login' : 'google-btn-reg';
+            const container = document.getElementById(containerId);
+            if (container) {
+                google.accounts.id.renderButton(container, btnOptions);
+            }
+        };
+
         updateTexts();
         renderDepartmentDropdown(typeof I18n !== 'undefined' && I18n.getLanguage ? I18n.getLanguage() : (localStorage.getItem('app_language') || localStorage.getItem('language') || 'en'));
         startClock();
+        initGoogleSignIn();
     };
 
     render();

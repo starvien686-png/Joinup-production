@@ -23,12 +23,15 @@ const { nowTaipei, toTaipei, formatTaipei, dayjs, APP_TIMEZONE } = require('./se
 const pushService = require('./services/push_service');
 const { awardCreditPoint, awardViolationPoint } = require('./services/points_service');
 const { Op } = require('sequelize');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // --- PROTOCOL ZERO 500 ERROR: ENVIRONMENT VALIDATION ---
 const REQUIRED_ENV_VARS = [
     'DB_HOST', 'DB_USER', 'DB_PASS', 'DB_NAME',
     'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS',
-    'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'
+    'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
+    'GOOGLE_CLIENT_ID'
 ];
 
 function validateEnv() {
@@ -469,7 +472,7 @@ const transporter = nodemailer.createTransport({
 
 app.post('/signup', async (req, res) => {
     try {
-        const { username, email, password, major, study_year, role, is_delayed_graduation } = req.body;
+        const { username, email, password, major, study_year, role, is_delayed_graduation, profile_pic } = req.body;
 
         const isAdminWhitelist = email.toLowerCase() === 'ncnujoinupadmin@gmail.com';
 
@@ -493,7 +496,8 @@ app.post('/signup', async (req, res) => {
             study_year,
             role,
             is_delayed_graduation: !!is_delayed_graduation,
-            is_admin: isAdminWhitelist
+            is_admin: isAdminWhitelist,
+            profile_pic: profile_pic || null
         });
 
         res.status(201).json({ message: 'User created successfully!', user: newUser });
@@ -536,6 +540,63 @@ app.post('/login', loginLimiter, async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ error: 'A server error occured: ' + error.message });
+    }
+});
+
+// --- GOOGLE AUTHENTICATION ENDPOINT ---
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { credential } = req.body;
+        if (!credential) return res.status(400).json({ error: "Missing Google credential" });
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        // Check if user already exists
+        const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
+
+        if (user) {
+            // User exists -> Login
+            console.log(`User ${user.username} logged in via Google.`);
+            return res.status(200).json({
+                success: true,
+                isNewUser: false,
+                user: {
+                    username: user.username,
+                    email: user.email,
+                    major: user.major,
+                    study_year: user.study_year,
+                    role: user.role,
+                    bio: user.bio,
+                    hobby: user.hobby,
+                    profile_pic: user.profile_pic,
+                    credit_points: user.credit_points || 0,
+                    violation_points: user.violation_points || 0,
+                    creditPoints: user.credit_points || 0,
+                    violationCount: user.violation_points || 0,
+                    is_admin: user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com'
+                }
+            });
+        } else {
+            // User doesn't exist -> Signal frontend to collect remaining data (Major, Year, Role)
+            return res.status(200).json({
+                success: true,
+                isNewUser: true,
+                googleData: {
+                    email: email.toLowerCase().trim(),
+                    name: name,
+                    picture: picture,
+                    googleId: googleId
+                }
+            });
+        }
+    } catch (error) {
+        console.error("[Google Auth] Error:", error);
+        res.status(500).json({ error: "Google Authentication failed: " + error.message });
     }
 });
 
