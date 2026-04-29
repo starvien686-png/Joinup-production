@@ -193,6 +193,7 @@ window.navigateTo = (viewName) => {
     // Reset global layout styles that might have been changed by full-screen views (like chat)
     document.body.style.paddingBottom = '80px';
     document.body.style.overflow = '';
+    document.body.style.backgroundColor = 'var(--bg-body)';
 
     if (viewName === 'home') {
 
