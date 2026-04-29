@@ -2809,6 +2809,87 @@ async function startEventRetirementWorker() {
     setInterval(retireLogic, 60000);
 }
 
+// --- BACKGROUND WORKER: AUTOMATIC DATABASE CAPACITY CLEANUP ---
+/**
+ * Safely deletes large amounts of data in batches to avoid table locks and TiDB spikes.
+ */
+async function batchDelete(tableName, condition, replacements = []) {
+    let totalDeleted = 0;
+    let iteration = 0;
+    while (true) {
+        iteration++;
+        const [result] = await sequelize.query(
+            `DELETE FROM ${tableName} WHERE ${condition} LIMIT 1000`,
+            { replacements }
+        );
+        
+        const deleted = (result && result.affectedRows) ? result.affectedRows : 0;
+        totalDeleted += deleted;
+        
+        if (deleted < 1000) break;
+        
+        // Yield execution to prevent event loop starvation and allow DB to breathe
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (iteration % 5 === 0) console.log(`[Cleanup] Ongoing: ${tableName} deleted ${totalDeleted} rows...`);
+    }
+    return totalDeleted;
+}
+
+async function startDatabaseCleanupWorker() {
+    console.log('[Cleanup] Initializing Database Capacity Guard (Schedule: 03:00 AM)');
+
+    cron.schedule('0 3 * * *', async () => {
+        const startTime = Date.now();
+        console.log('[Cleanup] Starting scheduled database purge...');
+
+        try {
+            // 1. request_idempotency (Expired cache)
+            // No strict dependencies, can be cleared first.
+            const idempCount = await batchDelete('request_idempotency', 'expires_at < NOW()');
+            if (idempCount > 0) console.log(`[Cleanup] Purged ${idempCount} expired idempotency keys.`);
+
+            // 2. system_notifications (Ephemeral notifications)
+            // We clear these before chats/outbox to avoid logical inconsistency (notifications pointing to deleted objects)
+            const cutoffNotifRead = nowTaipei().subtract(14, 'day').format('YYYY-MM-DD HH:mm:ss');
+            const cutoffNotifUnread = nowTaipei().subtract(30, 'day').format('YYYY-MM-DD HH:mm:ss');
+            
+            const readNotifCount = await batchDelete('system_notifications', 'is_read = 1 AND created_at < ?', [cutoffNotifRead]);
+            const unreadNotifCount = await batchDelete('system_notifications', 'is_read = 0 AND created_at < ?', [cutoffNotifUnread]);
+            if (readNotifCount + unreadNotifCount > 0) {
+                console.log(`[Cleanup] Purged ${readNotifCount} read and ${unreadNotifCount} unread system notifications.`);
+            }
+
+            // 3. chat_messages (History - Preserved for 90 days as per user request)
+            const cutoffChat = nowTaipei().subtract(90, 'day').format('YYYY-MM-DD HH:mm:ss');
+            const chatCount = await batchDelete('chat_messages', 'created_at < ?', [cutoffChat]);
+            if (chatCount > 0) console.log(`[Cleanup] Purged ${chatCount} legacy chat messages (>90 days).`);
+
+            // 4. outbox_events & dead_letter_queue (Technical logs)
+            const cutoffOutbox = nowTaipei().subtract(7, 'day').format('YYYY-MM-DD HH:mm:ss');
+            const outboxCount = await batchDelete('outbox_events', 'status = "processed" AND created_at < ?', [cutoffOutbox]);
+            
+            const cutoffDLQ = nowTaipei().subtract(30, 'day').format('YYYY-MM-DD HH:mm:ss');
+            const dlqCount = await batchDelete('dead_letter_queue', 'failed_at < ?', [cutoffDLQ]);
+            if (outboxCount + dlqCount > 0) {
+                console.log(`[Cleanup] Purged ${outboxCount} processed outbox events and ${dlqCount} old DLQ entries.`);
+            }
+
+            // 5. audit_logs (Activity logs - Long term but not eternal)
+            const cutoffAudit = nowTaipei().subtract(180, 'day').format('YYYY-MM-DD HH:mm:ss');
+            const auditCount = await batchDelete('audit_logs', 'timestamp < ?', [cutoffAudit]);
+            if (auditCount > 0) console.log(`[Cleanup] Purged ${auditCount} ancient audit logs (>180 days).`);
+
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+            console.log(`[Cleanup] Daily maintenance completed in ${duration}s.`);
+        } catch (error) {
+            console.error('[Cleanup] CRITICAL ERROR during database maintenance:', error.message);
+        }
+    }, {
+        scheduled: true,
+        timezone: "Asia/Taipei"
+    });
+}
+
 // 🕒 DAILY DIGEST CRON JOB
 // Logic provided by user:
 // 12:00 -> 19:01 (Prev Day) to 12:00 (Today)
@@ -2971,5 +3052,6 @@ server.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
     await syncAll();
     startEventRetirementWorker();
+    startDatabaseCleanupWorker();
     workerService.startWorker();
 });
