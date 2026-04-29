@@ -1043,32 +1043,33 @@ export const renderMessages = (roomId = null, prefill = null) => {
                 height: 100dvh; 
                 background: var(--bg-primary); 
                 width: 100%;
-                max-width: 600px; 
-                margin: 0 auto; 
                 position: fixed;
                 top: 0;
-                left: 50%;
-                transform: translateX(-50%);
+                left: 0;
                 z-index: 1000;
-                box-shadow: 0 0 50px rgba(0,0,0,0.15);
                 overflow: hidden;
                 transition: background-color 0.3s ease;
             }
-            @media (min-width: 1400px) {
-                .chat-container { 
-                    max-width: 800px;
+            .chat-header { background: var(--bg-card); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+            .chat-message-area { 
+                flex: 1; 
+                padding: 20px 20px; 
+                overflow-y: auto; 
+                display: flex; 
+                flex-direction: column; 
+                gap: 12px; 
+                background-image: url("https://www.transparenttextures.com/patterns/cubes.png"); 
+                scroll-behavior: smooth; 
+                -webkit-overflow-scrolling: touch; 
+            }
+            @media (min-width: 1024px) {
+                .chat-message-area {
+                    padding: 30px 10%; /* More breathing room on large screens */
+                }
+                .chat-input-area {
+                    padding: 15px 10% !important;
                 }
             }
-            @media (max-width: 768px) {
-                .chat-container { 
-                    max-width: 100%; 
-                    left: 0;
-                    transform: none;
-                    box-shadow: none;
-                }
-            }
-            .chat-header { background: var(--bg-card); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-            .chat-message-area { flex: 1; padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-image: url("https://www.transparenttextures.com/patterns/cubes.png"); scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
             .chat-input-area { background: var(--bg-secondary); padding: 10px 16px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color); padding-bottom: calc(10px + env(safe-area-inset-bottom)); transition: background-color 0.3s ease; }
             .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 16px; margin-bottom: 4px; font-size: 0.95rem; line-height: 1.5; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.08); cursor: pointer; transition: filter 0.2s; }
             .chat-bubble:active { filter: brightness(0.9); }
