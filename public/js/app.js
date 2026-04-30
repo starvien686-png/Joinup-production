@@ -201,7 +201,7 @@ window.navigateTo = (viewName) => {
 
         renderHome();
 
-    } else if (viewName === 'register') {
+    } else if (viewName === 'login' || viewName === 'register') {
 
         state.isLoggedIn = false;
 

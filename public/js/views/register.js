@@ -652,10 +652,15 @@ export const renderRegister = () => {
                 } else if (result.user) {
                     // Existing User: Success Login
                     alert('Login Successful! Welcome back, ' + result.user.username);
-                    localStorage.setItem('userProfile', JSON.stringify(result.user));
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.location.hash = '#home';
-                    window.location.reload();
+                    if (typeof window.validLogin === 'function') {
+                        window.validLogin(result.user);
+                    } else {
+                        localStorage.setItem('userProfile', JSON.stringify(result.user));
+                        localStorage.setItem('userEmail', result.user.email);
+                        localStorage.setItem('isLoggedIn', 'true');
+                        window.location.hash = '#home';
+                        window.location.reload();
+                    }
                 } else {
                     alert("Error: " + (result.error || "Failed to authenticate with Google"));
                 }
