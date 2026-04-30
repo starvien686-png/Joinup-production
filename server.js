@@ -2434,6 +2434,27 @@ app.post('/submit-feedback', checkAuth, async (req, res) => {
 
 });
 
+// 1.1. API UNTUK MENYIMPAN CANCELLATION FEEDBACK
+app.post('/api/v1/cancellation-feedback', async (req, res) => {
+    try {
+        const { event_id, event_category, user_email, action_type, reason, detail } = req.body;
+        
+        const query = `
+            INSERT INTO cancellation_feedback 
+            (event_id, event_category, user_email, action_type, reason, detail) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        await sequelize.query(query, {
+            replacements: [event_id, event_category, user_email, action_type, reason, detail || '']
+        });
+
+        res.json({ success: true, message: 'Cancellation feedback recorded successfully.' });
+    } catch (err) {
+        console.error('[API] Error in /api/v1/cancellation-feedback:', err);
+        res.status(500).json({ error: 'Failed to record cancellation feedback.' });
+    }
+});
 
 // 2. API UNTUK DASHBOARD ADMIN (Ambil Statistik & Detail)
 app.get('/admin/feedback-stats', async (req, res) => {
@@ -2728,6 +2749,16 @@ async function syncAll() {
                 category_name ENUM('carpool', 'hangout', 'sports', 'study', 'housing'),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_email, category_name)
+            )`,
+            `CREATE TABLE IF NOT EXISTS cancellation_feedback (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_id INT,
+                event_category VARCHAR(50),
+                user_email VARCHAR(255),
+                action_type VARCHAR(50),
+                reason VARCHAR(255),
+                detail TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];
 

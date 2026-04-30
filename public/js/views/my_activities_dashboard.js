@@ -131,28 +131,28 @@ export const renderMyActivitiesDashboard = async () => {
 
             const isHost = p.user_role === 'host';
             let statusBadge = '';
-            if (p.status === 'open') statusBadge = `<span style="font-size: 0.7rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 招募中</span>`;
-            else if (p.status === 'full') statusBadge = `<span style="font-size: 0.7rem; color: #f44336; border: 1px solid #f44336; padding: 2px 6px; border-radius: 4px;">🔴 額滿</span>`;
-            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.7rem; color: #ff9800; border: 1px solid #ff9800; padding: 2px 6px; border-radius: 4px;">⏸️ 暫停</span>`;
-            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.7rem; color: #2196f3; border: 1px solid #2196f3; padding: 2px 6px; border-radius: 4px;">🎉 已成案</span>`;
-            else if (p.status === 'cancelled') statusBadge = `<span style="font-size: 0.7rem; color: #9e9e9e; border: 1px solid #9e9e9e; padding: 2px 6px; border-radius: 4px;">✗ 已取消</span>`;
+            if (p.status === 'open') statusBadge = `<span style="font-size: 0.7rem; color: #4CAF50; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🟢 ${isZH ? '招募中' : 'Recruiting'}</span>`;
+            else if (p.status === 'full') statusBadge = `<span style="font-size: 0.7rem; color: #f44336; border: 1px solid #4CAF50; padding: 2px 6px; border-radius: 4px;">🔴 ${isZH ? '額滿' : 'Full'}</span>`;
+            else if (p.status === 'paused') statusBadge = `<span style="font-size: 0.7rem; color: #ff9800; border: 1px solid #ff9800; padding: 2px 6px; border-radius: 4px;">⏸️ ${isZH ? '暫停' : 'Paused'}</span>`;
+            else if (p.status === 'success') statusBadge = `<span style="font-size: 0.7rem; color: #2196f3; border: 1px solid #2196f3; padding: 2px 6px; border-radius: 4px;">🎉 ${isZH ? '已成案' : 'Success'}</span>`;
+            else if (p.status === 'cancelled') statusBadge = `<span style="font-size: 0.7rem; color: #9e9e9e; border: 1px solid #9e9e9e; padding: 2px 6px; border-radius: 4px;">✗ ${isZH ? '已取消' : 'Cancelled'}</span>`;
 
             let manageButtons = '';
             if (isHost) {
                 if (p.status === 'open' || p.status === 'full') {
                     manageButtons = `
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                            <button onclick="window.pauseDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">⏸️ 暫停</button>
-                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 成案</button>
-                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ 取消活動</button>
+                            <button onclick="window.pauseDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #FF9800; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">⏸️ ${isZH ? '暫停' : 'Pause'}</button>
+                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 ${isZH ? '成案' : 'Success'}</button>
+                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ ${isZH ? '取消活動' : 'Cancel Activity'}</button>
                         </div>
                     `;
                 } else if (p.status === 'paused') {
                     manageButtons = `
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                            <button onclick="window.resumeDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">▶️ 繼續</button>
-                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 成案</button>
-                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ 取消活動</button>
+                            <button onclick="window.resumeDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #4CAF50; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">▶️ ${isZH ? '繼續' : 'Resume'}</button>
+                            <button onclick="window.successDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #2196f3; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem;">🎉 ${isZH ? '成案' : 'Success'}</button>
+                            <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" style="padding: 8px; border-radius: 8px; background: #F44336; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; grid-column: span 2;">❌ ${isZH ? '取消活動' : 'Cancel Activity'}</button>
                         </div>
                     `;
                 }
@@ -277,25 +277,28 @@ export const renderMyActivitiesDashboard = async () => {
     };
 
     window.pauseDashboardActivity = (postId, category) => {
-        if (confirm('確定要暫停招募嗎？')) {
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
+        if (confirm(isZH ? '確定要暫停招募嗎？' : 'Are you sure you want to pause recruitment?')) {
             updateDashboardActivityStatus(postId, category, 'paused');
         }
     };
 
     window.resumeDashboardActivity = (postId, category) => {
-        if (confirm('確定要繼續招募嗎？')) {
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
+        if (confirm(isZH ? '確定要繼續招募嗎？' : 'Are you sure you want to resume recruitment?')) {
             updateDashboardActivityStatus(postId, category, 'open');
         }
     };
 
     window.successDashboardActivity = (postId, category) => {
-        if (confirm('恭喜成案！確定要標記為已成案嗎？')) {
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
+        if (confirm(isZH ? '恭喜成案！確定要標記為已成案嗎？' : 'Congratulations! Mark this activity as success?')) {
             updateDashboardActivityStatus(postId, category, 'success');
         }
     };
 
     window.cancelDashboardActivity = async (postId, category) => {
-        const isZH = true;
+        const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const currentActivity = allActivities.find(a => String(a.id) === String(postId) && a.category === category);
         
         const executeCancel = () => updateDashboardActivityStatus(postId, category, 'cancelled');
@@ -303,7 +306,7 @@ export const renderMyActivitiesDashboard = async () => {
         if (currentActivity && currentActivity.created_at) {
             const ageMs = Date.now() - new Date(currentActivity.created_at).getTime();
             if (ageMs <= 10 * 60 * 1000) {
-                if (confirm(isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure?")) {
+                if (confirm(isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure you want to cancel?")) {
                     executeCancel();
                 }
                 return;
@@ -315,11 +318,11 @@ export const renderMyActivitiesDashboard = async () => {
         if (existingModal) existingModal.remove();
 
         const reasons = [
-            { value: 'schedule_conflict', label: '🗓️ 時間衝突 / 有其他安排' },
-            { value: 'not_enough_people', label: '👥 人數不足 / 沒人報名' },
-            { value: 'wrong_info', label: '📝 發佈資訊有誤' },
-            { value: 'personal_reason', label: '🙋 個人原因' },
-            { value: 'other', label: '💬 其他原因' }
+            { value: 'schedule_conflict', label: isZH ? '🗓️ 時間衝突 / 有其他安排' : '🗓️ Schedule Conflict' },
+            { value: 'not_enough_people', label: isZH ? '👥 人數不足 / 沒人報名' : '👥 Not Enough People' },
+            { value: 'wrong_info', label: isZH ? '📝 發佈資訊有誤' : '📝 Wrong Information' },
+            { value: 'personal_reason', label: isZH ? '🙋 個人原因' : '🙋 Personal Reason' },
+            { value: 'other', label: isZH ? '💬 其他原因' : '💬 Other Reasons' }
         ];
 
         const reasonRadios = reasons.map(r => `<label><input type="radio" name="cancel-reason" value="${r.value}"><span>${r.label}</span></label>`).join('');
@@ -327,13 +330,13 @@ export const renderMyActivitiesDashboard = async () => {
         const modalHtml = `
             <div class="cancel-feedback-overlay" id="cancel-feedback-overlay">
                 <div class="cancel-feedback-modal">
-                    <div class="cancel-warning-badge">⚠️ 取消前必填</div>
+                    <div class="cancel-warning-badge">${isZH ? '⚠️ 取消前必填' : '⚠️ Required before cancel'}</div>
                     <h3>${isZH ? '為什麼要取消此活動？' : 'Why are you canceling?'}</h3>
-                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please provide a reason to avoid penalties.'}</p>
+                    <p class="modal-subtitle">${isZH ? '請告訴我們取消原因。取消已有已核准參與者的活動，或在活動開始前最後 2 小時內取消，將扣除 2 點信用積分。' : 'Please tell us the reason. Canceling an event with approved participants or within 2 hours of the start time will result in a 2-point credit penalty.'}</p>
                     <div class="cancel-reason-group" id="cancel-reason-group">${reasonRadios}</div>
-                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="補充說明（選填）..."></textarea>
-                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>❌ 確認取消並送出</button>
-                    <button onclick="document.getElementById('cancel-feedback-overlay').remove()" style="margin-top: 10px; background: none; border: none; color: #999; cursor: pointer; text-decoration: underline; width: 100%;">暫不取消</button>
+                    <textarea class="cancel-detail-textarea" id="cancel-detail-text" placeholder="${isZH ? '補充說明（選填）...' : 'Additional details (optional)...'}"></textarea>
+                    <button class="cancel-submit-btn" id="cancel-submit-btn" disabled>❌ ${isZH ? '確認取消並送出' : 'Confirm Cancel & Submit'}</button>
+                    <button onclick="document.getElementById('cancel-feedback-overlay').remove()" style="margin-top: 10px; background: none; border: none; color: #999; cursor: pointer; text-decoration: underline; width: 100%;">${isZH ? '暫不取消' : 'Don\'t cancel yet'}</button>
                 </div>
             </div>
         `;
@@ -351,7 +354,7 @@ export const renderMyActivitiesDashboard = async () => {
             const selected = document.querySelector('input[name="cancel-reason"]:checked');
             if (!selected) return;
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ 處理中...';
+            submitBtn.textContent = isZH ? '⏳ 處理中...' : '⏳ Processing...';
             try {
                 await api.fetch('/api/v1/cancellation-feedback', {
                     method: 'POST',
