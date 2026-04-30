@@ -1,5 +1,6 @@
 import { notifications } from './services/notification.js';
 import { ThemeService } from './services/themeService.js';
+import api from './utils/api.js';
 
 
 
@@ -313,7 +314,7 @@ window.refreshUserProfile = async () => {
 
     try {
         // Use the new secure session-based endpoint with authentication header
-        const response = await api.fetch('/api/v1/users/me', {
+        const response = await (window.api || api).fetch('/api/v1/users/me', {
             idempotency: false,
             headers: { 'x-user-email': userEmail }
         });
@@ -539,14 +540,14 @@ window.showAnnouncements = async () => {
     if (safeUserEmail) {
         try {
             // Mark all as read immediately when opening the bell
-            api.fetch('/api/v1/notifications/mark-all-read', {
+            (window.api || api).fetch('/api/v1/notifications/mark-all-read', {
                 method: 'POST',
                 body: { user_email: safeUserEmail }
             }).then(() => {
                 if (window.checkNotificationBadge) window.checkNotificationBadge();
             }).catch(e => console.warn("Failed to clear notifications:", e));
 
-            const res = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=20`, { idempotency: false });
+            const res = await (window.api || api).fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=20`, { idempotency: false });
 
 
             if (res.success && res.data && res.data.list) {
@@ -962,7 +963,7 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
     try {
         const endpoint = action === 'accept' ? '/api/v1/join/approve' : '/api/v1/join/reject';
 
-        await api.fetch(endpoint, {
+        await (window.api || api).fetch(endpoint, {
             method: 'POST',
             body: payloadData
         });
@@ -1368,164 +1369,110 @@ window.closeEventEarly = async (activityId) => {
 
 
 window.showKickMemberModal = async (roomId) => {
-
-    const chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
-
-    const room = chatRooms.find(r => String(r.id) === String(roomId));
-
-
-
-    if (!room) return alert("Ruang obrolan tidak ditemukan!/Chat room not found!");
-
-
+    // roomId format is eventType_eventId
+    const parts = roomId.split('_');
+    if (parts.length < 2) return alert("Invalid Room ID");
+    
+    const category = parts[0];
+    const postId = parts[1];
 
     const currentUserStr = localStorage.getItem('userProfile');
-
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
-
-
-
-    const hostParticipant = room.participants.find(p => p.role === 'host');
-
-    const isHost = hostParticipant && hostParticipant.id === currentUser.email;
-
-
-
+    const user = currentUserStr ? JSON.parse(currentUserStr) : {};
+    if (!user.email) return alert("Please login first.");
+    
     const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-
     const isZH = currentLang.toLowerCase().includes('zh');
 
+    // Show loading or just fetch
+    try {
+        const res = await (window.api || api).fetch(`/api/v1/host/participants?event_type=${category}&event_id=${postId}&host_email=${encodeURIComponent(user.email)}`, { idempotency: false });
+        
+        if (!res.success) {
+            // If host check fails, they might just not be the host
+            return alert(isZH ? "只有發起人可以管理成員！" : "Only the Host can manage members!");
+        }
 
+        const participants = res.data || [];
+        const members = participants.filter(p => (p.status === 'approved' || p.status === 'accepted') && p.user_email.toLowerCase() !== user.email.toLowerCase());
 
-    if (!isHost) {
+        const txtTitle = isZH ? '管理成員' : 'Manage Members';
+        const txtKick = isZH ? '移除' : 'Kick';
+        const txtNoMember = isZH ? '聊天室內沒有其他成員。' : 'No other members in the chat.';
+        const txtClose = isZH ? '關閉' : 'Close';
 
-        return alert(isZH ? "只有發起人可以移除成員！" : "Only the Host can remove members!");
+        const overlay = document.createElement('div');
+        overlay.id = 'kick-member-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px);';
 
-    }
+        let membersHtml = '';
+        if (members.length > 0) {
+            membersHtml = members.map(m => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee;">
+                    <span style="font-weight: bold; color: #333;">${m.snapshot_display_name || m.user_email}</span>
+                    <button onclick="window.executeKickMember('${roomId}', '${m.user_email}', '${(m.snapshot_display_name || m.user_email).replace(/'/g, "\\'")}', '${category}', '${postId}')" style="background: #F44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">${txtKick}</button>
+                </div>
+            `).join('');
+        } else {
+            membersHtml = `<p style="text-align: center; color: #888;">${txtNoMember}</p>`;
+        }
 
-
-
-    const members = room.participants.filter(p => p.id !== currentUser.email);
-
-
-
-    const txtTitle = isZH ? '管理成員' : 'Manage Members';
-
-    const txtKick = isZH ? '移除' : 'Kick';
-
-    const txtNoMember = isZH ? '聊天室內沒有其他成員。' : 'No other members in the chat.';
-
-    const txtClose = isZH ? '關閉' : 'Close';
-
-
-
-    const overlay = document.createElement('div');
-
-    overlay.id = 'kick-member-overlay';
-
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px);';
-
-
-
-    let membersHtml = '';
-
-    if (members.length > 0) {
-
-        membersHtml = members.map(m => `
-
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee;">
-
-                <span style="font-weight: bold; color: #333;">${m.name || m.id}</span>
-
-                <button onclick="window.executeKickMember('${roomId}', '${m.id}', '${m.name || m.id}')" style="background: #F44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">${txtKick}</button>
-
+        overlay.innerHTML = `
+            <div style="background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); animation: scaleIn 0.2s ease-out;">
+                <h3 style="margin: 0 0 15px 0; color: var(--text-primary); text-align: center;">🛡️ ${txtTitle}</h3>
+                <div style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
+                    ${membersHtml}
+                </div>
+                <button onclick="document.getElementById('kick-member-overlay').remove()" style="width: 100%; padding: 12px; background: var(--bg-secondary); color: var(--text-primary); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">${txtClose}</button>
             </div>
+        `;
+        document.body.appendChild(overlay);
 
-        `).join('');
-
-    } else {
-
-        membersHtml = `<p style="text-align: center; color: #888;">${txtNoMember}</p>`;
-
+    } catch (err) {
+        console.error("Failed to fetch members:", err);
+        alert(isZH ? "無法取得成員名單" : "Failed to fetch member list");
     }
-
-
-
-    overlay.innerHTML = `
-
-        <div style="background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); animation: scaleIn 0.2s ease-out;">
-
-            <h3 style="margin: 0 0 15px 0; color: var(--text-primary); text-align: center;">🛡️ ${txtTitle}</h3>
-
-            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
-
-                ${membersHtml}
-
-            </div>
-
-            <button onclick="document.getElementById('kick-member-overlay').remove()" style="width: 100%; padding: 12px; background: var(--bg-secondary); color: var(--text-primary); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">${txtClose}</button>
-
-        </div>
-
-    `;
-
-
-
-    document.body.appendChild(overlay);
-
 };
 
 
-
-window.executeKickMember = (roomId, memberEmail, memberName) => {
+window.executeKickMember = async (roomId, memberEmail, memberName, category, postId) => {
 
     const currentLang = localStorage.getItem('language') || localStorage.getItem('lang') || 'zh-TW';
-
     const isZH = currentLang.toLowerCase().includes('zh');
-
-    const msgConfirm = isZH ? `確定要將 ${memberName} 移出聊天室嗎？` : `Are you sure you want to remove ${memberName}?`;
-
-
+    const msgConfirm = isZH ? `確定要將 ${memberName} 移出活動與聊天室嗎？` : `Are you sure you want to remove ${memberName} from this event and chat?`;
 
     if (confirm(msgConfirm)) {
+        const currentUserStr = localStorage.getItem('userProfile');
+        const user = currentUserStr ? JSON.parse(currentUserStr) : {};
 
-        let chatRooms = JSON.parse(localStorage.getItem('chatRooms') || '[]');
+        try {
+            // Call the backend to reject/remove the user
+            const res = await (window.api || api).post('/api/v1/join/reject', {
+                event_type: category,
+                event_id: postId,
+                target_user_email: memberEmail,
+                host_email: user.email,
+                participant_id: 'KICK_ACTION'
+            });
 
-        const roomIndex = chatRooms.findIndex(r => String(r.id) === String(roomId));
+            if (!res.success) throw new Error(res.message || "Failed");
 
-        if (roomIndex > -1) {
+            if (window.sendAppNotification) {
+                window.sendAppNotification(memberEmail, 'info', isZH ? `⚠️ 您已被發起人移出活動。` : `⚠️ You have been removed from the activity by the Host.`, '');
+            }
 
-            chatRooms[roomIndex].participants = chatRooms[roomIndex].participants.filter(p => p.id !== memberEmail);
+            alert(isZH ? "已成功移除！" : "Member removed successfully!");
+            document.getElementById('kick-member-overlay').remove();
 
-            localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
-
+            if (window.location.hash.includes('messages')) {
+                window.location.reload();
+            } else if (window.manageParticipantsDashboard) {
+                window.manageParticipantsDashboard(postId, category);
+            }
+        } catch (err) {
+            alert(isZH ? "移除失敗" : "Failed");
         }
-
-
-
-        if (window.sendAppNotification) {
-
-            window.sendAppNotification(memberEmail, 'info', isZH ? `⚠️ 您已被發起人移出聊天室。` : `⚠️ You have been removed from the chat room by the Host.`, '');
-
-        }
-
-
-
-        alert(isZH ? "已成功移除！" : "Member removed successfully!");
-
-        document.getElementById('kick-member-overlay').remove();
-
-
-
-        if (window.location.hash.includes('messages')) {
-
-            window.location.reload();
-
-        }
-
     }
-
-};
+}
 
 
 
@@ -1610,7 +1557,7 @@ async function syncNotifications() {
     try {
         const u = JSON.parse(userProfileStr);
         const safeUserEmail = localStorage.getItem('userEmail') || u.email || u.id; // Jaring Pengaman!
-        const data = await api.fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=5&unread_only=true`, { idempotency: false });
+        const data = await (window.api || api).fetch(`/api/v1/notifications?user_email=${encodeURIComponent(safeUserEmail)}&limit=5&unread_only=true`, { idempotency: false });
 
         if (data.success && data.data.list && data.data.list.length > 0) {
             const latestNotifs = data.data.list;
@@ -1670,7 +1617,7 @@ async function syncNotifications() {
                 }
 
                 // Mark as read immediately on fetch so it doesn't haunt the user on next login
-                api.fetch(`/api/v1/notifications/${newest.id}/mark-as-read`, { method: 'POST' }).catch(console.error);
+                (window.api || api).fetch(`/api/v1/notifications/${newest.id}/mark-as-read`, { method: 'POST' }).catch(console.error);
             }
 
             // Auto-refresh disabled to save DB quota
