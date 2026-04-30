@@ -1,6 +1,9 @@
 import { notifications } from './services/notification.js';
 import { ThemeService } from './services/themeService.js';
+import { I18n } from './services/i18n.js';
 import api from './utils/api.js';
+
+window.I18n = I18n;
 
 
 
@@ -1669,6 +1672,9 @@ window.addEventListener('hashchange', () => {
         window.navigateTo(hash);
     }
 });
+
+// Initial Render
+render();
 
 // --- Starbucks Promotional Pop-up (Gen Z Aesthetic Implementation) ---
 (function() {
