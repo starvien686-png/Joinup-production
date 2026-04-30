@@ -159,7 +159,16 @@ export const renderMyActivitiesDashboard = async () => {
             }
 
             return `
-                <div class="card" style="margin-bottom: 1.2rem; padding: 18px; cursor: default; background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); ${p.status === 'cancelled' ? 'opacity: 0.6;' : ''}">
+                <div class="card" style="position: relative; margin-bottom: 1.2rem; padding: 18px; cursor: default; background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); ${p.status === 'cancelled' ? 'opacity: 0.6;' : ''}">
+                    ${isHost && p.status !== 'cancelled' && p.status !== 'success' ? `
+                        <button onclick="window.cancelDashboardActivity('${p.id}', '${p.category}')" 
+                                style="position: absolute; top: 12px; right: 12px; background: #fee2e2; color: #ef4444; border: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 0.2s; z-index: 10;"
+                                onmouseover="this.style.background='#fecaca'" 
+                                onmouseout="this.style.background='#fee2e2'"
+                                title="${isZH ? '取消活動' : 'Cancel Activity'}">
+                            ✕
+                        </button>
+                    ` : ''}
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                         <span style="font-size: 0.75rem; background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             ${icon} ${labelName}
@@ -299,21 +308,10 @@ export const renderMyActivitiesDashboard = async () => {
 
     window.cancelDashboardActivity = async (postId, category) => {
         const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
-        const currentActivity = allActivities.find(a => String(a.id) === String(postId) && a.category === category);
         
         const executeCancel = () => updateDashboardActivityStatus(postId, category, 'cancelled');
 
-        if (currentActivity && currentActivity.created_at) {
-            const ageMs = Date.now() - new Date(currentActivity.created_at).getTime();
-            if (ageMs <= 10 * 60 * 1000) {
-                if (confirm(isZH ? "此活動剛建立不久，確定要取消嗎？" : "This event was just created. Are you sure you want to cancel?")) {
-                    executeCancel();
-                }
-                return;
-            }
-        }
-
-        // Penalty Modal for older activities
+        // Penalty Modal
         const existingModal = document.getElementById('cancel-feedback-overlay');
         if (existingModal) existingModal.remove();
 
