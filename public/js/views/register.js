@@ -586,7 +586,8 @@ export const renderRegister = () => {
                         displayName: payloadDatabase.username,
                         role: payloadDatabase.role,
                         study_year: payloadDatabase.study_year,
-                        major: payloadDatabase.major
+                        major: payloadDatabase.major,
+                        profile_pic: payloadDatabase.profile_pic
                     };
 
                     try {

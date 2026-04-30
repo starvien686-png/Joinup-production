@@ -203,6 +203,12 @@ window.navigateTo = (viewName) => {
 
     } else if (viewName === 'login' || viewName === 'register') {
 
+        if (state.isLoggedIn) {
+            window.location.hash = '#home';
+            renderHome();
+            return;
+        }
+
         state.isLoggedIn = false;
 
         renderRegister();
