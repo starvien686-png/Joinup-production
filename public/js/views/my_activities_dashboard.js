@@ -15,7 +15,7 @@ export const renderMyActivitiesDashboard = async () => {
     let allActivities = [];
     let filteredActivities = [];
     let currentFilter = 'all';
-    let activeTab = 'hosted'; // 'hosted' or 'joined'
+    let activeTab = 'ongoing'; // 'ongoing', 'hosted', or 'joined'
 
     const fetchActivities = async () => {
         try {
@@ -34,11 +34,24 @@ export const renderMyActivitiesDashboard = async () => {
         currentFilter = filter || 'all';
         activeTab = tab || activeTab;
         
-        // 1. Filter by role (host vs participant)
-        // ADMIN BYPASS: Admin sees everything in a single list or we add a new tab?
-        // Let's keep tabs but 'hosted' means 'everything' for admin? 
-        // Or just allow admin to see everything in the current tab.
-        const tabFiltered = user.email === 'ncnujoinupadmin@gmail.com' ? allActivities : allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+        // 1. Filter by role (host vs participant) or Ongoing status
+        let tabFiltered;
+        if (activeTab === 'ongoing') {
+            const now = new Date();
+            tabFiltered = allActivities.filter(a => {
+                const isOngoingStatus = ['open', 'full', 'paused'].includes(a.status);
+                const eventTime = new Date(a.unified_event_time || a.created_at);
+                return isOngoingStatus && eventTime > now;
+            });
+            // Sort by unified_event_time ASC (soonest first)
+            tabFiltered.sort((a, b) => {
+                const timeA = new Date(a.unified_event_time || 0);
+                const timeB = new Date(b.unified_event_time || 0);
+                return timeA - timeB;
+            });
+        } else {
+            tabFiltered = user.email === 'ncnujoinupadmin@gmail.com' ? allActivities : allActivities.filter(a => a.user_role === (activeTab === 'hosted' ? 'host' : 'participant'));
+        }
 
         // 2. Filter by category
         if (currentFilter === 'all') {
@@ -80,12 +93,15 @@ export const renderMyActivitiesDashboard = async () => {
 
         const isZH = (localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh');
         const tabsHtml = `
-            <div style="display: flex; background: var(--bg-body); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color);">
-                <button onclick="window.setDashboardTab('hosted')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'hosted' ? 'white' : 'transparent'}; color: ${activeTab === 'hosted' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'hosted' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
-                    ${isZH ? '我發起的' : 'Initiated by Me'}
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-body); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--border-color); gap: 4px;">
+                <button onclick="window.setDashboardTab('ongoing')" style="padding: 10px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'ongoing' ? 'white' : 'transparent'}; color: ${activeTab === 'ongoing' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'ongoing' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'}; font-size: 0.85rem;">
+                    ${isZH ? '進行中' : 'Ongoing'}
                 </button>
-                <button onclick="window.setDashboardTab('joined')" style="flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'joined' ? 'white' : 'transparent'}; color: ${activeTab === 'joined' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'joined' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
-                    ${isZH ? '我參與的' : 'Joined by Me'}
+                <button onclick="window.setDashboardTab('hosted')" style="padding: 10px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'hosted' ? 'white' : 'transparent'}; color: ${activeTab === 'hosted' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'hosted' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'}; font-size: 0.85rem;">
+                    ${isZH ? '我發起的' : 'Initiated'}
+                </button>
+                <button onclick="window.setDashboardTab('joined')" style="padding: 10px 2px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; background: ${activeTab === 'joined' ? 'white' : 'transparent'}; color: ${activeTab === 'joined' ? 'var(--primary-light)' : 'var(--text-secondary)'}; box-shadow: ${activeTab === 'joined' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'}; font-size: 0.85rem;">
+                    ${isZH ? '我參與的' : 'Joined'}
                 </button>
             </div>
         `;
