@@ -437,48 +437,7 @@ window.validLogin = (user) => {
 
 
 
-window.handleDeepLink = (payload) => {
 
-    const { type, id, metadata } = payload;
-
-    if (payload.notifId) MockStore.trackNotificationStatus(payload.notifId, 'opened');
-
-
-
-    if (type === 'support_appeal') {
-
-        const userEmail = localStorage.getItem('userEmail');
-
-        let rooms = MockStore.getChatRooms(userEmail);
-
-        let supportRoom = rooms.find(r => r.roomType === 'support');
-
-        if (!supportRoom) {
-
-            supportRoom = MockStore.createChatRoom({
-
-                postId: 'None', applicationId: 'None',
-
-                participants: [{ id: userEmail, role: 'user' }, { id: 'support', role: 'support' }],
-
-                roomType: 'support'
-
-            });
-
-        }
-
-        const prefill = metadata?.appealTemplate || I18n.t('messages.prefill.support');
-
-        window.navigateTo(`messages?room=${supportRoom.id}&prefill=${encodeURIComponent(prefill)}`);
-
-    } else if (type === 'chat') {
-        window.navigateTo(`messages?room=${id}`);
-    } else if (type === 'violation') {
-        window.navigateTo('profile');
-    } else if (type === 'ACCEPTED' || type === 'REJECTED') {
-        window.navigateTo('activities');
-    }
-};
 
 
 
@@ -1492,47 +1451,61 @@ document.addEventListener('DOMContentLoaded', () => {
 // =====================================
 // === GLOBAL NOTIFICATION POLLING ===
 // =====================================
-// UX Resilience Strategy: Background polling checks every 15s using Page Visibility API 
-// to gracefully sync Eventual Consistency Side-Effects (like join approvals) from Outbox.
-import api from './utils/api.js';
 
 // --- DEEP LINK HANDLER (BluePrint Item 3: Notification Action Contract) ---
 window.handleDeepLink = (data) => {
     if (!data) return;
     console.log("=== ISI DATA NOTIFIKASI ===", data);
-    const { actionType, targetId } = data;
+    
+    // Unified Mapping for both old (type/id) and new (actionType/targetId) formats
+    const type = data.actionType || data.type;
+    const id = data.targetId || data.id || data.roomId;
+    const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || data || {};
 
-    switch (actionType) {
+    if (data.notifId) (window.api || api).fetch(`/api/v1/notifications/${data.notifId}/mark-as-read`, { method: 'POST' }).catch(console.error);
+
+    switch (type) {
         case 'OPEN_REVIEW_MODAL':
             if (window.showReviewApplicationModal) {
-                // If data has full metadata (from background fetch), use it
-                const meta = data.metadata || (typeof data.payload === 'string' ? JSON.parse(data.payload) : data.payload) || data || {};
                 const appId = data.id || meta.id || data.aggregate_id;
-                const postId = data.targetId ||
-                    meta.event_id ||
-                    meta.post_id ||
-                    meta.activity_id ||
-                    meta.carpool_id ||
-                    meta.study_id ||
-                    data.event_id ||
-                    data.post_id ||
-                    data.activity_id ||
-                    data.aggregate_id ||
-                    meta.target_id ||
-                    "";
+                const postId = data.targetId || meta.event_id || meta.post_id || data.event_id || "";
                 const applicantEmail = meta.user_email || data.user_email || meta.applicant_email;
                 const teamName = meta.event_title || meta.teamName || 'Event';
                 const category = meta.event_type || meta.category || 'sports';
-
                 window.showReviewApplicationModal(appId, postId, applicantEmail, teamName, category, meta);
             }
             break;
         case 'NAVIGATE_TO_EVENT_DETAIL':
-            window.navigateTo('event-detail', { id: targetId });
+            window.navigateTo('event-detail', { id: id });
+            break;
+        case 'chat':
+        case 'MESSAGES':
+            window.navigateTo(`messages?room=${id}`);
+            break;
+        case 'support_appeal':
+            const userEmail = localStorage.getItem('userEmail');
+            const prefill = meta?.appealTemplate || I18n.t('messages.prefill.support');
+            // Support room lookup logic
+            const rooms = (typeof MockStore !== 'undefined' ? MockStore.getChatRooms(userEmail) : []);
+            let supportRoom = rooms.find(r => r.roomType === 'support');
+            if (supportRoom) {
+                window.navigateTo(`messages?room=${supportRoom.id}&prefill=${encodeURIComponent(prefill)}`);
+            } else {
+                window.navigateTo('profile'); // Fallback
+            }
+            break;
+        case 'violation':
+            window.navigateTo('profile');
+            break;
+        case 'ACCEPTED':
+        case 'REJECTED':
+            window.navigateTo('activities');
             break;
         case 'SHOW_TOAST':
             notifications.info(data.message || "Update received");
             break;
+        default:
+            console.log("[DeepLink] Unhandled type:", type);
     }
 };
 
