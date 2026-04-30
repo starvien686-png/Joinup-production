@@ -2,33 +2,18 @@ import { notifications } from './services/notification.js';
 import { ThemeService } from './services/themeService.js';
 import { I18n } from './services/i18n.js';
 import api from './utils/api.js';
-
-window.I18n = I18n;
-
-
-
-window.notifications = notifications;
-window.socket = io(); // Initialize Socket.io globally
-
-
 import { renderRegister } from './views/register.js?v=16';
-
 import { renderHome } from './views/home.js?v=17';
-
 import { openFeedbackModal } from './views/feedback.js?v=16';
-
 import { showUserProfile } from './views/userProfileModal.js?v=1';
-
 import { MockStore } from './models/mockStore.js?v=21';
-
-
-
 import { openRatingModal, checkPendingFeedback } from './views/rating.js?v=5';
 
-
-
+window.I18n = I18n;
+window.notifications = notifications;
 window.showUserProfile = showUserProfile;
 window.openRatingModal = openRatingModal;
+window.socket = io(); // Initialize Socket.io globally
 
 // --- OneSignal Push Setup ---
 const normalizeEmail = (email) => {
@@ -1672,9 +1657,6 @@ window.addEventListener('hashchange', () => {
         window.navigateTo(hash);
     }
 });
-
-// Initial Render
-render();
 
 // --- Starbucks Promotional Pop-up (Gen Z Aesthetic Implementation) ---
 (function() {
