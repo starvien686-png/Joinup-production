@@ -506,18 +506,19 @@ export const renderHome = () => {
 
                     ${(() => {
                     // Determine participant status
-                    const roleStatus = myStatuses[`${p.category || 'sports'}_${p.id}`];
+                    const catLower = (p.category || 'sports').toLowerCase();
+                    const roleStatus = myStatuses[`${catLower}_${p.id}`] || myStatuses[`${p.category || 'sports'}_${p.id}`];
                     const isPast = p.display_status === 'expired';
                     const isActivityFull = p.status === 'full';
                     const isSuccess = p.status === 'success';
 
                     if ((user.email && p.host_email && user.email === p.host_email) || roleStatus === 'approved' || roleStatus === 'accepted') {
                         const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
-                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category || 'sports'}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        return `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${catLower}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 💬 進入聊天室 / Enter Chat
                             </button>`;
                     } else if (user.email === 'ncnujoinupadmin@gmail.com') {
-                        return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        return `<button data-id="${p.id}" data-category="${p.category || 'sports'}" onclick="event.stopPropagation(); window.quickApply(this.getAttribute('data-id'), this.getAttribute('data-category'), this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg, #607D8B, #455A64); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 Monitor Event 🕵️‍♀️
                             </button>`;
                     } else if (roleStatus === 'pending') {
@@ -531,7 +532,7 @@ export const renderHome = () => {
                                 ${lockLabel}
                             </button>`;
                     } else {
-                        return `<button onclick="event.stopPropagation(); window.quickApply('${p.id}', '${p.category}', this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
+                        return `<button data-id="${p.id}" data-category="${p.category || 'sports'}" onclick="event.stopPropagation(); window.quickApply(this.getAttribute('data-id'), this.getAttribute('data-category'), this)" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:linear-gradient(135deg,#FF8C00,#FF6D00); border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);">
                                 申請加入 / Apply to Join
                             </button>`;
                     }
@@ -588,7 +589,7 @@ export const renderHome = () => {
                 const out = await api.fetch('/api/v1/join', {
                     method: 'POST',
                     body: {
-                        event_type: category || 'sports',
+                        event_type: (category || 'sports').toLowerCase().trim(),
                         event_id: eventId,
                         user_email: u.email
                     }
