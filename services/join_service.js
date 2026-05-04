@@ -229,7 +229,7 @@ router.post('/join', async (req, res) => {
                  JOIN users u ON ep.user_id = u.id
                  WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
                    AND ep.status = 'approved'
-                   AND u.email != 'ncnujoinupadmin@gmail.com'
+                   AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
                  FOR UPDATE`,
                 { replacements: [event_type, event_id], transaction: t }
             );
@@ -478,7 +478,7 @@ router.post('/join/approve', async (req, res) => {
              JOIN users u ON ep.user_id = u.id
              WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
                AND ep.status = 'approved'
-               AND u.email != 'ncnujoinupadmin@gmail.com'
+               AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
              FOR UPDATE`,
             { replacements: [event_type, event_id], transaction: t }
         );
@@ -502,7 +502,13 @@ router.post('/join/approve', async (req, res) => {
         await sequelize.query("UPDATE event_participants SET status = 'approved', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
 
         const [updatedApproved] = await sequelize.query(
-            "SELECT COUNT(*) as count FROM event_participants WHERE LOWER(event_type) = LOWER(?) AND event_id = ? AND status = 'approved' FOR UPDATE",
+            `SELECT COUNT(*) as count 
+             FROM event_participants ep
+             JOIN users u ON ep.user_id = u.id
+             WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
+               AND ep.status = 'approved'
+               AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
+             FOR UPDATE`,
             { replacements: [event_type, event_id], transaction: t }
         );
 
