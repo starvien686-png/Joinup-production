@@ -19,18 +19,25 @@ const logger = winston.createLogger({
 
 // 1. Helper: Domain mapping to Table Name
 function getTableName(category) {
+    if (!category) return 'activities';
+    const cat = category.toLowerCase().trim();
     const mapping = {
         'sports': 'activities',
+        'activities': 'activities',
         'carpool': 'carpools',
+        'carpools': 'carpools',
         'study': 'studies',
+        'studies': 'studies',
         'hangout': 'hangouts',
+        'hangouts': 'hangouts',
         'housing': 'housing',
         'groupbuy': 'housing'
     };
+    if (mapping[cat]) return mapping[cat];
     // Hangout sub-categories all map to the 'hangouts' table
-    const hangoutSubCategories = ['travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'sports', 'nightlife'];
-    if (hangoutSubCategories.includes(category)) return 'hangouts';
-    return mapping[category] || 'activities';
+    const hangoutSubCategories = ['travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other'];
+    if (hangoutSubCategories.includes(cat)) return 'hangouts';
+    return 'activities';
 }
 
 // 1.1 Helper: Column mappings for different event types
@@ -159,12 +166,37 @@ router.post('/join', async (req, res) => {
         const capacityCol = getCapacityColumn(event_type);
         const timeCol = getTimeColumn(event_type);
 
-        const [events] = await sequelize.query(
+        let [events] = await sequelize.query(
             `SELECT id, title, status, host_email, ${capacityCol} as capacity, deadline, 
              ${(event_type === 'housing' || event_type === 'groupbuy') ? 'deadline' : timeCol} as start_time 
              FROM ${tableName} WHERE id = ? FOR UPDATE`,
             { replacements: [event_id], transaction: t }
         );
+        if (events.length === 0) {
+            const allTables = [
+                { name: 'activities', cap: 'people_needed', time: 'event_time', type: 'sports' },
+                { name: 'carpools', cap: 'available_seats', time: 'departure_time', type: 'carpool' },
+                { name: 'studies', cap: 'people_needed', time: 'event_time', type: 'study' },
+                { name: 'hangouts', cap: 'people_needed', time: 'event_time', type: 'hangout' },
+                { name: 'housing', cap: null, time: 'deadline', type: 'housing' }
+            ];
+            for (const item of allTables) {
+                if (item.name === tableName) continue;
+                const colCap = item.cap ? `${item.cap} as capacity` : 'NULL as capacity';
+                const colTime = item.time ? item.time : 'deadline';
+                const [found] = await sequelize.query(
+                    `SELECT id, title, status, host_email, ${colCap}, deadline, 
+                     ${colTime} as start_time 
+                     FROM ${item.name} WHERE id = ? FOR UPDATE`,
+                    { replacements: [event_id], transaction: t }
+                );
+                if (found.length > 0) {
+                    events = found;
+                    event_type = item.type;
+                    break;
+                }
+            }
+        }
         if (events.length === 0) throw { status: 404, errorCode: 'EVENT_NOT_FOUND', message: 'Event not found' };
 
         const event = events[0];
@@ -405,7 +437,29 @@ router.post('/join/approve', async (req, res) => {
         const tableName = getTableName(event_type);
         const capacityCol = getCapacityColumn(event_type);
 
-        const [events] = await sequelize.query(`SELECT host_email, title, ${capacityCol} as capacity FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        let [events] = await sequelize.query(`SELECT host_email, title, ${capacityCol} as capacity FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        if (events.length === 0) {
+            const allTables = [
+                { name: 'activities', cap: 'people_needed', type: 'sports' },
+                { name: 'carpools', cap: 'available_seats', type: 'carpool' },
+                { name: 'studies', cap: 'people_needed', type: 'study' },
+                { name: 'hangouts', cap: 'people_needed', type: 'hangout' },
+                { name: 'housing', cap: null, type: 'housing' }
+            ];
+            for (const item of allTables) {
+                if (item.name === tableName) continue;
+                const colCap = item.cap ? `${item.cap} as capacity` : 'NULL as capacity';
+                const [found] = await sequelize.query(
+                    `SELECT host_email, title, ${colCap} as capacity FROM ${item.name} WHERE id = ? FOR UPDATE`,
+                    { replacements: [event_id], transaction: t }
+                );
+                if (found.length > 0) {
+                    events = found;
+                    event_type = item.type;
+                    break;
+                }
+            }
+        }
         if (events.length === 0) throw { status: 404, message: 'Event not found' };
         if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
@@ -524,7 +578,28 @@ router.post('/join/reject', async (req, res) => {
     try {
         t = await sequelize.transaction({ isolationLevel: 'REPEATABLE READ' });
         const tableName = getTableName(event_type);
-        const [events] = await sequelize.query(`SELECT host_email, title FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        let [events] = await sequelize.query(`SELECT host_email, title FROM ${tableName} WHERE id = ? FOR UPDATE`, { replacements: [event_id], transaction: t });
+        if (events.length === 0) {
+            const allTables = [
+                { name: 'activities', cap: 'people_needed', type: 'sports' },
+                { name: 'carpools', cap: 'available_seats', type: 'carpool' },
+                { name: 'studies', cap: 'people_needed', type: 'study' },
+                { name: 'hangouts', cap: 'people_needed', type: 'hangout' },
+                { name: 'housing', cap: null, type: 'housing' }
+            ];
+            for (const item of allTables) {
+                if (item.name === tableName) continue;
+                const [found] = await sequelize.query(
+                    `SELECT host_email, title FROM ${item.name} WHERE id = ? FOR UPDATE`,
+                    { replacements: [event_id], transaction: t }
+                );
+                if (found.length > 0) {
+                    events = found;
+                    event_type = item.type;
+                    break;
+                }
+            }
+        }
         if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
 
         const targetEmailVars = getEmailVariations(target_user_email);
@@ -707,7 +782,29 @@ router.get('/host/participants', async (req, res) => {
         }
 
         const tableName = getTableName(event_type);
-        const [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
+        let [events] = await sequelize.query(`SELECT host_email FROM ${tableName} WHERE id = ?`, { replacements: [event_id] });
+
+        if (events.length === 0) {
+            const allTables = [
+                { name: 'activities', cap: 'people_needed', type: 'sports' },
+                { name: 'carpools', cap: 'available_seats', type: 'carpool' },
+                { name: 'studies', cap: 'people_needed', type: 'study' },
+                { name: 'hangouts', cap: 'people_needed', type: 'hangout' },
+                { name: 'housing', cap: null, type: 'housing' }
+            ];
+            for (const item of allTables) {
+                if (item.name === tableName) continue;
+                const [found] = await sequelize.query(
+                    `SELECT host_email FROM ${item.name} WHERE id = ?`,
+                    { replacements: [event_id] }
+                );
+                if (found.length > 0) {
+                    events = found;
+                    event_type = item.type;
+                    break;
+                }
+            }
+        }
 
         if (events.length === 0) {
             return res.status(404).json({ success: false, message: 'Event not found' });
