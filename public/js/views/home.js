@@ -81,6 +81,9 @@ export const renderHome = () => {
                         <a href="https://maps.app.goo.gl/iLAKmQvLXhMJpGhQ7" target="_blank">
                             <img src="ads-4.png" alt="Ads 嚼嚼斯">
                         </a>
+                        <a href="https://maps.app.goo.gl/auEgPSWpQiuJLqpG8" target="_blank">
+                            <img src="ads-5.png" alt="Ads 人間邊境咖啡書房">
+                        </a>
                     </div>
                 </div>
 
