@@ -113,27 +113,25 @@ app.use((req, res, next) => {
     const originalJson = res.json;
     res.json = function(data) {
         const normalize = (obj) => {
-            if (obj && typeof obj === 'object') {
-                if ('approvedcount' in obj && !('approvedCount' in obj)) {
-                    obj.approvedCount = obj.approvedcount;
-                }
-                if ('approvedCount' in obj && !('approvedcount' in obj)) {
-                    obj.approvedcount = obj.approvedCount;
+            if (!obj || typeof obj !== 'object') return;
+            if ('approvedcount' in obj && !('approvedCount' in obj)) {
+                obj.approvedCount = obj.approvedcount;
+            }
+            if ('approvedCount' in obj && !('approvedcount' in obj)) {
+                obj.approvedcount = obj.approvedCount;
+            }
+            for (let k in obj) {
+                if (obj[k] && typeof obj[k] === 'object') {
+                    normalize(obj[k]);
                 }
             }
         };
-        if (Array.isArray(data)) {
-            data.forEach(normalize);
-        } else if (data && typeof data === 'object') {
-            normalize(data);
-            if (Array.isArray(data.data)) {
-                data.data.forEach(normalize);
-            }
-        }
+        normalize(data);
         return originalJson.call(this, data);
     };
     next();
 });
+
 
 
 // --- SOCKET.IO INITIALIZATION ---

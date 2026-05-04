@@ -353,7 +353,7 @@ export const renderHome = () => {
                 category: p.category,
                 title: p.title,
                 peoplecount: p.people_needed,
-                approvedCount: p.approvedCount,
+                approvedCount: p.approvedCount !== undefined ? p.approvedCount : p.approvedcount,
                 eventtime: p.event_time || p.departure_time || p.deadline,
                 location: p.location || p.destination || p.meeting_location,
                 sport_type: p.sport_type,
