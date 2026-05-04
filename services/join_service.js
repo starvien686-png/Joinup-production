@@ -485,8 +485,8 @@ router.post('/join/approve', async (req, res) => {
 
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
-        // Host-Inclusive Rule: Host is already in event_participants, so approvedCount reflects (Host + Approved Participants).
-        const currentCount = approvedCount;
+        // Host-Inclusive Rule: Total count = Host (1) + Approved Participants (from event_participants)
+        const currentCount = 1 + approvedCount;
 
         if (currentCount >= events[0].capacity) {
             throw { status: 409, message: 'Event full' };
@@ -512,7 +512,7 @@ router.post('/join/approve', async (req, res) => {
             { replacements: [event_type, event_id], transaction: t }
         );
 
-        const totalAfterApprove = parseInt(updatedApproved[0].count, 10);
+        const totalAfterApprove = 1 + parseInt(updatedApproved[0].count, 10);
         if (totalAfterApprove >= events[0].capacity) {
             await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
             logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalAfterApprove})`);
@@ -1069,7 +1069,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 a.id, a.title, COALESCE(a.category, 'sports') as category, a.sport_type, a.event_time as event_time, a.location, a.people_needed, a.host_email, a.status, a.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'sports' AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(a.host_email))))) as approvedCount,
                 CASE WHEN (a.event_time < NOW() OR (a.deadline IS NOT NULL AND a.deadline < NOW())) THEN 'expired' ELSE a.status END as display_status
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
@@ -1080,7 +1080,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 c.id, c.title, 'carpool' as category, NULL as sport_type, c.departure_time as event_time, c.departure_loc as location, c.available_seats as people_needed, c.host_email, c.status, c.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'carpool' AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('carpools', 'carpool') AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(c.host_email))))) as approvedCount,
                 CASE WHEN (c.departure_time < NOW() OR (c.deadline IS NOT NULL AND c.deadline < NOW())) THEN 'expired' ELSE c.status END as display_status
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
@@ -1091,7 +1091,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 s.id, s.title, 'study' as category, NULL as sport_type, s.event_time as event_time, s.location, s.people_needed, s.host_email, s.status, s.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'study' AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('studies', 'study') AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(s.host_email))))) as approvedCount,
                 CASE WHEN (s.event_time < NOW() OR (s.deadline IS NOT NULL AND s.deadline < NOW())) THEN 'expired' ELSE s.status END as display_status
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
@@ -1102,7 +1102,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 h.id, h.title, h.category, NULL as sport_type, h.event_time as event_time, h.meeting_location as location, h.people_needed, h.host_email, h.status, h.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'hangout' AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other') AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(h.host_email))))) as approvedCount,
                 CASE WHEN (h.event_time < NOW() OR (h.deadline IS NOT NULL AND h.deadline < NOW())) THEN 'expired' ELSE h.status END as display_status
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
@@ -1113,7 +1113,7 @@ router.get('/activities/latest', async (req, res) => {
             SELECT 
                 ho.id, ho.title, 'housing' as category, NULL as sport_type, ho.deadline as event_time, ho.location, ho.people_needed, ho.host_email, ho.status, ho.created_at,
                 u.username as host_name, u.major as host_dept, u.profile_pic, u.is_admin,
-                (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE (LOWER(ep.event_type) = 'housing' OR LOWER(ep.event_type) = 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('housing', 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(ho.host_email))))) as approvedCount,
                 CASE WHEN (ho.deadline IS NOT NULL AND ho.deadline < NOW()) THEN 'expired' ELSE ho.status END as display_status
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
@@ -1124,6 +1124,7 @@ router.get('/activities/latest', async (req, res) => {
         `;
 
         const [results] = await sequelize.query(query);
+        console.log("[ActivitiesLatest Log] Correct approvedCounts sent to frontend for home page:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json({ success: true, data: results });
     } catch (err) {
         console.error('[API] Error in /api/v1/activities/latest:', err);

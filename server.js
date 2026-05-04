@@ -1215,7 +1215,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'sports' AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(a.host_email))))) as approvedCount,
                        CASE 
                          WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE a.status 
@@ -1230,7 +1230,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         } else {
             query = `
                 SELECT a.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'sports' AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(a.host_email))))) as approvedCount,
                        CASE 
                          WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE a.status 
@@ -1245,6 +1245,7 @@ app.get(['/activities', '/api/v1/activities'], async (req, res) => {
         }
 
         const [results] = await sequelize.query(query, { replacements });
+        console.log("[Activities API Log] Correct approvedCounts sent to frontend for activities:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json(results);
     } catch (error) {
         console.error("[GetActivities] Critical Error:", error);
@@ -1261,7 +1262,7 @@ app.get(['/my-activities/:email', '/api/v1/my-activities/:email'], async (req, r
         const currentTime = nowTaipei().format('YYYY-MM-DD HH:mm:ss');
         const query = `
             SELECT a.*,
-                   (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'sports' AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                   (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(a.host_email))))) as approvedCount,
                    CASE 
                      WHEN (a.event_time < ? OR (a.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                      ELSE a.status 
@@ -1533,7 +1534,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'carpool' AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('carpools', 'carpool') AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(c.host_email))))) as approvedCount,
                        CASE 
                          WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
                          ELSE c.status 
@@ -1547,9 +1548,9 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         } else {
             query = `
                 SELECT c.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'carpool' AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('carpools', 'carpool') AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(c.host_email))))) as approvedCount,
                        CASE 
-                         WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND c.deadline < ?)) THEN 'expired' 
+                         WHEN (c.departure_time < ? OR (c.deadline IS NOT NULL AND a.deadline < ?)) THEN 'expired' 
                          ELSE c.status 
                        END AS display_status
                 FROM carpools c
@@ -1561,6 +1562,7 @@ app.get(['/carpools', '/api/v1/carpools'], async (req, res) => {
         }
 
         const [results] = await sequelize.query(query, { replacements });
+        console.log("[Carpools API Log] Correct approvedCounts sent to frontend for carpools:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json(results);
     } catch (error) {
         console.error("[GetCarpools] Critical Error:", error);
@@ -1733,7 +1735,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'study' AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('studies', 'study') AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(s.host_email))))) as approvedCount,
                        CASE 
                          WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
                          ELSE s.status 
@@ -1747,7 +1749,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         } else {
             query = `
                 SELECT s.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'study' AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('studies', 'study') AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(s.host_email))))) as approvedCount,
                        CASE 
                          WHEN (s.event_time < ? OR (s.deadline IS NOT NULL AND s.deadline < ?)) THEN 'expired' 
                          ELSE s.status 
@@ -1761,6 +1763,7 @@ app.get(['/studies', '/api/v1/studies'], async (req, res) => {
         }
 
         const [results] = await sequelize.query(query, { replacements });
+        console.log("[Studies API Log] Correct approvedCounts sent to frontend for studies:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json(results);
     } catch (error) {
         console.error("[GetStudies] Critical Error:", error);
@@ -1933,7 +1936,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'hangout' AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other') AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(h.host_email))))) as approvedCount,
                        CASE 
                          WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
                          ELSE h.status 
@@ -1947,7 +1950,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         } else {
             query = `
                 SELECT h.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) = 'hangout' AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other') AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(h.host_email))))) as approvedCount,
                        CASE 
                          WHEN (h.event_time < ? OR (h.deadline IS NOT NULL AND h.deadline < ?)) THEN 'expired' 
                          ELSE h.status 
@@ -1961,6 +1964,7 @@ app.get(['/hangouts', '/api/v1/hangouts'], async (req, res) => {
         }
 
         const [results] = await sequelize.query(query, { replacements });
+        console.log("[Hangouts API Log] Correct approvedCounts sent to frontend for hangouts:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json(results);
     } catch (error) {
         console.error("[GetHangouts] Critical Error:", error);
@@ -2276,7 +2280,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         if (viewerEmail) {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.is_admin, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE (LOWER(ep.event_type) = 'housing' OR LOWER(ep.event_type) = 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('housing', 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(ho.host_email))))) as approvedCount,
                        CASE 
                          WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
                          ELSE ho.status 
@@ -2290,7 +2294,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         } else {
             query = `
                 SELECT ho.*, u.username as host_name, u.major as host_dept, u.study_year, u.profile_pic, u.hobby, u.bio, u.credit_points as creditPoints, u.violation_points as violationCount,
-                       (SELECT COUNT(*) FROM event_participants ep JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE (LOWER(ep.event_type) = 'housing' OR LOWER(ep.event_type) = 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') as approvedCount,
+                       (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('housing', 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR (LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com' AND LOWER(u_ghost.email) != LOWER(ho.host_email))))) as approvedCount,
                        CASE 
                          WHEN (ho.deadline IS NOT NULL AND ho.deadline < ?) THEN 'expired' 
                          ELSE ho.status 
@@ -2304,6 +2308,7 @@ app.get(['/housing', '/api/v1/housing'], async (req, res) => {
         }
 
         const [results] = await sequelize.query(query, { replacements });
+        console.log("[Housing API Log] Correct approvedCounts sent to frontend for housing:", results.map(r => ({ id: r.id, title: r.title, approvedCount: r.approvedCount })));
         res.json(results);
     } catch (error) {
         console.error("[GetHousing] Critical Error:", error);
