@@ -266,7 +266,7 @@ export const renderHome = () => {
         const track = document.getElementById('home-ads-track');
         if (!track) return;
         let currentIndex = 0;
-        const totalSlides = 4;
+        const totalSlides = track.children.length || 4;
 
         if (window.homeCarouselInterval) clearInterval(window.homeCarouselInterval);
 
