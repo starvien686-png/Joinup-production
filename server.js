@@ -628,6 +628,12 @@ app.post('/api/auth/google', async (req, res) => {
         const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
 
         if (user) {
+            // [SYNC LOGIC] Update full_name if it's currently empty
+            if (!user.full_name || user.full_name.trim() === '') {
+                await user.update({ full_name: name || email.split('@')[0] });
+                console.log(`[Google Sync] Updated full_name for existing user: ${user.email}`);
+            }
+
             // User exists -> Login
             console.log(`User ${user.username} logged in via Google.`);
             return res.status(200).json({
@@ -3217,9 +3223,33 @@ cron.schedule('0 * * * *', async () => {
     timezone: "Asia/Taipei"
 });
 
+
+// --- ONE-TIME MIGRATION: Populating full_name from username if NULL ---
+const runFullNameMigration = async () => {
+    try {
+        const [results] = await sequelize.query(`
+            UPDATE users 
+            SET full_name = username 
+            WHERE (full_name IS NULL OR full_name = '') 
+            AND (username IS NOT NULL AND username != '')
+        `);
+        if (results.affectedRows > 0) {
+            logger.info(`[Migration] Auto-populated full_name for ${results.affectedRows} users.`);
+        }
+    } catch (err) {
+        logger.error(`[Migration] Full name migration failed: ${err.message}`);
+    }
+};
+
 server.listen(PORT, async () => {
+    logger.info(`🚀 JoinUp Server v2.0 is BLASTING OFF on port ${PORT}!`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
+    
     await syncAll();
+    // Run migration after DB connection is stable
+    await runFullNameMigration();
+    
     startEventRetirementWorker();
     startDatabaseCleanupWorker();
     workerService.startWorker();
