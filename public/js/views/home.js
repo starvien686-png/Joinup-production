@@ -418,7 +418,8 @@ export const renderHome = () => {
             return map[sport] ? I18n.t(map[sport]) : sport;
         };
 
-        scrollContainer.innerHTML = posts.map(p => {
+        try {
+            scrollContainer.innerHTML = posts.map(p => {
             const getIcon = (cat, sportType) => {
                 if (cat === 'sports') {
                     if (!sportType) return '🏅';
@@ -495,7 +496,7 @@ export const renderHome = () => {
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1.5px solid #eee;">
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
-                                    ${hostFinalNm}
+                                    ${p.host_name}
                                     ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🎓 ${p.host_dept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
@@ -543,6 +544,10 @@ export const renderHome = () => {
                 </div>
             `;
         }).join('');
+        } catch (renderError) {
+            console.error("Home feed rendering failed:", renderError);
+            scrollContainer.innerHTML = `<div style="text-align:center;width:100%;color:var(--text-secondary);padding: 1rem;">Failed to display activities.</div>`;
+        }
     };
 
     // Quick Apply Function directly bridging the API

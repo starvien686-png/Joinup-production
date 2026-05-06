@@ -25,17 +25,32 @@ export const renderActivities = async () => {
             }
         }
 
-        const [actRes, carpoolRes, studyRes, hangoutRes, housingRes] = await Promise.all([
-            fetch('/activities'),
-            fetch('/carpools'),
-            fetch('/studies'),
-            fetch('/hangouts'),
-            fetch('/housing')
-        ]);
+        let activities = [], carpools = [], studies = [], hangouts = [], housings = [];
 
-        const [activities, carpools, studies, hangouts, housings] = await Promise.all([
-            actRes.json(), carpoolRes.json(), studyRes.json(), hangoutRes.json(), housingRes.json()
-        ]);
+        try {
+            const res = await fetch('/activities');
+            if (res.ok) activities = await res.json();
+        } catch (e) { console.error('Failed to fetch activities:', e); }
+
+        try {
+            const res = await fetch('/carpools');
+            if (res.ok) carpools = await res.json();
+        } catch (e) { console.error('Failed to fetch carpools:', e); }
+
+        try {
+            const res = await fetch('/studies');
+            if (res.ok) studies = await res.json();
+        } catch (e) { console.error('Failed to fetch studies:', e); }
+
+        try {
+            const res = await fetch('/hangouts');
+            if (res.ok) hangouts = await res.json();
+        } catch (e) { console.error('Failed to fetch hangouts:', e); }
+
+        try {
+            const res = await fetch('/housing');
+            if (res.ok) housings = await res.json();
+        } catch (e) { console.error('Failed to fetch housing:', e); }
 
         let dbPosts = [
             ...(Array.isArray(activities) ? activities : []).map(p => ({ ...p, category: p.category || 'sports' })),
