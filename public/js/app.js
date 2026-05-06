@@ -508,7 +508,7 @@ window.showAnnouncements = async () => {
                     if (n.type === 'join_request') {
                         const evtName = meta.event_title || '活動';
                         const sender = meta.snapshot_display_name || '有人';
-                        const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-left: 4px;">🛡️ ADMIN</span>` : '';
+                        const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
                         msg = isZH ? `🔔 新申請：${sender}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${sender}${adminBadge} wants to join "${evtName}"`;
 
                         // 👇 INI BARIS YANG KEMARIN TERHAPUS (Wajib ada!) 👇

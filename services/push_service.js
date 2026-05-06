@@ -31,8 +31,9 @@ const sendPushNotification = async (emails, title, message, url, icon) => {
     const data = JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
         include_external_user_ids: normalizedEmails,
-        contents: { en: message, zh: message },
-        headings: { en: title, zh: title },
+        channel_for_external_user_ids: 'push', // CRITICAL: Target push channel specifically
+        contents: { en: message, zh: message, 'zh-Hant': message },
+        headings: { en: title, zh: title, 'zh-Hant': title },
         url: url || DEFAULT_APP_URL,
         chrome_web_icon: icon || undefined,
         large_icon: icon || undefined,
@@ -55,7 +56,10 @@ const sendPushNotification = async (emails, title, message, url, icon) => {
             let body = '';
             res.on('data', (d) => body += d);
             res.on('end', () => {
-                console.log(`[OneSignal] Push sent to ${normalizedEmails.length} users. Response: ${body}`);
+                // Enhanced Logging for Debugging
+                console.log(`[OneSignal] Push sent to ${normalizedEmails.length} users.`);
+                console.log(`[OneSignal] Response Status: ${res.statusCode}`);
+                console.log(`[OneSignal] Response Body: ${body}`);
                 resolve();
             });
         });
