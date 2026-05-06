@@ -18,7 +18,7 @@ const normalizeEmailForOneSignal = (email) => {
  * Sends a push notification via OneSignal REST API to a list of users.
  * Target users are matched using their normalized email as external_id.
  */
-const sendPushNotification = async (emails, title, message, url) => {
+const sendPushNotification = async (emails, title, message, url, icon) => {
     if (!emails || emails.length === 0 || !ONESIGNAL_REST_API_KEY) {
         if (!ONESIGNAL_REST_API_KEY) console.warn("[OneSignal] Skip push: REST_API_KEY is missing from environment variables.");
         return;
@@ -33,7 +33,10 @@ const sendPushNotification = async (emails, title, message, url) => {
         include_external_user_ids: normalizedEmails,
         contents: { en: message, zh: message },
         headings: { en: title, zh: title },
-        url: url || DEFAULT_APP_URL
+        url: url || DEFAULT_APP_URL,
+        chrome_web_icon: icon || undefined,
+        large_icon: icon || undefined,
+        data: { url: url || DEFAULT_APP_URL }
     });
 
     const options = {

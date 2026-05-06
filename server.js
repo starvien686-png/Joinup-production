@@ -338,11 +338,17 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
         }
 
         // 4. OneSignal Push Notification
+        // 4. OneSignal Push Notification (OS-Level / Service Worker)
         if (uniqueRecipients.length > 0) {
-            const pushTitle = `💬 Message from ${senderName}`;
-            const snippet = message.length > 80 ? message.substring(0, 80) + "..." : message;
+            // Fetch sender profile pic for notification icon
+            const [senderData] = await sequelize.query(`SELECT profile_pic FROM users WHERE LOWER(email) = LOWER(?)`, { replacements: [senderEmail] });
+            const senderPic = (senderData.length > 0 && senderData[0].profile_pic) ? senderData[0].profile_pic : '';
+
+            const pushTitle = eventTitle; // Activity Title
+            const pushBody = `${senderName}: ${snippet}`; // "Sender: Message Snippet"
             const url = `https://joinup-production.onrender.com/#messages?room=${roomId}`;
-            await pushService.sendPushNotification(uniqueRecipients, pushTitle, snippet, url).catch(err => console.error("[OneSignal] Error:", err));
+            
+            await pushService.sendPushNotification(uniqueRecipients, pushTitle, pushBody, url, senderPic).catch(err => console.error("[OneSignal] Error:", err));
         }
 
     } catch (err) {
