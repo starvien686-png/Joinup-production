@@ -182,8 +182,9 @@ io.on('connection', (socket) => {
     logger.info(`[Socket] User connected: ${socket.id}`);
 
     socket.on('join_room', (roomId) => {
-        socket.join(String(roomId));
-        logger.info(`[Socket] Client ${socket.id} joined room: ${roomId}`);
+        const normalizedRoomId = String(roomId).toLowerCase().trim();
+        socket.join(normalizedRoomId);
+        logger.info(`[Socket] Client ${socket.id} joined room: ${normalizedRoomId}`);
     });
 
     socket.on('register_user', (email) => {
@@ -199,9 +200,15 @@ io.on('connection', (socket) => {
     socket.on('send_message', async (data) => {
         try {
             const { room_id, message, sender_name } = data;
+            const normalizedRoomId = String(room_id).toLowerCase().trim();
 
             // BUG 2 FIX: Extract sender_email from socket session or fallback strictly
-            const sender_email = socket.userEmail || data.sender_email;
+            let sender_email = socket.userEmail || data.sender_email;
+            if (sender_email) {
+                // Force normalization to @ncnu.edu.tw (non-mail1) for identity consistency
+                sender_email = sender_email.toLowerCase().replace('mail1.', '').trim();
+            }
+            
             if (!sender_email) return logger.error("[Socket] send_message rejected: No sender_email provided.");
 
             const [uData] = await sequelize.query(`SELECT username, is_admin FROM users WHERE email = ?`, { replacements: [sender_email] });
@@ -209,9 +216,9 @@ io.on('connection', (socket) => {
             const isAdmin = sender_email.toLowerCase() === 'ncnujoinupadmin@gmail.com' ? 1 : 0;
 
             const query = `INSERT INTO chat_messages (room_id, sender_email, sender_name, message) VALUES (?, ?, ?, ?)`;
-            await sequelize.query(query, { replacements: [room_id, sender_email, realSenderName, message] });
+            await sequelize.query(query, { replacements: [normalizedRoomId, sender_email, realSenderName, message] });
 
-            io.to(String(room_id)).emit('receive_message', {
+            io.to(normalizedRoomId).emit('receive_message', {
                 id: Date.now(),
                 room_id,
                 sender_email,
@@ -241,12 +248,13 @@ io.on('connection', (socket) => {
 async function handleChatNotification(io, roomId, senderEmail, senderName, message) {
     try {
         const senderVariants = getEmailVariations(senderEmail).map(e => e.toLowerCase().trim());
+        const normalizedRoomId = String(roomId).toLowerCase().trim();
 
         // 1. Get ALL participants for this room directly from chat_participants
-        // This is more reliable than event_participants for private/special rooms
+        // Use LOWER() for room_id to ensure we find participants regardless of setup casing
         const [participants] = await sequelize.query(
-            `SELECT user_email FROM chat_participants WHERE room_id = ?`,
-            { replacements: [String(roomId)] }
+            `SELECT user_email FROM chat_participants WHERE LOWER(room_id) = ?`,
+            { replacements: [normalizedRoomId] }
         );
 
         const recipientEmails = participants
@@ -310,15 +318,16 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
         const snippet = message.length > 40 ? message.substring(0, 40) + "..." : message;
 
         for (const email of uniqueRecipients) {
-            const [users] = await sequelize.query(`SELECT id FROM users WHERE LOWER(email) = LOWER(?)`, { replacements: [email] });
+            const emails = getEmailVariations(email);
+            const [users] = await sequelize.query(`SELECT id FROM users WHERE LOWER(email) IN (?)`, { replacements: [emails.map(e => e.toLowerCase())] });
             if (users.length > 0) {
                 const userId = users[0].id;
                 const metadata = JSON.stringify({
                     message: snippet,
                     sender_name: senderName,
                     event_title: eventTitle,
-                    room_id: roomId,
-                    link: `messages?room=${roomId}`
+                    room_id: normalizedRoomId,
+                    link: `messages?room=${normalizedRoomId}`
                 });
 
                 // Insert into in-app notifications
@@ -330,9 +339,11 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
 
                 // Real-time socket signal for inbox/toast
                 if (io) {
-                    const targetRoom = `user_${email.toLowerCase().trim()}`;
+                    // Force targetRoom email to non-mail1 variation to match app.js registration
+                    const cleanTargetEmail = email.toLowerCase().replace('mail1.', '').trim();
+                    const targetRoom = `user_${cleanTargetEmail}`;
                     io.to(targetRoom).emit('new_chat_notification', {
-                        roomId,
+                        roomId: normalizedRoomId,
                         senderName,
                         message: message.substring(0, 100)
                     });
@@ -349,7 +360,7 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
 
             const pushTitle = eventTitle; // Activity Title
             const pushBody = `${senderName}: ${snippet}`; // "Sender: Message Snippet"
-            const url = `https://joinup-production.onrender.com/#messages?room=${roomId}`;
+            const url = `https://joinup-production.onrender.com/#messages?room=${normalizedRoomId}`;
             
             await pushService.sendPushNotification(uniqueRecipients, pushTitle, pushBody, url, senderPic).catch(err => console.error("[OneSignal] Error:", err));
         }
@@ -2141,17 +2152,19 @@ app.get('/my-hangouts/:email', async (req, res) => {
 app.post('/setup-chat-room', async (req, res) => {
     try {
         const { room_id, post_id, room_type, team_name, participants } = req.body;
+        const normalizedRoomId = String(room_id).toLowerCase().trim();
 
         // Bikin ruangan (Kalau udah ada, abaikan pakai IGNORE)
         await sequelize.query(`INSERT IGNORE INTO chat_rooms (room_id, post_id, room_type, team_name) VALUES (?, ?, ?, ?)`, {
-            replacements: [room_id, post_id, room_type, team_name]
+            replacements: [normalizedRoomId, post_id, room_type, team_name]
         });
 
         // Masukin daftar orangnya
         if (participants && participants.length > 0) {
             for (let p of participants) {
+                const cleanEmail = p.id.toLowerCase().replace('mail1.', '').trim();
                 await sequelize.query(`INSERT IGNORE INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, ?)`, {
-                    replacements: [room_id, p.id, p.name || 'User', p.role || 'participant']
+                    replacements: [normalizedRoomId, cleanEmail, p.name || 'User', p.role || 'participant']
                 });
             }
         }
@@ -2195,7 +2208,7 @@ app.get('/my-chat-rooms/:email', async (req, res) => {
 // 3. Ambil semua pesan di dalam satu Room
 app.get('/room-messages/:roomId', async (req, res) => {
     try {
-        const roomId = req.params.roomId;
+        const roomId = String(req.params.roomId).toLowerCase().trim();
         const query = `SELECT * FROM chat_messages WHERE LOWER(room_id) = LOWER(?) ORDER BY created_at ASC`;
         const [messages] = await sequelize.query(query, { replacements: [roomId] });
         res.json(messages);

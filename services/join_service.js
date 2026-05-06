@@ -288,10 +288,11 @@ router.post('/join', async (req, res) => {
 
         // --- AUTO CHAT JOIN FOR ADMIN ---
         if (isAdmin) {
-            const roomId = `${event_type.toLowerCase()}_${event_id}`;
+            const roomId = `${event_type.toLowerCase()}_${event_id}`.toLowerCase().trim();
+            const cleanEmail = user_email.toLowerCase().replace('mail1.', '').trim();
             await sequelize.query(
                 "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member') ON DUPLICATE KEY UPDATE role = 'member'",
-                { replacements: [roomId, user_email, snapshot_display_name], transaction: t }
+                { replacements: [roomId, cleanEmail, snapshot_display_name], transaction: t }
             );
         }
 
@@ -532,12 +533,13 @@ router.post('/join/approve', async (req, res) => {
         }
 
         // Auto Chat Join
-        const roomId = `${event_type.toLowerCase()}_${event_id}`;
+        const roomId = `${event_type.toLowerCase()}_${event_id}`.toLowerCase().trim();
         const [targetUser] = await sequelize.query("SELECT email, username FROM users WHERE id = ?", { replacements: [parts[0].user_id], transaction: t });
         if (targetUser.length > 0) {
+            const cleanTargetEmail = targetUser[0].email.toLowerCase().replace('mail1.', '').trim();
             await sequelize.query(
                 "INSERT INTO chat_participants (room_id, user_email, user_name, role) VALUES (?, ?, ?, 'member') ON DUPLICATE KEY UPDATE role = 'member'",
-                { replacements: [roomId, targetUser[0].email, targetUser[0].username], transaction: t }
+                { replacements: [roomId, cleanTargetEmail, targetUser[0].username], transaction: t }
             );
         }
 
@@ -653,9 +655,9 @@ router.post('/join/reject', async (req, res) => {
         await sequelize.query("UPDATE event_participants SET status = 'rejected', version = version + 1, updated_at = NOW() WHERE id = ?", { replacements: [finalPartId], transaction: t });
         
         // 🚀 AUTO-REMOVE FROM CHAT
-        const roomId = `${event_type.toLowerCase()}_${event_id}`;
+        const roomId = `${event_type.toLowerCase()}_${event_id}`.toLowerCase().trim();
         await sequelize.query(
-            "DELETE FROM chat_participants WHERE LOWER(room_id) = LOWER(?) AND user_email IN (SELECT email FROM users WHERE id = ?)",
+            "DELETE FROM chat_participants WHERE LOWER(room_id) = ? AND user_email IN (SELECT email FROM users WHERE id = ?)",
             { replacements: [roomId, parts[0].user_id], transaction: t }
         );
 

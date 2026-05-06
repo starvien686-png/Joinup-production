@@ -29,17 +29,18 @@ const playNotificationSound = () => {
     } catch (e) { console.error('Audio play failed', e); }
 };
 
-const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
+const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
+    const roomId = String(roomIdRaw).toLowerCase().trim();
     let lastMsgCount = 0;
     let chatTitle = I18n.t('common.chat') || 'Room Chat';
 
     // 1. Deteksi Kategori dari ID
     let roomType = 'sports';
-    let realId = String(roomId);
+    let realId = roomId;
 
     if (realId.includes('_')) {
         const parts = realId.split('_');
-        roomType = parts[0].toLowerCase(); // Udah di-lowercase biar aman
+        roomType = parts[0].toLowerCase(); 
         realId = parts[1];
     }
 
@@ -245,7 +246,7 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
     const appendSingleMessage = (msg) => {
         // BUG 2 FIX: Strictly evaluate POV using currentUserEmail
         const currentUserEmail = normalizeChatEmail(user.email);
-        const msgSenderEmail = normalizeChatEmail(msg.sender_email);
+        const msgSenderEmail = normalizeChatEmail(msg.sender_email || msg.senderEmail);
         const isMine = msgSenderEmail === currentUserEmail;
         const date = new Date(msg.created_at);
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -519,8 +520,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
             // --- SOCKET.IO EMISSION ---
             const finalMessage = finalType === 'announcement' ? `! ${content}` : content;
             socket.emit('send_message', {
-                room_id: String(roomId),
-                sender_email: user.email,
+                room_id: String(roomId).toLowerCase().trim(),
+                sender_email: normalizeChatEmail(user.email),
                 sender_name: user.displayName || user.name || 'User',
                 message: finalMessage
             });
