@@ -286,16 +286,36 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
         }
 
         const uniqueRecipients = [...new Set(recipientEmails)];
+        if (uniqueRecipients.length === 0) return;
+
+        // --- ENRICHMENT: Fetch Event Title for context ---
+        let eventTitle = 'Event';
+        const parts = String(roomId).split('_');
+        if (parts.length >= 2) {
+            const eventType = parts[0];
+            const eventId = parts[1];
+            const mapping = { 
+                'sports': 'activities', 'activity': 'activities', 
+                'carpool': 'carpools', 'study': 'studies', 
+                'hangout': 'hangouts', 'housing': 'housing', 'groupbuy': 'housing' 
+            };
+            const tableName = mapping[eventType] || 'activities';
+            const [eventData] = await sequelize.query(`SELECT title FROM ${tableName} WHERE id = ?`, { replacements: [eventId] }).catch(() => [[]]);
+            if (eventData && eventData.length > 0) eventTitle = eventData[0].title;
+        }
+
+        const snippet = message.length > 40 ? message.substring(0, 40) + "..." : message;
 
         for (const email of uniqueRecipients) {
             const [users] = await sequelize.query(`SELECT id FROM users WHERE LOWER(email) = LOWER(?)`, { replacements: [email] });
             if (users.length > 0) {
                 const userId = users[0].id;
                 const metadata = JSON.stringify({
-                    message: `[Chat] ${senderName}: ${message.substring(0, 40)}${message.length > 40 ? '...' : ''}`,
+                    message: snippet,
                     sender_name: senderName,
+                    event_title: eventTitle,
                     room_id: roomId,
-                    link: `#messages?room=${roomId}`
+                    link: `messages?room=${roomId}`
                 });
 
                 // Insert into in-app notifications

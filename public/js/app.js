@@ -564,6 +564,15 @@ window.showAnnouncements = async () => {
                         msg = meta.message || (isZH ? '活動提醒' : 'Event Reminder');
                         iconType = 'info';
                         link = meta.link || 'home';
+                    } else if (n.type === 'chat_message') {
+                        const sender = meta.sender_name || (isZH ? '有人' : 'Someone');
+                        const evtTitle = meta.event_title || (isZH ? '活動' : 'Event');
+                        const snippet = meta.message || '';
+                        msg = isZH 
+                            ? `💬 ${sender} 在 "${evtTitle}" 中：${snippet}`
+                            : `💬 ${sender} in "${evtTitle}": ${snippet}`;
+                        iconType = 'info';
+                        link = `messages?room=${meta.room_id}`;
                     }
 
                     return {
@@ -1561,6 +1570,18 @@ async function syncNotifications() {
                     title = isZH ? "申請婉拒 / Rejected" : "Rejected";
                     msg = isZH ? `❌ 您對 ${eventName} 的加入申請已被婉拒。`
                         : `❌ Your join request was declined.`;
+                } else if (newest.type === 'chat_message') {
+                    title = isZH ? "新訊息 / New Message" : "New Message";
+                    const sender = meta?.sender_name || (isZH ? '有人' : 'Someone');
+                    const evtTitle = meta?.event_title || (isZH ? '活動' : 'Event');
+                    const snippet = meta?.message || '';
+                    msg = isZH 
+                        ? `💬 ${sender} 在 "${evtTitle}" 中：${snippet}`
+                        : `💬 ${sender} in "${evtTitle}": ${snippet}`;
+                    
+                    // Inject deep link data for handleDeepLink
+                    newest.actionType = 'chat';
+                    newest.targetId = meta?.room_id;
                 } else {
                     title = isZH ? "系統通知 / System Update" : "System Update";
                     msg = isZH ? `🔔 您有一則新通知` : `🔔 You have a new notification`;
