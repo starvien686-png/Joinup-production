@@ -217,17 +217,17 @@ export const renderRegister = () => {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="reg.full_name_label">Full Name</label>
-                                    <input type="text" id="reg-fullName" class="form-control" placeholder="John Doe" required>
+                                    <label data-i18n="reg.email_label">Email</label>
+                                    <input type="email" id="reg-email" class="form-control" placeholder="s112... / name@ncnu.edu.tw" required>
                                 </div>
                                 <div class="grid-2">
                                     <div class="form-group">
-                                        <label data-i18n="reg.nickname_label">Nickname</label>
-                                        <input type="text" id="reg-displayName" class="form-control" required>
+                                        <label data-i18n="reg.full_name_label">Full Name</label>
+                                        <input type="text" id="reg-fullName" class="form-control" placeholder="John Doe" required>
                                     </div>
                                     <div class="form-group">
-                                        <label data-i18n="reg.email_label">Email</label>
-                                        <input type="email" id="reg-email" class="form-control" placeholder="s112... / name@ncnu.edu.tw" required>
+                                        <label data-i18n="reg.nickname_label">Nickname</label>
+                                        <input type="text" id="reg-displayName" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="grid-2-1">
