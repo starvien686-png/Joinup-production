@@ -559,8 +559,8 @@ window.showAnnouncements = async () => {
                         const applicantEmail = meta.user_email || meta.applicant_email || meta.email || meta.applicantEmail || '';
                         const sender = meta.full_name || meta.snapshot_display_name || meta.name || meta.displayName || '有人';
                         
-                        // NEW: Make name clickable for profile viewing (Styled to inherit colors per USER_REQUEST)
-                        const nameLink = `<span onclick="event.stopPropagation(); window.showUserProfile('${applicantEmail}')" style="cursor: pointer; font-weight: bold;">${sender}</span>`;
+                        // NEW: Make name clickable for profile viewing (Using class for listener attachment)
+                        const nameLink = `<span class="participant-profile-link" data-email="${applicantEmail}" style="cursor: pointer; font-weight: bold;">${sender}</span>`;
                         
                         const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
                         msg = isZH ? `🔔 新申請：${nameLink}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${nameLink}${adminBadge} wants to join "${evtName}"`;
@@ -689,8 +689,8 @@ window.showAnnouncements = async () => {
 
                 actionButtons = `
                 <div id="notif-actions-${n.id}" style="display: flex; gap: 8px; margin-top: 10px;" onclick="event.stopPropagation()">
-                    <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: white; color: #F44336; border: 1px solid #F44336; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtReject}</button>
-                    <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtAccept}</button>
+                    <button class="notif-review-btn reject" data-action="reject" data-app-id="${appId}" data-post-id="${postId}" data-email="${applicantEmail}" data-name="${teamName}" data-cat="${category}" style="flex: 1; padding: 8px; background: white; color: #F44336; border: 1px solid #F44336; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtReject}</button>
+                    <button class="notif-review-btn accept" data-action="accept" data-app-id="${appId}" data-post-id="${postId}" data-email="${applicantEmail}" data-name="${teamName}" data-cat="${category}" style="flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtAccept}</button>
                 </div>
                 `;
             }
@@ -763,6 +763,32 @@ window.showAnnouncements = async () => {
     });
 
     document.body.appendChild(overlay);
+    
+    // --- ATTACH LISTENERS (Phase 9 Interactivity Fix) ---
+    overlay.querySelectorAll('.participant-profile-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const email = el.getAttribute('data-email');
+            if (window.showUserProfile) window.showUserProfile(email);
+        });
+    });
+
+    overlay.querySelectorAll('.notif-review-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const action = btn.getAttribute('data-action');
+            const appId = btn.getAttribute('data-app-id');
+            const postId = btn.getAttribute('data-post-id');
+            const email = btn.getAttribute('data-email');
+            const name = btn.getAttribute('data-name');
+            const cat = btn.getAttribute('data-cat');
+            
+            if (window.handleReviewAction) {
+                await window.handleReviewAction(action, appId, postId, email, name, cat);
+            }
+        });
+    });
+
     requestAnimationFrame(() => { overlay.classList.add('show'); });
 };
 
