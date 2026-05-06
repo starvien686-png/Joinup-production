@@ -136,6 +136,11 @@ export const renderSettings = () => {
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333;" data-i18n="settings.full_name_label">Full Name:</label>
+                        <input type="text" id="edit-full-name" class="form-control" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" placeholder="Your Full Name" value="${userProfile.full_name || ''}">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #333;" data-i18n="settings.bio_label">Your Bio:</label>
                         <textarea id="edit-bio" class="form-control" rows="3" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;" data-i18n="settings.bio_placeholder" placeholder="Love coffee and basketball...">${userProfile.bio || ''}</textarea>
                     </div>
@@ -290,6 +295,7 @@ export const renderSettings = () => {
 
         const inputBio = document.getElementById('edit-bio').value;
         const inputHobby = document.getElementById('edit-hobby').value;
+        const inputFullName = document.getElementById('edit-full-name').value;
         const btn = document.getElementById('btn-save-profile');
 
         btn.innerText = "⏳...";
@@ -305,6 +311,7 @@ export const renderSettings = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email: userProfile.email,
+                        full_name: inputFullName,
                         bio: inputBio,
                         hobby: inputHobby,
                         profile_pic: fotoBase64
@@ -313,6 +320,7 @@ export const renderSettings = () => {
 
                 if (response.ok) {
                     // 1. Save locally in the browser so it doesn't disappear on refresh
+                    userProfile.full_name = inputFullName;
                     userProfile.bio = inputBio;
                     userProfile.hobby = inputHobby;
 
@@ -342,11 +350,12 @@ export const renderSettings = () => {
             }
 
             // Also update MockStore so it reflects properly in local app
-            const updates = { bio: inputBio, hobby: inputHobby, profile_pic: fotoBase64, photoURL: fotoBase64, study_year: currentYearString };
+            const updates = { full_name: inputFullName, bio: inputBio, hobby: inputHobby, profile_pic: fotoBase64, photoURL: fotoBase64, study_year: currentYearString };
             await MockStore.updateUserProfile(userProfile.email, updates);
 
             alert(typeof I18n !== 'undefined' ? I18n.t('settings.success') || "Settings updated successfully!" : "Settings updated successfully!");
 
+            userProfile.full_name = inputFullName;
             userProfile.bio = inputBio;
             userProfile.hobby = inputHobby;
             userProfile.profile_pic = fotoBase64;

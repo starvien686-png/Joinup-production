@@ -459,7 +459,7 @@ export const renderCarpool = () => {
                                     <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
                                     <div style="flex: 1;">
                                         <div style="font-weight: bold; color: var(--text-primary); font-size: 1rem; display: flex; align-items: center; gap: 6px;">
-                                            ${p.host_name}
+                                            ${p.full_name || p.host_name}
                                             ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                         </div>
                                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">🎓 ${p.host_dept} ${studyYear ? `(Year ${studyYear})` : ''}</div>
@@ -827,7 +827,7 @@ window.showCarpoolDetail = async (id) => {
         }
 
         // Kalau dapet from MySQL, pakai datanya. Kalau kosong, pakai data from postingan
-        const hostName = hostUser.name || p.host_name || 'Host';
+        const hostName = hostUser.full_name || hostUser.name || p.full_name || p.host_name || 'Host';
         const hostDept = hostUser.department || p.host_dept || 'Student';
         const hostAvatar = hostUser.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         const hostHobby = hostUser.hobby || '';

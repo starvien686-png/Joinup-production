@@ -463,7 +463,7 @@ export const renderAdminDashboard = async () => { // <-- JADIKAN ASYNC
                         <img src="${u.profile_pic || 'https://via.placeholder.com/60'}" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                     <div style="flex: 1;">
-                        <div style="font-weight: 900; font-size: 1.1rem; color: #333;">${u.username}</div>
+                        <div style="font-weight: 900; font-size: 1.1rem; color: #333;">${u.full_name || u.username}</div>
                         <div style="font-size: 0.8rem; color: #666; font-weight: bold;">${u.major || 'Unknown Dept'}</div>
                     </div>
                 </div>

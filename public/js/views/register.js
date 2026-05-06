@@ -217,17 +217,17 @@ export const renderRegister = () => {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="reg.email_label">Email</label>
-                                    <input type="email" id="reg-email" class="form-control" placeholder="s112... / name@ncnu.edu.tw" required>
+                                    <label data-i18n="reg.full_name_label">Full Name</label>
+                                    <input type="text" id="reg-fullName" class="form-control" placeholder="John Doe" required>
                                 </div>
                                 <div class="grid-2">
                                     <div class="form-group">
-                                        <label data-i18n="reg.name_label">Full Name</label>
-                                        <input type="text" id="reg-realName" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
                                         <label data-i18n="reg.nickname_label">Nickname</label>
                                         <input type="text" id="reg-displayName" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label data-i18n="reg.email_label">Email</label>
+                                        <input type="email" id="reg-email" class="form-control" placeholder="s112... / name@ncnu.edu.tw" required>
                                     </div>
                                 </div>
                                 <div class="grid-2-1">
@@ -561,6 +561,7 @@ export const renderRegister = () => {
 
             const payloadDatabase = {
                 username: sanitizeInput(document.getElementById('reg-displayName').value),
+                full_name: sanitizeInput(document.getElementById('reg-fullName').value),
                 email: email,
                 password: pwd,
                 major: sanitizeInput(document.getElementById('reg-major').value),
@@ -637,7 +638,7 @@ export const renderRegister = () => {
                         document.getElementById('reg-email').value = googleUserPendingData.email;
                         document.getElementById('reg-email').readOnly = true;
                         document.getElementById('reg-displayName').value = googleUserPendingData.name;
-                        document.getElementById('reg-realName').value = googleUserPendingData.name;
+                        document.getElementById('reg-fullName').value = googleUserPendingData.name;
                         
                         // Set a random password for Google users to satisfy DB constraint
                         const randomPwd = Math.random().toString(36).slice(-10) + "G!";

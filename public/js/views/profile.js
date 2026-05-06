@@ -38,7 +38,7 @@ export const renderProfile = () => {
                         ${(userData.profile_pic || userData.photoURL) ? '' : '👤'}
                     </div>
                     <h2 id="profile-username" style="margin: 0; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        ${userData.username || userData.displayName || '...'}
+                        ${userData.full_name || userData.username || userData.displayName || '...'}
                         ${userData.email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                     </h2>
                     <p id="profile-email-display" style="color: #666; margin: 5px 0 0;">${userData.email}</p>
@@ -113,7 +113,14 @@ export const renderProfile = () => {
         const vcEl = document.getElementById('profile-violation-count');
         const avatarEl = document.getElementById('profile-avatar-display');
 
-        if (nameEl) nameEl.innerText = freshUser.username || freshUser.displayName || '';
+        if (nameEl) {
+            nameEl.innerText = freshUser.full_name || freshUser.username || freshUser.displayName || '';
+            // If it's the admin, we need to preserve the shield, but innerText wipes it.
+            // Simplified: let renderContent handle the shield during full re-render if needed, or:
+            if (freshUser.email === 'ncnujoinupadmin@gmail.com') {
+                nameEl.innerHTML = `${freshUser.full_name || freshUser.username || freshUser.displayName} <span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.7rem; padding: 4px 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🛡️ ADMIN</span>`;
+            }
+        }
         if (cpEl) cpEl.innerText = freshUser.credit_points ?? freshUser.creditPoints ?? 0;
         if (vcEl) vcEl.innerText = freshUser.violation_points ?? freshUser.violationCount ?? 0;
         if (avatarEl) {

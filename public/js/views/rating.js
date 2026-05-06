@@ -130,7 +130,7 @@ export const openRatingModal = (post, onSubmitted) => {
 
         const feedbackData = {
             user_email: user.email || 'unknown',
-            user_name: user.displayName || user.name || 'User',
+            user_name: user.full_name || user.displayName || user.name || 'User',
             user_dept: user.department || 'NCNU',
             study_year: user.study_year || '-',
             event_id: post.id || post.postId || 'unknown',

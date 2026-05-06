@@ -186,7 +186,7 @@ export const renderMyActivitiesDashboard = async () => {
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="flex: 1; min-width: 0; text-align: left;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
-                                ${p.host_name || 'Host'}
+                                ${p.host_full_name || p.host_name || 'Host'}
                                 ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 900; line-height: 1;">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary);">🎓 ${p.host_dept || ''}</div>
@@ -423,8 +423,8 @@ export const renderMyActivitiesDashboard = async () => {
                                 <img src="${avatar}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: var(--shadow-sm);">
                                 <div style="flex: 1; min-width: 0;">
                                     <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
-                                        ${p.snapshot_display_name || 'Member'}
-                                        ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
+                                        ${p.snapshot_full_name || p.snapshot_display_name || 'Member'}
+                                        ${p.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                     </div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary);">${p.user_email}</div>
                                 </div>

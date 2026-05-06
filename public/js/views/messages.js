@@ -85,7 +85,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                 post_id: realId,
                 room_type: roomType,
                 team_name: chatTitle,
-                participants: [{ id: user.email, name: user.displayName || user.name || 'User', role: 'participant' }]
+                participants: [{ id: user.email, name: user.full_name || user.displayName || user.name || 'User', role: 'participant' }]
             })
         });
     } catch (e) { console.error("Auto-Setup room error", e); }
@@ -272,9 +272,9 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         const html = `
             <div id="msg-${uniqueId}" class="chat-bubble ${isMine ? 'chat-mine' : 'chat-other'}" data-type="${message_type}">
                 ${!isMine ? `
-                <div class="chat-sender-info">
+                <div class="chat-sender-info" style="margin-bottom: 4px; font-size: 0.8rem; font-weight: bold;">
                     <span style="color: ${msg.role === 'host' ? '#e67e22' : '#3498db'}; display: flex; align-items: center; gap: 4px;">
-                        ${crownIcon}${msg.sender_name}
+                        ${crownIcon}${msg.full_name || msg.sender_name || 'User'}
                         ${msg.sender_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                     </span>
                 </div>` : ''}
@@ -301,7 +301,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             let rawMessages = dbMsgs.map(m => {
                 const safeMsg = m.message || '';
                 return {
-                    id: m.id, sender_email: m.sender_email, sender_name: m.sender_name, created_at: m.created_at,
+                    id: m.id, sender_email: m.sender_email, sender_name: m.sender_name, full_name: m.full_name, created_at: m.created_at,
                     message_type: safeMsg.startsWith('!') ? 'announcement' : 'text', content: safeMsg.replace('!', '').trim(),
                     role: 'participant', sender_dept: '', sender_student_id: ''
                 };
@@ -425,7 +425,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                 if (msg.message_type === 'announcement' || (msg.content && String(msg.content).startsWith('!'))) {
                     messageArea.insertAdjacentHTML('beforeend', `
                         <div id="msg-${uniqueId}" class="chat-announcement" style="padding: 10px; border-radius: 8px;">
-                            📢 <b>${I18n.t('chat.announcement_label') || 'Announcement'} ${crownIcon}${msg.sender_name}</b><br>
+                            📢 <b>${I18n.t('chat.announcement_label') || 'Announcement'} ${crownIcon}${msg.full_name || msg.sender_name}</b><br>
                             ${contentHtml.replace('!', '').trim()}
                         </div>
                     `);
@@ -433,9 +433,9 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                     messageArea.insertAdjacentHTML('beforeend', `
                         <div id="msg-${uniqueId}" class="chat-bubble ${isMine ? 'chat-mine' : 'chat-other'}" data-type="${msg.message_type}" data-content="${msg.content.replace(/"/g, '"')}">
                             ${!isMine ? `
-                            <div class="chat-sender-info">
+                            <div class="chat-sender-info" style="margin-bottom: 4px; font-size: 0.8rem; font-weight: bold;">
                                 <span style="color: ${msg.role === 'host' ? '#e67e22' : '#3498db'};${msg.role === 'host' ? 'font-weight:900;' : ''}; display: flex; align-items: center; gap: 4px;">
-                                    ${crownIcon}${msg.sender_name}
+                                    ${msg.full_name || msg.sender_name || 'User'}
                                     ${msg.sender_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                  </span>
                             </div>` : ''}
@@ -454,7 +454,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                 const latestId = latestAnnouncement.id || new Date(latestAnnouncement.created_at).getTime();
                 const cleanText = latestAnnouncement.content.replace('!', '').trim();
 
-                document.getElementById('pinned-sender').innerHTML = `${I18n.t('chat.pinned_by') || 'Pinned by'} <b>${latestAnnouncement.sender_name}</b> <span style="color: #e67e22; font-size: 0.75rem; margin-left: 5px;">${I18n.t('chat.view_all') || '(Click to view all)'}</span>`;
+                document.getElementById('pinned-sender').innerHTML = `${I18n.t('chat.pinned_by') || 'Pinned by'} <b>${latestAnnouncement.full_name || latestAnnouncement.sender_name}</b> <span style="color: #e67e22; font-size: 0.75rem; margin-left: 5px;">${I18n.t('chat.view_all') || '(Click to view all)'}</span>`;
                 document.getElementById('pinned-text').innerText = cleanText;
 
                 pinnedBanner.onclick = () => {
@@ -472,7 +472,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                         return `
                         <div onclick="window.jumpToMsg('${aId}')" style="background: #fdf6e3; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #f1c40f; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s;">
                             <div style="font-size: 0.75rem; color: #666; margin-bottom: 4px; display: flex; justify-content: space-between;">
-                                <b>${a.sender_name}</b> 
+                                <b>${a.full_name || a.sender_name}</b> 
                                 <span>${new Date(a.created_at).toLocaleDateString()} ${new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                             <div style="font-size: 0.95rem; color: #333; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.content.replace('!', '').trim()}</div>
@@ -522,7 +522,8 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             socket.emit('send_message', {
                 room_id: String(roomId).toLowerCase().trim(),
                 sender_email: normalizeChatEmail(user.email),
-                sender_name: user.displayName || user.name || 'User',
+                sender_name: user.full_name || user.displayName || user.name || 'User',
+                full_name: user.full_name || user.displayName || null,
                 message: finalMessage
             });
 

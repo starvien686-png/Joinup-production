@@ -325,7 +325,7 @@ window.updateGlobalUI = (user) => {
     const avatarEl = document.getElementById('header-user-avatar');
 
     if (nameEl) {
-        nameEl.innerText = user.username || user.displayName || '';
+        nameEl.innerText = user.full_name || user.username || user.displayName || '';
         nameEl.classList.remove('skeleton', 'skeleton-text');
     }
     if (deptEl) {
@@ -556,7 +556,7 @@ window.showAnnouncements = async () => {
 
                     if (n.type === 'join_request') {
                         const evtName = meta.event_title || '活動';
-                        const sender = meta.snapshot_display_name || '有人';
+                        const sender = meta.full_name || meta.snapshot_display_name || '有人';
                         const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
                         msg = isZH ? `🔔 新申請：${sender}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${sender}${adminBadge} wants to join "${evtName}"`;
 
@@ -854,7 +854,7 @@ window.showReviewApplicationModal = async (appId, postId, applicantEmail, teamNa
     const txtApplyFor = isZH ? '申請加入：' : 'Applying for:';
 
     // --- PERBAIKAN 2: Gunakan data dari realUserData dengan benar ---
-    let applicantName = realUserData?.username || 'Applicant';
+    let applicantName = realUserData?.full_name || realUserData?.username || 'Applicant';
     let applicantDept = realUserData?.major || (isZH ? '學生' : 'Student');
     let studyYear = realUserData?.study_year ? (isZH ? `大${realUserData.study_year}` : `Year ${realUserData.study_year}`) : '';
     let bio = realUserData?.bio || (isZH ? '希望能加入這個活動！' : 'I would love to join this activity!');
@@ -1247,13 +1247,13 @@ window.showEventDetail = async (activityId) => {
 
                
 
-                <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <div style="background: var(--bg-secondary); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-color); margin-bottom: 20px;">
 
                     <img src="${hostAvatar}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-card); box-shadow: var(--shadow-sm);">
 
                     <div>
 
-                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${data.host_name || 'Host'}</div>
+                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">${data.full_name || data.host_name || 'Host'}</div>
 
                         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">🎓 ${data.host_dept || '-'} (Year ${data.study_year || '-'})</div>
 
@@ -1621,7 +1621,7 @@ async function syncNotifications() {
                         : `❌ Your join request was declined.`;
                 } else if (newest.type === 'chat_message') {
                     title = isZH ? "新訊息 / New Message" : "New Message";
-                    const sender = meta?.sender_name || (isZH ? '有人' : 'Someone');
+                    const sender = meta?.full_name || meta?.sender_name || (isZH ? '有人' : 'Someone');
                     const evtTitle = meta?.event_title || (isZH ? '活動' : 'Event');
                     const snippet = meta?.message || '';
                     msg = isZH 

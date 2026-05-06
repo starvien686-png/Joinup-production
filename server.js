@@ -488,6 +488,7 @@ app.get('/api/v1/users/me', checkAuth, (req, res) => {
         res.json({
             success: true,
             username: user.username,
+            full_name: user.full_name,
             email: user.email,
             major: user.major,
             study_year: user.study_year,
@@ -537,7 +538,7 @@ const transporter = nodemailer.createTransport({
 
 app.post('/signup', async (req, res) => {
     try {
-        const { username, email, password, major, study_year, role, is_delayed_graduation, profile_pic } = req.body;
+        const { username, full_name, email, password, major, study_year, role, is_delayed_graduation, profile_pic } = req.body;
 
         const isAdminWhitelist = email.toLowerCase() === 'ncnujoinupadmin@gmail.com';
 
@@ -555,6 +556,7 @@ app.post('/signup', async (req, res) => {
 
         const newUser = await User.create({
             username,
+            full_name: full_name || null,
             email,
             password,
             major,
@@ -588,6 +590,7 @@ app.post('/login', loginLimiter, async (req, res) => {
             message: 'Login successful!',
             user: {
                 username: user.username,
+                full_name: user.full_name,
                 email: user.email,
                 major: user.major,
                 study_year: user.study_year,
@@ -632,6 +635,7 @@ app.post('/api/auth/google', async (req, res) => {
                 isNewUser: false,
                 user: {
                     username: user.username,
+                    full_name: user.full_name,
                     email: user.email,
                     major: user.major,
                     study_year: user.study_year,
@@ -669,11 +673,11 @@ app.post('/api/auth/google', async (req, res) => {
 
 app.post('/update-profile', async (req, res) => {
     try {
-        const { email, bio, hobby, profile_pic } = req.body;
+        const { email, full_name, bio, hobby, profile_pic } = req.body;
 
-        const query = `UPDATE users SET bio = ?, hobby = ?, profile_pic = ? WHERE email = ?`;
+        const query = `UPDATE users SET full_name = ?, bio = ?, hobby = ?, profile_pic = ? WHERE email = ?`;
         await sequelize.query(query, {
-            replacements: [bio, hobby, profile_pic, email]
+            replacements: [full_name, bio, hobby, profile_pic, email]
         });
 
         res.json({ message: 'Profile and Photo updated successfully! ✨' });

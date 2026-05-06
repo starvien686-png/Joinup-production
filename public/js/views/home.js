@@ -21,7 +21,7 @@ export const renderHome = () => {
     }
 
     // Use I18n for default name if generic? Or keep simple.
-    const username = user?.username || user?.displayName || '';
+    const username = user?.full_name || user?.username || user?.displayName || '';
     const deptDisplay = user?.department || user?.major || '';
     const deptInfo = deptDisplay ? `<span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: normal; margin-left: 0.5rem;">(${deptDisplay})</span>` : '';
 
@@ -360,6 +360,7 @@ export const renderHome = () => {
                 eventtime: p.event_time || p.departure_time || p.deadline,
                 location: p.location || p.destination || p.meeting_location,
                 sport_type: p.sport_type,
+                full_name: p.full_name,
                 created_at: p.created_at
             }));
             window._cachedHomePosts = posts;
@@ -496,7 +497,7 @@ export const renderHome = () => {
                         <img src="${p.profile_pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1.5px solid #eee;">
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-size: 0.85rem; font-weight: 600; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px;">
-                                    ${p.host_name}
+                                    ${p.full_name || p.host_name}
                                     ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                             </div>
                             <div style="font-size: 0.7rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🎓 ${p.host_dept} ${p.study_year ? `• ${p.study_year}` : ''}</div>
@@ -642,7 +643,7 @@ export const renderHome = () => {
             const approvedCnt = Math.max(1, parseInt(p.approvedCount) || 0);
             const capacityFraction = `${approvedCnt} / ${peopleCnt}`;
 
-            const hostNm = p.host_name || p.hostName || 'Anonymous';
+            const hostNm = p.full_name || p.host_name || p.hostName || 'Anonymous';
             const hostDp = p.host_dept || p.hostDept || '';
             const desc = p.description || p.notes || '';
             const evTimeStr = p.eventtime || p.eventTime || p.event_time || p.departure_time || p.deadline || p.created_at;
@@ -737,7 +738,7 @@ export const renderHome = () => {
                             <img src="${hostAvatar}" alt="avatar" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
                             <div style="flex: 1;">
                                 <div style="color: var(--text-primary); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                                    ${hostFinalNm}
+                                    ${p.full_name || hostFinalNm}
                                     ${p.host_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 4px;">

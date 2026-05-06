@@ -90,7 +90,7 @@ export const renderActivities = async () => {
             eventTime: p.event_time || p.departure_time || p.deadline,
             location: p.location || p.destination || p.meeting_location,
             deadline: p.deadline, description: p.description, hostEmail: p.host_email,
-            hostName: p.host_name || 'Host', hostDept: p.host_dept || '', status: p.status,
+            hostName: p.full_name || p.host_name || 'Host', hostDept: p.host_dept || '', status: p.status,
             display_status: p.display_status,
             approvedCount: p.approvedCount,
             createdAt: p.created_at
@@ -365,7 +365,7 @@ export const renderActivities = async () => {
                             <img src="${hostAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-card); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                             <div style="flex: 1;">
                                 <div style="color: var(--text-primary); font-weight: 700; font-size: 1.1rem; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
-                                    ${p.hostName}
+                                    ${p.full_name || p.hostName}
                                     ${p.hostEmail === 'ncnujoinupadmin@gmail.com' ? `<span style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                 </div>
                                 <div style="font-size: 0.85rem; color: var(--text-secondary);">🎓 ${p.hostDept} ${p.study_year ? `• ${p.study_year}` : ''}</div>

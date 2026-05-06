@@ -28,7 +28,7 @@ export const showUserProfile = (userId) => {
                         ${avatar}
                     </div>
 
-                    <h2 style="margin: 0.5rem 0 0.2rem 0;">${user.displayName || 'User'}</h2>
+                    <h2 style="margin: 0.5rem 0 0.2rem 0;">${user.full_name || user.displayName || 'User'}</h2>
                     <p style="color: var(--text-secondary); margin: 0 0 1.5rem 0; font-size: 0.9rem;">${user.nickname ? `(${user.nickname})` : ''}</p>
 
                     <div style="text-align: left; background: #f9f9f9; padding: 1.5rem; border-radius: 12px;">
