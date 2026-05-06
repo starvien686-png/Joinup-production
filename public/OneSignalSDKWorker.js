@@ -1,48 +1,38 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-// 🔔 JoinUp! PWA Smart Push & Deep Linking
-self.addEventListener('push', function(event) {
-    if (event.data) {
-        try {
-            const payload = event.data.json();
-            // If OneSignal didn't display it automatically, or we want custom control
-            if (payload.custom && payload.custom.a) {
-                const data = payload.custom.a;
-                const options = {
-                    body: payload.alert || '',
-                    icon: data.icon || '/icon-192x192.png',
-                    badge: '/icon-192x192.png',
-                    data: { url: data.url || '/' }
-                };
-                event.waitUntil(self.registration.showNotification(payload.title || 'JoinUp!', options));
-            }
-        } catch (e) {
-            console.error("[SW] Push Parse Error:", e);
-        }
-    }
-});
-
+// 🔔 JoinUp! PWA Smart Deep Linking (Non-Conflicting Handler)
 self.addEventListener('notificationclick', function(event) {
     const notification = event.notification;
-    notification.close(); // MUST close immediately
+    notification.close(); // Close the notification immediately
 
-    // Extract URL from data (Backend-passed) or notification.url
-    const url = (notification.data && notification.data.url) ? notification.data.url : (notification.url || '/');
+    // Strategy: Try multiple possible URL locations in the payload
+    // 1. data.url (Our custom injection)
+    // 2. data.custom.a.url (OneSignal standard nested)
+    // 3. notification.url (Legacy)
+    let url = '/';
+    if (notification.data) {
+        if (notification.data.url) {
+            url = notification.data.url;
+        } else if (notification.data.custom && notification.data.custom.a && notification.data.custom.a.url) {
+            url = notification.data.custom.a.url;
+        }
+    } else if (notification.url) {
+        url = notification.url;
+    }
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
             .then(function(windowClients) {
-                // 1. Find if a window is already open
+                // Check if the app is already open
                 for (var i = 0; i < windowClients.length; i++) {
                     var client = windowClients[i];
-                    // Focus existing window and navigate to new URL
                     if (client.url.includes(self.location.origin) && 'focus' in client) {
                         return client.focus().then(c => {
                              if (url && url !== '/') return c.navigate(url);
                         });
                     }
                 }
-                // 2. Open new window if none exists
+                // If no window is open, open a new one
                 if (clients.openWindow) {
                     return clients.openWindow(url || '/');
                 }

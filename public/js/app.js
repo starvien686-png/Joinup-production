@@ -1587,8 +1587,8 @@ async function syncNotifications() {
                     msg = isZH ? `🔔 您有一則新通知` : `🔔 You have a new notification`;
                 }
 
-                // Strictly ONLY show banner for real-time join_requests. DO NOT pop up on initial load.
-                if (!isInitialSync && newest.type === 'join_request') {
+                // Strictly ONLY show banner for real-time join_requests or chat_messages. DO NOT pop up on initial load.
+                if (!isInitialSync && (newest.type === 'join_request' || newest.type === 'chat_message')) {
                     // Show the toast banner immediately
                     notifications.showNativeBanner({
                         title: title,

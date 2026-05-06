@@ -290,6 +290,9 @@ async function handleChatNotification(io, roomId, senderEmail, senderName, messa
 
         // --- ENRICHMENT: Fetch Event Title for context ---
         let eventTitle = 'Event';
+        if (String(roomId).startsWith('support_')) eventTitle = 'Customer Support';
+        else if (String(roomId).startsWith('private_admin_')) eventTitle = 'Admin Support';
+
         const parts = String(roomId).split('_');
         if (parts.length >= 2) {
             const eventType = parts[0];
