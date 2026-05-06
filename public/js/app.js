@@ -27,8 +27,32 @@ window.OneSignal = window.OneSignal || [];
 OneSignal.push(function () {
     OneSignal.init({
         appId: "65d2da97-e8f8-40ed-a298-978a485ba6f9",
+        safari_web_id: "web.onesignal.auto.176f5713-3343-487b-891a-7b3b78298713", // Optional if using Safari
+        notifyButton: { enable: false }, // We handle our own UI
+        allowLocalhostAsSecureOrigin: true,
     });
 });
+
+// --- OneSignal Permission Helpers ---
+window.getNotificationPermissionStatus = async () => {
+    try {
+        if (!window.OneSignal) return 'default';
+        return await OneSignal.Notifications.permission ? 'granted' : 'default'; // Simplification for UI
+    } catch (e) {
+        return Notification.permission;
+    }
+};
+
+window.requestNotificationPermission = async () => {
+    console.log('[OneSignal] Requesting notification permission...');
+    try {
+        await OneSignal.Notifications.requestPermission();
+    } catch (e) {
+        console.warn('[OneSignal] Native permission request failed, trying SDK method:', e);
+        // Fallback for older SDK versions if any
+        if (OneSignal.showNativePrompt) OneSignal.showNativePrompt();
+    }
+};
 
 
 
@@ -116,7 +140,10 @@ if (window.socket) {
 if (state.isLoggedIn && state.userEmail) {
     const cleanEmail = normalizeEmail(state.userEmail);
     OneSignal.push(function () {
-        OneSignal.login(cleanEmail);
+        if (OneSignal.login) {
+            OneSignal.login(cleanEmail);
+            console.log(`[OneSignal] Logged in as: ${cleanEmail}`);
+        }
     });
 
     if (window.socket) {
@@ -124,6 +151,28 @@ if (state.isLoggedIn && state.userEmail) {
         console.log(`[Socket] Registered targeted room for: ${cleanEmail}`);
     }
 }
+
+// Client Consistency: Ensure OneSignal is updated even if login happens after page load
+window.validLogin = (user) => {
+    if (!user || !user.email) return;
+    const cleanEmail = normalizeEmail(user.email);
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userEmail', user.email);
+    localStorage.setItem('userProfile', JSON.stringify(user));
+    
+    OneSignal.push(async function () {
+        if (OneSignal.login) await OneSignal.login(cleanEmail);
+        console.log(`[OneSignal] Sync Login for: ${cleanEmail}`);
+    });
+    
+    // Trigger permission request immediately after login
+    if (window.requestNotificationPermission) {
+        window.requestNotificationPermission();
+    }
+
+    window.location.hash = '#home';
+    window.location.reload(); // Force reload to re-run all initializers
+};
 
 const render = () => {
 

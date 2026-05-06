@@ -20,6 +20,11 @@ self.addEventListener('notificationclick', function(event) {
         url = notification.url;
     }
 
+    // 🌐 Ensure URL is absolute and belongs to our origin
+    if (url && !url.startsWith('http')) {
+        url = self.location.origin + (url.startsWith('/') ? '' : '/') + url;
+    }
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
             .then(function(windowClients) {

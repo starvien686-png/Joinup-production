@@ -109,6 +109,23 @@ export const renderSettings = () => {
                 </div>
             </div>
 
+            <!-- Push Notification Status (Smart Integration) -->
+            <div class="card" style="border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #e0e0e0;">
+                <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">📲</span>
+                    <span data-i18n="settings.push_status">Push Notification Status</span>
+                </h3>
+                <div id="push-status-container" style="display: flex; align-items: center; justify-content: space-between; background: #fdf2f2; padding: 12px 16px; border-radius: 12px; margin-top: 10px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span id="push-status-label" style="font-weight: bold; color: #d32f2f; font-size: 0.95rem;">Disconnected</span>
+                        <span style="font-size: 0.8rem; color: #666;" data-i18n="settings.push_hint">Required for background updates</span>
+                    </div>
+                    <button type="button" id="btn-enable-push" class="btn" style="padding: 0.6rem 1.2rem; background: #d32f2f; color: white; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+                        Enable
+                    </button>
+                </div>
+            </div>
+
             <!-- Form -->
             <div class="card" style="border-radius: 16px; padding: 1.5rem;">
                 <form id="settings-form">
@@ -219,6 +236,40 @@ export const renderSettings = () => {
             console.error("Toggle subscription error:", err);
         }
     };
+
+    // 3.5 LOGIKA PUSH STATUS
+    const updatePushUI = async () => {
+        const label = document.getElementById('push-status-label');
+        const container = document.getElementById('push-status-container');
+        const btn = document.getElementById('btn-enable-push');
+        if (!label || !container || !btn) return;
+
+        const status = await window.getNotificationPermissionStatus();
+        if (status === 'granted') {
+            label.innerText = 'Connected / 已連線';
+            label.style.color = '#2e7d32';
+            container.style.background = '#f1f8e9';
+            btn.innerText = 'Enabled';
+            btn.style.background = '#2e7d32';
+            btn.disabled = true;
+        } else {
+            label.innerText = 'Disconnected / 未連線';
+            label.style.color = '#d32f2f';
+            container.style.background = '#fdf2f2';
+            btn.innerText = 'Enable';
+            btn.style.background = '#d32f2f';
+            btn.disabled = false;
+        }
+    };
+
+    document.getElementById('btn-enable-push').onclick = async () => {
+        if (window.requestNotificationPermission) {
+            await window.requestNotificationPermission();
+            setTimeout(updatePushUI, 2000); // Check again after a delay
+        }
+    };
+
+    setTimeout(updatePushUI, 500);
 
     // Load initial subs
     setTimeout(loadSubscriptions, 100);

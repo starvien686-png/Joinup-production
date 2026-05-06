@@ -37,7 +37,11 @@ const sendPushNotification = async (emails, title, message, url, icon) => {
         url: url || DEFAULT_APP_URL,
         chrome_web_icon: icon || undefined,
         large_icon: icon || undefined,
-        data: { url: url || DEFAULT_APP_URL }
+        isAnyWeb: true, // Target all web platforms
+        data: { 
+            url: url || DEFAULT_APP_URL,
+            notif_type: 'custom'
+        }
     });
 
     const options = {
