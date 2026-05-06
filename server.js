@@ -2450,9 +2450,12 @@ app.get('/housing/:id', async (req, res) => {
 });
 
 // API UNTUK MENGAMBIL PROFIL USER BERDASARKAN EMAIL
-app.get('/profile/:email', async (req, res) => {
+app.get(['/profile/:email', '/api/v1/profile-user'], async (req, res) => {
     try {
-        const emails = getEmailVariations(req.params.email);
+        const emailParam = req.params.email || req.query.email;
+        if (!emailParam) return res.status(400).json({ error: 'Email is required' });
+        
+        const emails = getEmailVariations(emailParam);
         // Ambil data user berdasarkan email
         const [results] = await sequelize.query('SELECT * FROM users WHERE email IN (?)', {
             replacements: [emails]
@@ -2463,6 +2466,7 @@ app.get('/profile/:email', async (req, res) => {
             const user = results[0];
             res.json({
                 username: user.username,
+                full_name: user.full_name,
                 email: user.email,
                 major: user.major,
                 study_year: user.study_year,
