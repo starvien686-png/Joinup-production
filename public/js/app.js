@@ -555,22 +555,11 @@ window.showAnnouncements = async () => {
                     let iconType = 'info';
 
                     if (n.type === 'join_request') {
-                        const evtName = meta.event_title || '活動';
-                        const applicantEmail = meta.user_email || meta.applicant_email || meta.email || meta.applicantEmail || '';
-                        const sender = meta.full_name || meta.snapshot_display_name || meta.name || meta.displayName || '有人';
-                        
-                        // NEW: Make name clickable for profile viewing (Using class for listener attachment)
-                        const nameLink = `<span class="participant-profile-link" data-email="${applicantEmail}" style="cursor: pointer; font-weight: bold;">${sender}</span>`;
-                        
-                        const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
-                        msg = isZH ? `🔔 新申請：${nameLink}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${nameLink}${adminBadge} wants to join "${evtName}"`;
-
-                        // 👇 INI BARIS YANG KEMARIN TERHAPUS (Wajib ada!) 👇
+                        // --- 1. Extract Metadata and Category first ---
                         const category = meta.event_type || 'sports';
-
-                        // Cek semua kemungkinan tempat ID acara disimpan (Sangat Fleksibel)
                         const actionMeta = typeof n.action_metadata === 'string' ? JSON.parse(n.action_metadata) : (n.action_metadata || {});
 
+                        // --- 2. Extract Event ID (Robust fallback logic) ---
                         const postId = meta.event_id ||
                             meta.post_id ||
                             meta.activity_id ||
@@ -588,11 +577,26 @@ window.showAnnouncements = async () => {
                             n.activity_id ||
                             n.target_id ||
                             '';
-
-                        // Jika postId masih kosong, kita coba cek apakah category terselip di metadata
                         const finalPostId = (postId && postId !== 'undefined') ? postId : '';
+                        
+                        // --- 3. Extract Applicant Info ---
+                        const evtName = meta.event_title || '活動';
+                        const applicantEmail = meta.user_email || meta.applicant_email || meta.email || meta.applicantEmail || '';
+                        const sender = meta.full_name || meta.snapshot_display_name || meta.name || meta.displayName || '有人';
+                        
+                        // --- 4. Build Interactive Elements ---
+                        const nameLink = `<span class="participant-profile-link" 
+                            data-email="${applicantEmail}" 
+                            data-app-id="${n.id}" 
+                            data-post-id="${finalPostId}" 
+                            data-name="${evtName.replace(/'/g, "\\'")}" 
+                            data-cat="${category}" 
+                            style="cursor: pointer; font-weight: bold;">${sender}</span>`;
+                        
+                        const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
+                        msg = isZH ? `🔔 新申請：${nameLink}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${nameLink}${adminBadge} wants to join "${evtName}"`;
 
-                        link = `action:review_${category}_app:${n.id}:${finalPostId}:${meta.user_email}:${encodeURIComponent(evtName)}`;
+                        link = `action:review_${category}_app:${n.id}:${finalPostId}:${applicantEmail}:${encodeURIComponent(evtName)}`;
                         iconType = 'action';
                     } else if (n.type === 'ACCEPTED') {
                         msg = I18n.t('notifications.type.accepted', { eventTitle: meta.event_title || 'Event' });
@@ -764,12 +768,21 @@ window.showAnnouncements = async () => {
 
     document.body.appendChild(overlay);
     
-    // --- ATTACH LISTENERS (Phase 9 Interactivity Fix) ---
+    // --- ATTACH LISTENERS (Connecting to Existing Review Modal) ---
     overlay.querySelectorAll('.participant-profile-link').forEach(el => {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             const email = el.getAttribute('data-email');
-            if (window.showUserProfile) window.showUserProfile(email);
+            const appId = el.getAttribute('data-app-id');
+            const postId = el.getAttribute('data-post-id');
+            const name = el.getAttribute('data-name');
+            const cat = el.getAttribute('data-cat');
+            
+            if (window.showReviewApplicationModal) {
+                // Remove notification overlay first so modal is on top/clean
+                overlay.remove();
+                window.showReviewApplicationModal(appId, postId, email, name, cat);
+            }
         });
     });
 
