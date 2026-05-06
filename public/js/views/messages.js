@@ -6,6 +6,11 @@ import { PullToRefresh } from '../utils/PullToRefresh.js';
 // No longer using local chatInterval, we use Socket.io for real-time updates
 const socket = window.socket || io(); 
 
+const normalizeChatEmail = (email) => {
+    if (!email) return '';
+    return email.toLowerCase().replace('mail1.', '').trim();
+};
+
 const playNotificationSound = () => {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -239,8 +244,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
     const appendSingleMessage = (msg) => {
         // BUG 2 FIX: Strictly evaluate POV using currentUserEmail
-        const currentUserEmail = (user.email || '').toLowerCase().trim();
-        const msgSenderEmail = (msg.sender_email || '').toLowerCase().trim();
+        const currentUserEmail = normalizeChatEmail(user.email);
+        const msgSenderEmail = normalizeChatEmail(msg.sender_email);
         const isMine = msgSenderEmail === currentUserEmail;
         const date = new Date(msg.created_at);
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -307,8 +312,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
             if (!isInitial && rawMessages.length > lastMsgCount) {
                 const lastMsg = rawMessages[rawMessages.length - 1];
-                const lastMsgSender = (lastMsg.sender_email || '').toLowerCase().trim();
-                const currentUserEmail = (user.email || '').toLowerCase().trim();
+                const lastMsgSender = normalizeChatEmail(lastMsg.sender_email);
+                const currentUserEmail = normalizeChatEmail(user.email);
                 if (lastMsgSender !== currentUserEmail) playNotificationSound();
             }
 
@@ -330,8 +335,8 @@ const renderChatRoomUnified = async (roomId, user, prefill, appElement) => {
 
             newMessages.forEach(msg => {
                 // BUG 2 FIX: Strictly evaluate POV using currentUserEmail
-                const currentUserEmail = (user.email || '').toLowerCase().trim();
-                const msgSenderEmail = (msg.sender_email || '').toLowerCase().trim();
+                const currentUserEmail = normalizeChatEmail(user.email);
+                const msgSenderEmail = normalizeChatEmail(msg.sender_email);
                 const isMine = msgSenderEmail === currentUserEmail;
                 const date = new Date(msg.created_at);
                 const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -1073,8 +1078,8 @@ export const renderMessages = (roomId = null, prefill = null) => {
             .chat-input-area { background: var(--bg-secondary); padding: 10px 16px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color); padding-bottom: calc(10px + env(safe-area-inset-bottom)); transition: background-color 0.3s ease; }
             .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 16px; margin-bottom: 4px; font-size: 0.95rem; line-height: 1.5; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.08); cursor: pointer; transition: filter 0.2s; }
             .chat-bubble:active { filter: brightness(0.9); }
-            .chat-mine { background: var(--chat-bubble-mine); color: var(--chat-bubble-mine-text); align-self: flex-end; border-top-right-radius: 4px; } 
-            .chat-other { background: var(--chat-bubble-other); color: var(--chat-bubble-other-text); align-self: flex-start; border-top-left-radius: 4px; }
+            .chat-mine { background: var(--chat-bubble-mine); color: var(--chat-bubble-mine-text); align-self: flex-end; border-top-right-radius: 4px; margin-left: auto; width: fit-content; } 
+            .chat-other { background: var(--chat-bubble-other); color: var(--chat-bubble-other-text); align-self: flex-start; border-top-left-radius: 4px; margin-right: auto; width: fit-content; }
             .chat-sender-info { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
             .chat-time { font-size: 0.65rem; color: var(--text-secondary); text-align: right; margin-top: 4px; opacity: 0.8; }
             .chat-announcement { background: #fff3cd; color: #856404; text-align: center; padding: 8px 12px; border-radius: 10px; font-size: 0.88rem; margin: 10px auto; width: 90%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: bold; border: 1px solid #ffeeba; }
