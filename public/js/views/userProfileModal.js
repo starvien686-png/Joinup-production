@@ -2,6 +2,7 @@ import { MockStore } from '../models/mockStore.js?v=20';
 import { I18n } from '../services/i18n.js';
 
 export const showUserProfile = (userId) => {
+    console.log("[UserProfile] Showing profile for:", userId);
     const user = MockStore.getUser(userId);
 
     if (!user) {

@@ -556,8 +556,8 @@ window.showAnnouncements = async () => {
 
                     if (n.type === 'join_request') {
                         const evtName = meta.event_title || '活動';
-                        const applicantEmail = meta.user_email || '';
-                        const sender = meta.full_name || meta.snapshot_display_name || '有人';
+                        const applicantEmail = meta.user_email || meta.applicant_email || meta.email || meta.applicantEmail || '';
+                        const sender = meta.full_name || meta.snapshot_display_name || meta.name || meta.displayName || '有人';
                         
                         // NEW: Make name clickable for profile viewing (Styled to inherit colors per USER_REQUEST)
                         const nameLink = `<span onclick="event.stopPropagation(); window.showUserProfile('${applicantEmail}')" style="cursor: pointer; font-weight: bold;">${sender}</span>`;
@@ -679,10 +679,10 @@ window.showAnnouncements = async () => {
                 const parts = n.link.split(':');
                 // parts format: [action, type_app, appId, postId, email, name]
                 const category = parts[1]?.replace('review_', '').replace('_app', '') || 'sports';
-                const appId = parts[2];
+                const appId = n.id; // Use n.id directly to be 100% sure it matches the div ID
                 const postId = parts[3];
                 const applicantEmail = parts[4];
-                const teamName = decodeURIComponent(parts[5] || '');
+                const teamName = decodeURIComponent(parts[5] || '').replace(/'/g, "\\'");
 
                 const txtAccept = isZH ? '接受 (Accept)' : 'Accept';
                 const txtReject = isZH ? '拒絕 (Reject)' : 'Reject';
@@ -952,7 +952,7 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
     };
 
     // 🚨 PELACAK: Tampilkan di Console (F12) untuk melihat data apa yang dikirim
-    console.log("=== DATA SENT TO SERVER ===", {
+    console.log("=== Review Action Triggered ===", {
         action,
         appId,
         postId,
