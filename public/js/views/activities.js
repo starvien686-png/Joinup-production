@@ -1,6 +1,11 @@
 import { I18n } from '../services/i18n.js';
 import api from '../utils/api.js';
 
+const normalizeChatEmail = (email) => {
+    if (!email) return '';
+    return email.toLowerCase().replace('mail1.', '').trim();
+};
+
 export const renderActivities = async () => {
     const app = document.getElementById('app');
     const userProfileStr = localStorage.getItem('userProfile');
@@ -150,7 +155,11 @@ export const renderActivities = async () => {
             const isSuccess = p.status === 'success';
 
             let actionBtn = '';
-            if ((user && user.email && p.hostEmail && user.email === p.hostEmail) || roleStatus === 'approved' || roleStatus === 'accepted') {
+            const currentUserEmail = normalizeChatEmail(user ? user.email : '');
+            const postHostEmail = normalizeChatEmail(p.hostEmail || '');
+            const isHost = (currentUserEmail !== '' && currentUserEmail === postHostEmail);
+
+            if (isHost || roleStatus === 'approved' || roleStatus === 'accepted') {
                 const btnColor = (roleStatus === 'approved' || roleStatus === 'accepted') ? '#4CAF50' : '#1976D2';
                 actionBtn = `<button onclick="event.stopPropagation(); window.navigateTo('messages?room=${p.category}_${p.id}')" style="width:100%; margin-top:12px; padding:8px; border-radius:8px; background:${btnColor}; border:none; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">💬 ${(localStorage.getItem('app_language') || localStorage.getItem('language') || 'zh-TW').includes('zh') ? '進入聊天室' : 'Enter Chat Room'}</button>`;
             } else if (user && user.email === 'ncnujoinupadmin@gmail.com') {

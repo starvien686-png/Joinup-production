@@ -461,7 +461,9 @@ router.post('/join/approve', async (req, res) => {
             }
         }
         if (events.length === 0) throw { status: 404, message: 'Event not found' };
-        if (events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
+        const eventHostEmail = (events[0].host_email || '').toLowerCase().trim();
+        const requestHostVariations = getEmailVariations(host_email).map(e => e.toLowerCase().trim());
+        if (!requestHostVariations.includes(eventHostEmail)) throw { status: 403, message: 'Unauthorized' };
 
         const targetEmailVars = getEmailVariations(target_user_email);
         const [lookup] = await sequelize.query(
@@ -621,7 +623,9 @@ router.post('/join/reject', async (req, res) => {
                 }
             }
         }
-        if (events.length === 0 || events[0].host_email !== host_email) throw { status: 403, message: 'Unauthorized' };
+        const eventHostEmail = (events[0].host_email || '').toLowerCase().trim();
+        const requestHostVariations = getEmailVariations(host_email).map(e => e.toLowerCase().trim());
+        if (events.length === 0 || !requestHostVariations.includes(eventHostEmail)) throw { status: 403, message: 'Unauthorized' };
 
         const targetEmailVars = getEmailVariations(target_user_email);
         const [lookup] = await sequelize.query(
@@ -848,9 +852,9 @@ router.get('/host/participants', async (req, res) => {
 
         // --- CASE-INSENSITIVE EMAIL CHECK (PROTOCOL ZERO 500 ERROR) ---
         const eventHostEmail = (events[0].host_email || '').toLowerCase().trim();
-        const requestHostEmail = (host_email || '').toLowerCase().trim();
+        const requestHostVariations = getEmailVariations(host_email).map(e => e.toLowerCase().trim());
 
-        if (eventHostEmail !== requestHostEmail) {
+        if (!requestHostVariations.includes(eventHostEmail)) {
             console.warn(`[Auth] Unauthorized host access attempt. Event Host: ${eventHostEmail}, Request Host: ${requestHostEmail}`);
             return res.status(403).json({ success: false, message: 'Unauthorized. You are not the host of this event.' });
         }
@@ -914,6 +918,7 @@ router.get('/my-activities', async (req, res) => {
     }
 
     try {
+        const emails = getEmailVariations(email).map(e => e.toLowerCase());
         const query = `
             /* --- PART 1: HOSTED BY ME (ALL STATUSES) --- */
             SELECT 
@@ -923,7 +928,7 @@ router.get('/my-activities', async (req, res) => {
                 (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != LOWER(a.host_email)))) as approvedCount
             FROM activities a
             LEFT JOIN users u ON LOWER(a.host_email) = LOWER(u.email)
-            WHERE LOWER(a.host_email) = LOWER(:email)
+            WHERE LOWER(a.host_email) IN (:emails)
 
             UNION ALL
 
@@ -934,7 +939,7 @@ router.get('/my-activities', async (req, res) => {
                 (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('carpools', 'carpool') AND ep.event_id = c.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != LOWER(c.host_email)))) as approvedCount
             FROM carpools c
             LEFT JOIN users u ON LOWER(c.host_email) = LOWER(u.email)
-            WHERE LOWER(c.host_email) = LOWER(:email)
+            WHERE LOWER(c.host_email) IN (:emails)
 
             UNION ALL
 
@@ -945,7 +950,7 @@ router.get('/my-activities', async (req, res) => {
                 (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('studies', 'study') AND ep.event_id = s.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != LOWER(s.host_email)))) as approvedCount
             FROM studies s
             LEFT JOIN users u ON LOWER(s.host_email) = LOWER(u.email)
-            WHERE LOWER(s.host_email) = LOWER(:email)
+            WHERE LOWER(s.host_email) IN (:emails)
 
             UNION ALL
 
@@ -956,7 +961,7 @@ router.get('/my-activities', async (req, res) => {
                 (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other') AND ep.event_id = h.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != LOWER(h.host_email)))) as approvedCount
             FROM hangouts h
             LEFT JOIN users u ON LOWER(h.host_email) = LOWER(u.email)
-            WHERE LOWER(h.host_email) = LOWER(:email)
+            WHERE LOWER(h.host_email) IN (:emails)
 
             UNION ALL
 
@@ -967,7 +972,7 @@ router.get('/my-activities', async (req, res) => {
                 (1 + (SELECT COUNT(*) FROM event_participants ep LEFT JOIN users u_ghost ON ep.user_id = u_ghost.id WHERE LOWER(ep.event_type) IN ('housing', 'groupbuy') AND ep.event_id = ho.id AND LOWER(ep.status) IN ('approved', 'accepted') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != 'ncnujoinupadmin@gmail.com') AND (u_ghost.email IS NULL OR LOWER(u_ghost.email) != LOWER(ho.host_email)))) as approvedCount
             FROM housing ho
             LEFT JOIN users u ON LOWER(ho.host_email) = LOWER(u.email)
-            WHERE LOWER(ho.host_email) = LOWER(:email)
+            WHERE LOWER(ho.host_email) IN (:emails)
 
             UNION ALL
 
@@ -981,9 +986,9 @@ router.get('/my-activities', async (req, res) => {
             JOIN event_participants ep ON (LOWER(ep.event_type) IN ('activities', 'activity', 'sports') AND ep.event_id = a.id)
             JOIN users u_me ON ep.user_id = u_me.id
             LEFT JOIN users u_host ON LOWER(a.host_email) = LOWER(u_host.email)
-            WHERE LOWER(u_me.email) = LOWER(:email) 
+            WHERE LOWER(u_me.email) IN (:emails) 
               AND LOWER(ep.status) IN ('approved', 'accepted')
-              AND LOWER(a.host_email) != LOWER(:email)
+              AND LOWER(a.host_email) NOT IN (:emails)
 
             UNION ALL
 
@@ -996,9 +1001,9 @@ router.get('/my-activities', async (req, res) => {
             JOIN event_participants ep ON (LOWER(ep.event_type) IN ('carpools', 'carpool') AND ep.event_id = c.id)
             JOIN users u_me ON ep.user_id = u_me.id
             LEFT JOIN users u_host ON LOWER(c.host_email) = LOWER(u_host.email)
-            WHERE LOWER(u_me.email) = LOWER(:email) 
+            WHERE LOWER(u_me.email) IN (:emails) 
               AND LOWER(ep.status) IN ('approved', 'accepted')
-              AND LOWER(c.host_email) != LOWER(:email)
+              AND LOWER(c.host_email) NOT IN (:emails)
 
             UNION ALL
 
@@ -1011,9 +1016,9 @@ router.get('/my-activities', async (req, res) => {
             JOIN event_participants ep ON (LOWER(ep.event_type) IN ('studies', 'study') AND ep.event_id = s.id)
             JOIN users u_me ON ep.user_id = u_me.id
             LEFT JOIN users u_host ON LOWER(s.host_email) = LOWER(u_host.email)
-            WHERE LOWER(u_me.email) = LOWER(:email) 
+            WHERE LOWER(u_me.email) IN (:emails) 
               AND LOWER(ep.status) IN ('approved', 'accepted')
-              AND LOWER(s.host_email) != LOWER(:email)
+              AND LOWER(s.host_email) NOT IN (:emails)
 
             UNION ALL
 
@@ -1026,9 +1031,9 @@ router.get('/my-activities', async (req, res) => {
             JOIN event_participants ep ON (LOWER(ep.event_type) IN ('hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other') AND ep.event_id = h.id)
             JOIN users u_me ON ep.user_id = u_me.id
             LEFT JOIN users u_host ON LOWER(h.host_email) = LOWER(u_host.email)
-            WHERE LOWER(u_me.email) = LOWER(:email) 
+            WHERE LOWER(u_me.email) IN (:emails) 
               AND LOWER(ep.status) IN ('approved', 'accepted')
-              AND LOWER(h.host_email) != LOWER(:email)
+              AND LOWER(h.host_email) NOT IN (:emails)
 
             UNION ALL
 
@@ -1041,15 +1046,15 @@ router.get('/my-activities', async (req, res) => {
             JOIN event_participants ep ON (LOWER(ep.event_type) IN ('housing', 'groupbuy') AND ep.event_id = ho.id)
             JOIN users u_me ON ep.user_id = u_me.id
             LEFT JOIN users u_host ON LOWER(ho.host_email) = LOWER(u_host.email)
-            WHERE LOWER(u_me.email) = LOWER(:email) 
+            WHERE LOWER(u_me.email) IN (:emails) 
               AND LOWER(ep.status) IN ('approved', 'accepted')
-              AND LOWER(ho.host_email) != LOWER(:email)
+              AND LOWER(ho.host_email) NOT IN (:emails)
 
             ORDER BY created_at DESC
         `;
 
         const results = await sequelize.query(query, {
-            replacements: { email },
+            replacements: { emails },
             type: sequelize.QueryTypes.SELECT
         });
 
