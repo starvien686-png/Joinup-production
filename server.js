@@ -3224,22 +3224,6 @@ cron.schedule('0 * * * *', async () => {
 });
 
 
-// --- ONE-TIME MIGRATION: Populating full_name from username if NULL ---
-const runFullNameMigration = async () => {
-    try {
-        const [results] = await sequelize.query(`
-            UPDATE users 
-            SET full_name = username 
-            WHERE (full_name IS NULL OR full_name = '') 
-            AND (username IS NOT NULL AND username != '')
-        `);
-        if (results.affectedRows > 0) {
-            logger.info(`[Migration] Auto-populated full_name for ${results.affectedRows} users.`);
-        }
-    } catch (err) {
-        logger.error(`[Migration] Full name migration failed: ${err.message}`);
-    }
-};
 
 server.listen(PORT, async () => {
     logger.info(`🚀 JoinUp Server v2.0 is BLASTING OFF on port ${PORT}!`);
@@ -3247,8 +3231,6 @@ server.listen(PORT, async () => {
     console.log(`SERVER SUCCESSFUL! 🚀 Run on port ${PORT}`);
     
     await syncAll();
-    // Run migration after DB connection is stable
-    await runFullNameMigration();
     
     startEventRetirementWorker();
     startDatabaseCleanupWorker();
