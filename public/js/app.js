@@ -556,9 +556,14 @@ window.showAnnouncements = async () => {
 
                     if (n.type === 'join_request') {
                         const evtName = meta.event_title || '活動';
+                        const applicantEmail = meta.user_email || '';
                         const sender = meta.full_name || meta.snapshot_display_name || '有人';
+                        
+                        // NEW: Make name clickable for profile viewing (Styled to inherit colors per USER_REQUEST)
+                        const nameLink = `<span onclick="event.stopPropagation(); window.showUserProfile('${applicantEmail}')" style="cursor: pointer; font-weight: bold;">${sender}</span>`;
+                        
                         const adminBadge = meta.user_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : '';
-                        msg = isZH ? `🔔 新申請：${sender}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${sender}${adminBadge} wants to join "${evtName}"`;
+                        msg = isZH ? `🔔 新申請：${nameLink}${adminBadge} 申請加入 "${evtName}"` : `🔔 New request: ${nameLink}${adminBadge} wants to join "${evtName}"`;
 
                         // 👇 INI BARIS YANG KEMARIN TERHAPUS (Wajib ada!) 👇
                         const category = meta.event_type || 'sports';
@@ -683,7 +688,7 @@ window.showAnnouncements = async () => {
                 const txtReject = isZH ? '拒絕 (Reject)' : 'Reject';
 
                 actionButtons = `
-                <div style="display: flex; gap: 8px; margin-top: 10px;" onclick="event.stopPropagation()">
+                <div id="notif-actions-${n.id}" style="display: flex; gap: 8px; margin-top: 10px;" onclick="event.stopPropagation()">
                     <button onclick="window.handleReviewAction('reject', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: white; color: #F44336; border: 1px solid #F44336; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtReject}</button>
                     <button onclick="window.handleReviewAction('accept', '${appId}', '${postId}', '${applicantEmail}', '${teamName}', '${category}')" style="flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">${txtAccept}</button>
                 </div>
@@ -974,8 +979,22 @@ window.handleReviewAction = async (action, appId, postId, applicantEmail, teamNa
         });
 
         document.getElementById('review-app-overlay')?.remove();
-        alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
-        window.location.reload();
+        
+        // --- NEW: Premium UI feedback for Notification Center ---
+        const actionContainer = document.getElementById(`notif-actions-${appId}`);
+        if (actionContainer) {
+            const statusText = action === 'accept' 
+                ? (isZH ? '<span style="color: #4CAF50; font-weight: bold;">✅ 已接受 (Accepted)</span>' : '<span style="color: #4CAF50; font-weight: bold;">✅ Accepted</span>') 
+                : (isZH ? '<span style="color: #F44336; font-weight: bold;">❌ 已拒絕 (Rejected)</span>' : '<span style="color: #F44336; font-weight: bold;">❌ Rejected</span>');
+            actionContainer.innerHTML = `<div style="padding: 8px; text-align: center; width: 100%;">${statusText}</div>`;
+            
+            // Refresh badge since we processed an item
+            if (window.checkNotificationBadge) window.checkNotificationBadge();
+        } else {
+            // Fallback for standard modal (Manage My Activities page or deep-link review modal)
+            alert(action === 'accept' ? (isZH ? "已接受！ ✓" : "Accepted! ✓") : (isZH ? "已拒絕 ✗" : "Declined ✗"));
+            window.location.reload();
+        }
 
     } catch (err) {
         console.error("Failed to Review:", err);
