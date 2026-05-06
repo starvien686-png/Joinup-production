@@ -61,6 +61,17 @@ function getTimeColumn(category) {
     return cat === 'carpool' ? 'departure_time' : 'event_time';
 }
 
+const getEventTypeGroup = (type) => {
+    const t = (type || '').toLowerCase().trim();
+    if (['activities', 'activity', 'sports'].includes(t)) return ['activities', 'activity', 'sports'];
+    if (['carpools', 'carpool'].includes(t)) return ['carpools', 'carpool'];
+    if (['studies', 'study'].includes(t)) return ['studies', 'study'];
+    if (['hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other'].includes(t)) 
+        return ['hangouts', 'hangout', 'travel', 'food', 'outdoor', 'arts', 'entertainment', 'shopping', 'nightlife', 'other'];
+    if (['housing', 'groupbuy'].includes(t)) return ['housing', 'groupbuy'];
+    return [t];
+};
+
 // 2. Idempotency DB-backed middleware
 async function withIdempotency(req, res, next) {
     req.requestId = crypto.randomUUID();
@@ -865,8 +876,8 @@ router.get('/host/participants', async (req, res) => {
                    ep.created_at, ep.updated_at 
             FROM event_participants ep
             JOIN users u ON ep.user_id = u.id
-            WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ?`;
-        const replacements = [event_type, event_id];
+            WHERE LOWER(ep.event_type) IN (?) AND ep.event_id = ?`;
+        const replacements = [getEventTypeGroup(event_type), event_id];
 
         if (status) {
             queryStr += ` AND status = ?`;
