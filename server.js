@@ -2204,11 +2204,27 @@ app.get('/my-chat-rooms/:email', async (req, res) => {
             FROM chat_rooms r
             LEFT JOIN (SELECT (CASE WHEN LOWER(email) = 'ncnujoinupadmin@gmail.com' THEN 1 ELSE 0 END) as is_admin, email FROM users) u_me ON LOWER(u_me.email) = LOWER(?)
             LEFT JOIN chat_participants p ON LOWER(r.room_id) = LOWER(p.room_id)
-            WHERE (COALESCE(u_me.is_admin, 0) = 1 OR LOWER(p.user_email) IN (?))
+            LEFT JOIN event_participants ep ON r.post_id = ep.event_id 
+                AND (
+                    LOWER(r.room_type) = LOWER(ep.event_type) OR 
+                    (LOWER(r.room_type) IN ('sports', 'activities', 'activity') AND LOWER(ep.event_type) IN ('sports', 'activities', 'activity')) OR
+                    (LOWER(r.room_type) IN ('carpool', 'carpools') AND LOWER(ep.event_type) IN ('carpool', 'carpools')) OR
+                    (LOWER(r.room_type) IN ('study', 'studies') AND LOWER(ep.event_type) IN ('study', 'studies')) OR
+                    (LOWER(r.room_type) IN ('hangout', 'hangouts') AND LOWER(ep.event_type) IN ('hangout', 'hangouts')) OR
+                    (LOWER(r.room_type) IN ('housing', 'groupbuy') AND LOWER(ep.event_type) IN ('housing', 'groupbuy')) OR
+                    (LOWER(r.room_type) = 'private' AND LOWER(ep.event_type) = 'private')
+                )
+            WHERE (COALESCE(u_me.is_admin, 0) = 1) 
+               OR (LOWER(p.user_email) IN (?))
+               OR (
+                   ep.user_id IN (SELECT id FROM users WHERE LOWER(email) IN (?))
+                   AND LOWER(ep.status) IN ('approved', 'accepted')
+               )
             GROUP BY r.room_id
             ORDER BY r.created_at DESC
         `;
-        const [rooms] = await sequelize.query(query, { replacements: [userEmail, emails.map(e => e.toLowerCase())] });
+        const emailVars = emails.map(e => e.toLowerCase());
+        const [rooms] = await sequelize.query(query, { replacements: [userEmail, emailVars, emailVars] });
         res.json(rooms);
     } catch (error) {
         res.status(500).json({ error: error.message });
