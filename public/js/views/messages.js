@@ -172,6 +172,49 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
     socket.off('receive_message');
     socket.on('receive_message', handleSocketMessage);
 
+    socket.off('update_message');
+    socket.on('update_message', (data) => {
+        const { message_id, new_message } = data;
+        const msgEl = document.getElementById(`msg-${message_id}`);
+        if (msgEl) {
+            const contentDiv = msgEl.querySelector('.chat-msg-content');
+            if (contentDiv) contentDiv.innerText = new_message;
+            
+            let timeDiv = msgEl.querySelector('.chat-time');
+            if (timeDiv && !timeDiv.innerHTML.includes('(edited)')) {
+                timeDiv.innerHTML += ' <span style="font-size:0.7rem; opacity:0.7; margin-left:4px;">(edited)</span>';
+            }
+        }
+    });
+
+    socket.off('edit_message_error');
+    socket.on('edit_message_error', (data) => {
+        alert(data.error);
+    });
+
+    // Delegate click for editing messages
+    messageArea.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.btn-edit-msg');
+        if (editBtn) {
+            const msgId = editBtn.getAttribute('data-id');
+            const msgEl = document.getElementById(`msg-${msgId}`);
+            if (msgEl) {
+                const contentDiv = msgEl.querySelector('.chat-msg-content');
+                if (contentDiv) {
+                    const currentText = contentDiv.innerText;
+                    const newText = prompt('Edit your message (max 30 mins):', currentText);
+                    if (newText && newText.trim() !== '' && newText !== currentText) {
+                        socket.emit('edit_message', {
+                            message_id: msgId,
+                            room_id: String(roomId),
+                            new_message: newText.trim()
+                        });
+                    }
+                }
+            }
+        }
+    });
+
     const messageArea = document.getElementById('chat-messages-area');
     const inputField = document.getElementById('chat-input-msg');
     const pinnedBanner = document.getElementById('chat-pinned-banner');
@@ -278,8 +321,16 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                         ${msg.sender_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                     </span>
                 </div>` : ''}
-                <div>${contentHtml}</div>
-                <div class="chat-time">${timeStr}</div>
+                <div class="chat-msg-content">${contentHtml}</div>
+                <div class="chat-time">
+                    ${timeStr}
+                    ${msg.is_edited ? '<span style="font-size:0.7rem; opacity:0.7; margin-left:4px;">(edited)</span>' : ''}
+                </div>
+                ${isMine && message_type === 'text' ? `
+                <div style="margin-top: 5px; text-align: right;">
+                    <button class="btn-edit-msg" data-id="${uniqueId}" style="background:none; border:none; color:var(--text-secondary); font-size:0.8rem; cursor:pointer;">✏️ Edit</button>
+                </div>
+                ` : ''}
             </div>
         `;
         messageArea.insertAdjacentHTML('beforeend', html);
@@ -301,7 +352,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             let rawMessages = dbMsgs.map(m => {
                 const safeMsg = m.message || '';
                 return {
-                    id: m.id, sender_email: m.sender_email, sender_name: m.sender_name, full_name: m.full_name, created_at: m.created_at,
+                    id: m.id, sender_email: m.sender_email, sender_name: m.sender_name, full_name: m.full_name, created_at: m.created_at, is_edited: m.is_edited,
                     message_type: safeMsg.startsWith('!') ? 'announcement' : 'text', content: safeMsg.replace('!', '').trim(),
                     role: 'participant', sender_dept: '', sender_student_id: ''
                 };
@@ -439,8 +490,16 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                                     ${msg.sender_email === 'ncnujoinupadmin@gmail.com' ? `<span style="background: #FFD700; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 900; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🛡️ ADMIN</span>` : ''}
                                  </span>
                             </div>` : ''}
-                            <div>${contentHtml}</div>
-                            <div class="chat-time">${timeStr}</div>
+                            <div class="chat-msg-content">${contentHtml}</div>
+                            <div class="chat-time">
+                                ${timeStr}
+                                ${msg.is_edited ? '<span style="font-size:0.7rem; opacity:0.7; margin-left:4px;">(edited)</span>' : ''}
+                            </div>
+                            ${isMine && msg.message_type === 'text' ? `
+                            <div style="margin-top: 5px; text-align: right;">
+                                <button class="btn-edit-msg" data-id="${uniqueId}" style="background:none; border:none; color:var(--text-secondary); font-size:0.8rem; cursor:pointer;">✏️ Edit</button>
+                            </div>
+                            ` : ''}
                         </div>
                     `);
                 }

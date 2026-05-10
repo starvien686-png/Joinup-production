@@ -237,6 +237,59 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('edit_message', async (data) => {
+        try {
+            const { message_id, room_id, new_message } = data;
+            const normalizedRoomId = String(room_id).toLowerCase().trim();
+            
+            let sender_email = socket.userEmail || data.sender_email;
+            if (sender_email) {
+                sender_email = sender_email.toLowerCase().replace('mail1.', '').trim();
+            }
+
+            if (!sender_email) return logger.error("[Socket] edit_message rejected: No sender_email provided.");
+
+            // Get the original message
+            const [msgData] = await sequelize.query(`SELECT sender_email, created_at FROM chat_messages WHERE id = ?`, { replacements: [message_id] });
+            
+            if (msgData.length === 0) return logger.error("[Socket] edit_message rejected: Message not found.");
+            
+            // STRICT VALIDATION 1: Verify the user requesting the edit is the actual sender
+            const originalSender = msgData[0].sender_email.toLowerCase().replace('mail1.', '').trim();
+            if (originalSender !== sender_email) {
+                return logger.warn(`[Socket] edit_message rejected: Unauthorized. User ${sender_email} tried to edit message from ${originalSender}`);
+            }
+
+            // STRICT VALIDATION 2: Check time difference <= 30 minutes
+            const createdAt = new Date(msgData[0].created_at);
+            const now = new Date();
+            const diffMinutes = (now - createdAt) / (1000 * 60);
+
+            if (diffMinutes > 30) {
+                if (socket) {
+                    socket.emit('edit_message_error', { error: 'A message can only be edited within 30 minutes of its original creation time.' });
+                }
+                return logger.warn(`[Socket] edit_message rejected: Time exceeded 30 minutes (${diffMinutes.toFixed(2)} min)`);
+            }
+
+            // Update database
+            const query = `UPDATE chat_messages SET message = ?, is_edited = 1 WHERE id = ?`;
+            await sequelize.query(query, { replacements: [new_message, message_id] });
+
+            // Broadcast update to room
+            io.to(normalizedRoomId).emit('update_message', {
+                message_id,
+                room_id,
+                new_message,
+                is_edited: 1
+            });
+
+            logger.info(`[Socket] Message ${message_id} edited by ${sender_email}`);
+        } catch (error) {
+            logger.error(`[Socket] edit_message database error: ${error.message}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         logger.info(`[Socket] User disconnected: ${socket.id}`);
     });
