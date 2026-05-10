@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
         port: process.env.DB_PORT || 3306,
         dialect: 'mysql',
         timezone: '+08:00',
-        logging: false,
+        logging: console.log, // Enable verbose logging to see connection issues
         pool: {
             max: 10,
             min: 2,
@@ -19,8 +19,10 @@ const sequelize = new Sequelize(
             handleDisconnects: true
         },
         dialectOptions: {
+            connectTimeout: 10000, // Force timeout after 10 seconds!
             ssl: {
-                rejectUnauthorized: false
+                minVersion: 'TLSv1.2',
+                rejectUnauthorized: true // Mandatory for TiDB Serverless
             },
             dateStrings: true,
             typeCast: function (field, next) {
