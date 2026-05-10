@@ -345,9 +345,19 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         if (document.hidden) return; // 🛑 Don't fetch if tab is hidden
         try {
             const res = await fetch(`${window.BASE_URL || ''}/room-messages/${roomId}`);
+            
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            
             const dbMsgs = await res.json();
 
-            if (!Array.isArray(dbMsgs)) return; // Baju Zirah
+            if (!Array.isArray(dbMsgs)) {
+                if (isInitial) {
+                    messageArea.innerHTML = `<div style="text-align:center; color:red; margin-top: 20px; font-size: 0.9rem;">${dbMsgs.error || 'Failed to load messages from server.'}</div>`;
+                }
+                return;
+            }
 
             let rawMessages = dbMsgs.map(m => {
                 const safeMsg = m.message || '';
@@ -374,6 +384,14 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             
             if (isInitial) {
                 messageArea.innerHTML = '';
+            } else {
+                // Failsafe: Remove connecting text if it's still there
+                if (messageArea.innerHTML.includes('Connecting') || messageArea.innerHTML.includes('連接資料庫')) {
+                    const firstChild = messageArea.firstElementChild;
+                    if (firstChild && firstChild.innerText && (firstChild.innerText.includes('Connecting') || firstChild.innerText.includes('連接資料庫'))) {
+                        firstChild.remove();
+                    }
+                }
             }
 
             if (rawMessages.length === 0 && isInitial) {
@@ -558,7 +576,12 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             }
 
             if (isInitial) messageArea.scrollTop = messageArea.scrollHeight;
-        } catch (err) { console.error("Gagal load chat:", err); }
+        } catch (err) { 
+            console.error("Gagal load chat:", err); 
+            if (isInitial) {
+                messageArea.innerHTML = `<div style="text-align:center; color:red; margin-top: 20px; font-size: 0.9rem;">Failed to connect to database. Please refresh or try again.</div>`;
+            }
+        }
     };
 
     const sendMessage = async (type = 'text', customContent = null) => {
