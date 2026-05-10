@@ -67,7 +67,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             activityStatus = currentItem.status || 'open';
         } else {
             // Kalau ga ketemu, nyontek dari data Inbox
-            const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
+            const myRoomsRes = await fetch(`${window.BASE_URL || ''}/my-chat-rooms/${user.email}`);
             if (myRoomsRes.ok) {
                 const myRooms = await myRoomsRes.json();
                 const existingRoom = myRooms.find(r => String(r.id) === String(roomId));
@@ -78,7 +78,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         }
 
         // Daftarkan ke DB
-        await fetch('/setup-chat-room', {
+        await fetch(`${window.BASE_URL || ''}/setup-chat-room`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 room_id: String(roomId),
@@ -344,7 +344,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
     const loadMessages = async (isInitial = false) => {
         if (document.hidden) return; // 🛑 Don't fetch if tab is hidden
         try {
-            const res = await fetch(`/room-messages/${roomId}`);
+            const res = await fetch(`${window.BASE_URL || ''}/room-messages/${roomId}`);
             const dbMsgs = await res.json();
 
             if (!Array.isArray(dbMsgs)) return; // Baju Zirah
@@ -781,7 +781,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             messageArea.scrollTop = messageArea.scrollHeight;
             
             // Fixed: Use the correct Cloudinary endpoint
-            const res = await fetch('/api/chat/upload', { 
+            const res = await fetch(`${window.BASE_URL || ''}/api/chat/upload`, {
                 method: 'POST', 
                 headers: { 'x-user-email': user.email }, // Auth header
                 body: formData 
@@ -868,7 +868,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
             for (let file of files) {
                 const formData = new FormData(); formData.append('file', file);
                 try {
-                    const res = await fetch('/upload', { method: 'POST', body: formData });
+                    const res = await fetch(`${window.BASE_URL || ''}/upload`, { method: 'POST', body: formData });
                     const data = await res.json();
                     if (data.url) albums[albumIndex].photos.push(data.url);
                 } catch (err) { }
@@ -982,7 +982,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
                     for (let file of files) {
                         const formData = new FormData(); formData.append('file', file);
                         try {
-                            const res = await fetch('/upload', { method: 'POST', body: formData });
+                            const res = await fetch(`${window.BASE_URL || ''}/upload`, { method: 'POST', body: formData });
                             const data = await res.json();
                             if (data.url) tempPhotos.push(data.url);
                         } catch (err) { }
@@ -1053,7 +1053,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         `;
         document.body.appendChild(reportModal);
 
-        fetch(`/room-messages/${roomId}`)
+        fetch(`${window.BASE_URL || ''}/room-messages/${roomId}`)
             .then(res => res.json())
             .then(messages => {
                 if (Array.isArray(messages)) {
@@ -1305,7 +1305,7 @@ export const renderMessages = (roomId = null, prefill = null) => {
             if (!inboxContainer) return;
 
             // 🚀 OPTIMIZED: Fetching all room metadata + last messages in ONE call!
-            const myRoomsRes = await fetch(`/my-chat-rooms/${user.email}`);
+            const myRoomsRes = await fetch(`${window.BASE_URL || ''}/my-chat-rooms/${user.email}`);
             if (!myRoomsRes.ok) throw new Error("Failed to load rooms");
             
             const inboxDataRaw = await myRoomsRes.json();
