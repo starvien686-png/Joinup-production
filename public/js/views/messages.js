@@ -156,6 +156,10 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         </div>
     `;
 
+    const messageArea = document.getElementById('chat-messages-area');
+    const inputField = document.getElementById('chat-input-msg');
+    const pinnedBanner = document.getElementById('chat-pinned-banner');
+
     // --- SOCKET.IO ROOM JOIN ---
     socket.emit('join_room', String(roomId));
 
@@ -215,9 +219,6 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         }
     });
 
-    const messageArea = document.getElementById('chat-messages-area');
-    const inputField = document.getElementById('chat-input-msg');
-    const pinnedBanner = document.getElementById('chat-pinned-banner');
 
     const renderAttachment = (data, isMine) => {
         const type = data.type || 'file';
