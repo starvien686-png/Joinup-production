@@ -1,4 +1,6 @@
 // Centralized API utility for JoinUp 53-Point Blueprint
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
+
 const api = {
     async fetch(url, options = {}) {
         const { 
@@ -28,7 +30,9 @@ const api = {
         let attempt = 0;
         const execute = async () => {
             try {
-                const response = await fetch(url, config);
+                // Prepend BASE_URL if url is relative
+                const finalUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
+                const response = await fetch(finalUrl, config);
 
                 // 2. Overload UX Rule (503 Exponential Backoff)
                 if (response.status === 503 && attempt < maxRetries) {

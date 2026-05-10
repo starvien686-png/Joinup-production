@@ -13,7 +13,7 @@ window.I18n = I18n;
 window.notifications = notifications;
 window.showUserProfile = showUserProfile;
 window.openRatingModal = openRatingModal;
-window.socket = io(); // Initialize Socket.io globally
+window.socket = io(window.BASE_URL); // Initialize Socket.io globally
 
 // --- OneSignal Push Setup ---
 const normalizeEmail = (email) => {

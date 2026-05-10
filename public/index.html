@@ -23,6 +23,10 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Socket.io Client -->
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Define global BASE_URL for dynamic API/Socket routing
+        window.BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
+    </script>
 </head>
 
 <body>
