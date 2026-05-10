@@ -22,7 +22,7 @@ const sequelize = new Sequelize(
             connectTimeout: 10000, // Force timeout after 10 seconds!
             ssl: {
                 minVersion: 'TLSv1.2',
-                rejectUnauthorized: true // Mandatory for TiDB Serverless
+                rejectUnauthorized: false // Set to false because of self-signed certificate in certificate chain error
             },
             dateStrings: true,
             typeCast: function (field, next) {
