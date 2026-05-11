@@ -552,7 +552,8 @@ app.get('/api/v1/users/me', checkAuth, (req, res) => {
             credit_points: user.credit_points || 0,
             violation_points: user.violation_points || 0,
             creditPoints: user.credit_points || 0,
-            violationCount: user.violation_points || 0
+            violationCount: user.violation_points || 0,
+            created_at: user.created_at
         });
     } catch (err) {
         console.error('[API] Error in /api/v1/users/me:', err);
@@ -655,7 +656,8 @@ app.post('/login', loginLimiter, async (req, res) => {
                 violation_points: user.violation_points || 0,
                 creditPoints: user.credit_points || 0,
                 violationCount: user.violation_points || 0,
-                is_admin: user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com'
+                is_admin: user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com',
+                created_at: user.created_at
             }
         });
 
@@ -706,7 +708,8 @@ app.post('/api/auth/google', async (req, res) => {
                     violation_points: user.violation_points || 0,
                     creditPoints: user.credit_points || 0,
                     violationCount: user.violation_points || 0,
-                    is_admin: user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com'
+                    is_admin: user.email.toLowerCase() === 'ncnujoinupadmin@gmail.com',
+                    created_at: user.created_at
                 }
             });
         } else {

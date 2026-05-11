@@ -77,8 +77,14 @@ async function backfillSignups() {
                 updatedCount++;
                 console.log(`   ✅ Matched! Earliest: ${finalEarliest.toISOString()}`);
             } else {
+                // Fallback for users with no activity (jangan kosong ataupun hari ini)
+                const fallbackDate = new Date('2026-05-01T00:00:00Z');
+                await sequelize.query(
+                    'UPDATE users SET created_at = ? WHERE id = ?',
+                    { replacements: [fallbackDate, userId], type: QueryTypes.UPDATE }
+                );
                 skippedCount++;
-                console.log(`   ⚠️ No activity found.`);
+                console.log(`   ⚠️ No activity found. Backfilled with fallback date: ${fallbackDate.toISOString()}`);
             }
         }
 
