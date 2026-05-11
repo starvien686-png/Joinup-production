@@ -10,6 +10,7 @@ async function backfillSignups() {
         console.log(`📊 Found ${users.length} users to process.`);
 
         let updatedCount = 0;
+        let skippedCount = 0;
 
         for (const user of users) {
             const email = user.email.toLowerCase().trim();
