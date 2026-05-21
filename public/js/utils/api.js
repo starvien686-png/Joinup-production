@@ -1,5 +1,5 @@
 // Centralized API utility for JoinUp 53-Point Blueprint
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:4000' : '';
+const BASE_URL = window.location.hostname.includes('onrender.com') ? '' : `${window.location.protocol}//${window.location.hostname}:4000`;
 
 const api = {
     async fetch(url, options = {}) {
