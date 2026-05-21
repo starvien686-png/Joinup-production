@@ -434,6 +434,13 @@ router.post('/join/cancel', async (req, res) => {
 
 // 3. POST /api/v1/join/approve
 router.post('/join/approve', async (req, res) => {
+    // === TEMPORARY DEBUG LOG FOR MOBILE TESTING ===
+    console.log('--- [DEBUG] JOIN APPROVE REQUEST START ---');
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Params:', JSON.stringify(req.params, null, 2));
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('--- [DEBUG] JOIN APPROVE REQUEST END ---');
+
     let { event_type, event_id, participant_id, host_email, target_user_email } = req.body;
     if (!event_type || !event_id || !participant_id || !host_email) return res.status(400).json({ success: false, message: 'Missing fields' });
     
