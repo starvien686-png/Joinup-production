@@ -34,6 +34,19 @@ const sequelize = new Sequelize(
         },
         retry: {
             max: 3
+        },
+        hooks: {
+            afterConnect: (connection, config) => {
+                return new Promise((resolve, reject) => {
+                    connection.query("SET time_zone = '+08:00';", (err) => {
+                        if (err) {
+                            console.error("Failed to set time_zone", err);
+                            return reject(err);
+                        }
+                        resolve();
+                    });
+                });
+            }
         }
     }
 );

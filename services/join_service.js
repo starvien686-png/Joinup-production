@@ -491,7 +491,7 @@ router.post('/join/approve', async (req, res) => {
              FROM event_participants ep
              JOIN users u ON ep.user_id = u.id
              WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
-               AND LOWER(ep.status) = 'approved'
+               AND LOWER(ep.status) IN ('approved', 'accepted')
                AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
              FOR UPDATE`,
             { replacements: [event_type, event_id], transaction: t }
@@ -499,10 +499,10 @@ router.post('/join/approve', async (req, res) => {
 
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
-        // Host-Inclusive Rule: Total count = Host (1) + Approved Participants (from event_participants)
+        // Host-Inclusive Rule: Total count = Host (1) + Approved/Accepted Participants (from event_participants)
         const currentCount = 1 + approvedCount;
 
-        if (currentCount >= events[0].capacity) {
+        if (events[0].capacity !== null && events[0].capacity !== undefined && currentCount >= events[0].capacity) {
             throw { status: 409, message: 'Event full' };
         }
 
@@ -520,14 +520,14 @@ router.post('/join/approve', async (req, res) => {
              FROM event_participants ep
              JOIN users u ON ep.user_id = u.id
              WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
-               AND LOWER(ep.status) = 'approved'
+               AND LOWER(ep.status) IN ('approved', 'accepted')
                AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
              FOR UPDATE`,
             { replacements: [event_type, event_id], transaction: t }
         );
 
         const totalAfterApprove = 1 + parseInt(updatedApproved[0].count, 10);
-        if (totalAfterApprove >= events[0].capacity) {
+        if (events[0].capacity !== null && events[0].capacity !== undefined && totalAfterApprove >= events[0].capacity) {
             await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
             logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalAfterApprove})`);
         }
