@@ -485,9 +485,10 @@ router.post('/join/approve', async (req, res) => {
         if (!requestHostVariations.includes(eventHostEmail)) throw { status: 403, message: 'Unauthorized' };
 
         const targetEmailVars = getEmailVariations(target_user_email);
+        const eventTypeGroup = getEventTypeGroup(event_type);
         const [lookup] = await sequelize.query(
-            "SELECT id FROM event_participants WHERE LOWER(event_type) = LOWER(?) AND event_id = ? AND user_id IN (SELECT id FROM users WHERE email IN (?)) FOR UPDATE",
-            { replacements: [event_type, event_id, targetEmailVars], transaction: t }
+            "SELECT id FROM event_participants WHERE LOWER(event_type) IN (?) AND event_id = ? AND user_id IN (SELECT id FROM users WHERE email IN (?)) FOR UPDATE",
+            { replacements: [eventTypeGroup, event_id, targetEmailVars], transaction: t }
         );
         if (lookup.length === 0) throw { status: 404, message: 'Participant not found' };
 
@@ -497,20 +498,21 @@ router.post('/join/approve', async (req, res) => {
             `SELECT COUNT(*) as count 
              FROM event_participants ep
              JOIN users u ON ep.user_id = u.id
-             WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
+             WHERE LOWER(ep.event_type) IN (?) AND ep.event_id = ? 
                AND LOWER(ep.status) IN ('approved', 'accepted')
                AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
              FOR UPDATE`,
-            { replacements: [event_type, event_id], transaction: t }
+            { replacements: [eventTypeGroup, event_id], transaction: t }
         );
 
         // --- CAPACITY CHECK ---
         const approvedCount = parseInt(approved[0].count, 10);
-        // Host-Inclusive Rule: Total count = Host (1) + Approved/Accepted Participants (from event_participants)
-        const currentCount = 1 + approvedCount;
-
-        if (events[0].capacity !== null && events[0].capacity !== undefined && currentCount >= events[0].capacity) {
-            throw { status: 409, message: 'Event full' };
+        
+        if (events[0].capacity !== null && events[0].capacity !== undefined) {
+            const maxCapacity = parseInt(events[0].capacity, 10);
+            if (!isNaN(maxCapacity) && approvedCount >= maxCapacity) {
+                throw { status: 409, message: 'Event full' };
+            }
         }
 
         const [parts] = await sequelize.query(
@@ -526,17 +528,20 @@ router.post('/join/approve', async (req, res) => {
             `SELECT COUNT(*) as count 
              FROM event_participants ep
              JOIN users u ON ep.user_id = u.id
-             WHERE LOWER(ep.event_type) = LOWER(?) AND ep.event_id = ? 
+             WHERE LOWER(ep.event_type) IN (?) AND ep.event_id = ? 
                AND LOWER(ep.status) IN ('approved', 'accepted')
                AND LOWER(u.email) != 'ncnujoinupadmin@gmail.com'
              FOR UPDATE`,
-            { replacements: [event_type, event_id], transaction: t }
+            { replacements: [eventTypeGroup, event_id], transaction: t }
         );
 
-        const totalAfterApprove = 1 + parseInt(updatedApproved[0].count, 10);
-        if (events[0].capacity !== null && events[0].capacity !== undefined && totalAfterApprove >= events[0].capacity) {
-            await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
-            logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalAfterApprove})`);
+        if (events[0].capacity !== null && events[0].capacity !== undefined) {
+            const maxCapacity = parseInt(events[0].capacity, 10);
+            const totalApproved = parseInt(updatedApproved[0].count, 10);
+            if (!isNaN(maxCapacity) && totalApproved >= maxCapacity) {
+                await sequelize.query(`UPDATE ${tableName} SET status = 'full' WHERE id = ?`, { replacements: [event_id], transaction: t });
+                logger.info(`Event ${event_type}:${event_id} marked as FULL. (Total: ${totalApproved})`);
+            }
         }
 
         // Auto Chat Join
