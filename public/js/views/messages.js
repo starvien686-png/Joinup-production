@@ -1100,7 +1100,7 @@ const renderChatRoomUnified = async (roomIdRaw, user, prefill, appElement) => {
         if (document.visibilityState === 'visible') {
             loadMessages(false);
         }
-    }, 180000); // Poll every 180s (3 minutes) as fallback to save DB quota
+    }, 60000); // Poll every 60s to save DB quota
 
     // Initialize Pull-to-Refresh for Chat
     new PullToRefresh({

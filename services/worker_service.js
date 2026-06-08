@@ -81,7 +81,7 @@ async function processOutbox() {
         
         if (pending.length === 0) {
             await t.commit();
-            return false;
+            return;
         }
 
         const ids = pending.map(p => p.id);
@@ -94,7 +94,7 @@ async function processOutbox() {
     } catch (e) {
         if (t) await t.rollback();
         logger.error(`Failed to fetch outbox jobs: ${e.message}`);
-        return false;
+        return;
     }
 
     for (const job of jobs) {
@@ -158,7 +158,6 @@ async function processOutbox() {
             }
         }
     }
-    return true;
 }
 
 // Data Drift & Cleanup Reconciliation Job
@@ -178,47 +177,11 @@ async function runReconciliation() {
     }
 }
 
-let currentDelay = 2000;
-const MIN_DELAY = 2000;
-const MAX_DELAY = 30000; // 30 seconds max idle poll
-let workerTimeoutId = null;
-let isWorkerRunning = false;
-
-async function workerLoop() {
-    isWorkerRunning = true;
-    try {
-        const processedAny = await processOutbox();
-        if (processedAny) {
-            currentDelay = MIN_DELAY;
-        } else {
-            currentDelay = Math.min(currentDelay * 2, MAX_DELAY);
-        }
-    } catch (err) {
-        logger.error(`Error in worker loop: ${err.message}`);
-        currentDelay = Math.min(currentDelay * 2, MAX_DELAY);
-    }
-    
-    workerTimeoutId = setTimeout(workerLoop, currentDelay);
-    isWorkerRunning = false;
-}
-
-function triggerWorker() {
-    if (currentDelay > MIN_DELAY || !isWorkerRunning) {
-        logger.info(`[Worker] Instant wake-up triggered! Resetting delay.`);
-        currentDelay = MIN_DELAY;
-        if (workerTimeoutId) {
-            clearTimeout(workerTimeoutId);
-            workerTimeoutId = null;
-        }
-        workerLoop();
-    }
-}
-
 // Start worker loops
 function startWorker() {
     logger.info("Worker Service Booted. Outbox processor active.");
-    workerLoop();
+    setInterval(processOutbox, 2000); // Faster polling (2s) for "Immediate" feel
     setInterval(runReconciliation, 5 * 60 * 1000); // Every 5 mins
 }
 
-module.exports = { startWorker, triggerWorker };
+module.exports = { startWorker };

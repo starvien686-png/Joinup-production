@@ -96,8 +96,6 @@ if (window.socket) {
             }
         });
 
-        if (window.checkNotificationBadge) window.checkNotificationBadge();
-        syncNotifications();
     });
 
     window.socket.on('join_accepted', (data) => {
@@ -115,9 +113,6 @@ if (window.socket) {
                 }
             }
         });
-
-        if (window.checkNotificationBadge) window.checkNotificationBadge();
-        syncNotifications();
     });
 
     window.socket.on('new_event_popup', (data) => {
@@ -129,7 +124,6 @@ if (window.socket) {
             data: { type: 'NEW_EVENT', link: data.category }
         });
         if (window.checkNotificationBadge) window.checkNotificationBadge();
-        syncNotifications();
     });
 
     window.socket.on('reminder_notification', (data) => {
@@ -140,13 +134,6 @@ if (window.socket) {
             data: { type: 'REMINDER', link: 'home' }
         });
         if (window.checkNotificationBadge) window.checkNotificationBadge();
-        syncNotifications();
-    });
-
-    window.socket.on('new_chat_notification', (data) => {
-        console.log('[Socket] Received real-time chat notification:', data);
-        if (window.checkNotificationBadge) window.checkNotificationBadge();
-        syncNotifications();
     });
 }
 
@@ -476,6 +463,9 @@ window.validLogin = (user) => {
 
     // Red Dot Bootstrap
     if (window.checkNotificationBadge) window.checkNotificationBadge();
+    setInterval(() => {
+        if (state.isLoggedIn) window.checkNotificationBadge();
+    }, 30000); // Check every 30s
 
 
     // OneSignal & Socket.io Sync
@@ -1727,7 +1717,7 @@ async function syncNotifications() {
 }
 
 let notificationPollInterval;
-const POLL_RATE = 300000; // Increased to 300s (5 minutes) as fallback (database quota protection)
+const POLL_RATE = 60000; // Increased to 60s to save DB quota (Usage Quota Exhausted fix)
 
 function startGlobalPolling() {
     if (notificationPollInterval) clearInterval(notificationPollInterval);

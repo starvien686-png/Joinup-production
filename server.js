@@ -2947,17 +2947,6 @@ async function syncAll() {
             }
         };
 
-        const addIndexSafe = async (table, indexName, columns) => {
-            try {
-                await sequelize.query(`CREATE INDEX ${indexName} ON ${table} (${columns})`);
-                console.log(`[Migration] Added index ${indexName} on ${table}`);
-            } catch (err) {
-                if (!err.message.includes('Duplicate key name') && !err.message.includes('already exists') && !err.message.includes('Duplicate key')) {
-                    console.error(`[Migration] Error adding index ${indexName} on ${table}:`, err.message);
-                }
-            }
-        };
-
         // Housing Migrations
         await addColumnSafe('housing', 'host_name', 'VARCHAR(255) AFTER host_email');
         await addColumnSafe('housing', 'host_dept', 'VARCHAR(255) AFTER host_name');
@@ -2989,29 +2978,16 @@ async function syncAll() {
         await modifyColumnSafe('housing', 'deposit', 'VARCHAR(100)');
         await modifyColumnSafe('housing', 'room_number', 'VARCHAR(100)');
 
-        // Index Migrations
-        console.log('Running index migrations...');
-        await addIndexSafe('event_participants', 'idx_event_participants_user_id', 'user_id');
-        await addIndexSafe('chat_messages', 'idx_chat_messages_room_id', 'room_id');
-        await addIndexSafe('chat_participants', 'idx_chat_participants_room_id', 'room_id');
-        await addIndexSafe('chat_participants', 'idx_chat_participants_user_email', 'user_email');
-        await addIndexSafe('outbox_events', 'idx_outbox_events_status_created_at', 'status, created_at');
-
-        const tablesForStatus = ['activities', 'carpools', 'studies', 'hangouts', 'housing'];
-        for (const tName of tablesForStatus) {
-            await addIndexSafe(tName, `idx_${tName}_status`, 'status');
-            await addIndexSafe(tName, `idx_${tName}_host_email`, 'host_email');
-        }
-
     } catch (err) {
         console.error('Initial Database Sync Failed:', err);
     }
 }
 
 // ==========================================
-// --- IMPORT WORKER SERVICE ---
+// --- START WORKER SERVICE ---
 // ==========================================
 const { startWorker } = require('./services/worker_service');
+startWorker();
 
 // --- BACKGROUND WORKER: AUTOMATIC EVENT RETIREMENT & COMPLETION ---
 async function startEventRetirementWorker() {
@@ -3080,8 +3056,8 @@ async function startEventRetirementWorker() {
 
     // Run once at start
     await retireLogic();
-    // Then every 15 minutes
-    setInterval(retireLogic, 15 * 60 * 1000);
+    // Then every 60 seconds
+    setInterval(retireLogic, 60000);
 }
 
 // --- BACKGROUND WORKER: AUTOMATIC DATABASE CAPACITY CLEANUP ---
@@ -3334,5 +3310,5 @@ server.listen(PORT, async () => {
     
     startEventRetirementWorker();
     startDatabaseCleanupWorker();
-    startWorker();
+    workerService.startWorker();
 });
