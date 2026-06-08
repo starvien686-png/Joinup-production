@@ -6,6 +6,7 @@ const winston = require('winston');
 const pushService = require('./push_service');
 const { awardViolationPoint } = require('./points_service');
 const { nowTaipei, dayjs } = require('./time_service');
+const { triggerWorker } = require('./worker_service');
 
 
 const logger = winston.createLogger({
@@ -321,6 +322,7 @@ router.post('/join', async (req, res) => {
         }
 
         await t.commit();
+        triggerWorker();
 
         if (isAdmin) {
             return res.status(200).json({ success: true, message: 'Admin Override: Joined successfully', data: { status: 'approved' }, requestId: req.requestId });
@@ -584,6 +586,7 @@ router.post('/join/approve', async (req, res) => {
         }
 
         await t.commit();
+        triggerWorker();
 
 
         // 🚀 Real-time Notification Shortcut (Shortcut to Activities)
@@ -701,6 +704,7 @@ router.post('/join/reject', async (req, res) => {
         }
 
         await t.commit();
+        triggerWorker();
         res.status(200).json({ success: true, message: 'Rejected' });
 
     } catch (err) {
